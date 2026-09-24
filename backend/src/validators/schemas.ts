@@ -21,12 +21,19 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Le mot de passe est obligatoire'),
 });
 
-export const updatePreferencesSchema = z.object({
-  budget_min: z.number().min(0).optional(),
-  budget_max: z.number().min(0).optional(),
-  location_preference: z.string().optional(),
-  equipment_needed: z.array(z.string()).optional(),
-});
+export const updatePreferencesSchema = z
+  .object({
+    budget_min: z.number().min(0).optional(),
+    budget_max: z.number().min(0).optional(),
+    location_preference: z.string().optional(),
+    city: z.string().optional(),
+    type: z.string().optional(),
+    mail: z.boolean().optional(),
+    push: z.boolean().optional(),
+    news: z.boolean().optional(),
+    equipment_needed: z.array(z.string()).optional(),
+  })
+  .passthrough();
 
 export const spaceFilterSchema = z.object({
   city: z.string().optional(),
@@ -70,7 +77,7 @@ export const updateBookingStatusSchema = z.object({
 
 export const createBookingSchema = z
   .object({
-    space_id: z.string().uuid('Identifiant d’espace invalide (UUID requis)'),
+    space_id: z.string().min(1, 'Identifiant d’espace invalide'),
     booking_date: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide (YYYY-MM-DD attendu)'),

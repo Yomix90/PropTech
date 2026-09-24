@@ -96,6 +96,14 @@ export class BookingService {
       if (error || !data) return null;
       return data as SpaceEntity;
     }
-    return localStore.spaces.find((s) => s.id === spaceId) || null;
+    const cleanId = String(spaceId);
+    return (
+      localStore.spaces.find(
+        (s) =>
+          s.id === cleanId ||
+          s.id.endsWith(cleanId.padStart(12, '0')) ||
+          s.id === `10000000-0000-0000-0000-${cleanId.padStart(12, '0')}`
+      ) || null
+    );
   }
 }

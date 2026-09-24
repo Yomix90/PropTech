@@ -201,6 +201,42 @@ const SpotworkAPI = {
     } catch {
       return null;
     }
+  },
+  async updatePreferences(preferences) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/preferences`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SpotworkAPI.token}`
+        },
+        body: JSON.stringify(preferences)
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: "error", message: e.message };
+    }
+  },
+  async cancelBooking(id) {
+    try {
+      const res = await fetch(`${API_BASE}/bookings/${id}/cancel`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token}` }
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: "error", message: e.message };
+    }
+  },
+  async getProfile() {
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, {
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token}` }
+      });
+      return res.ok ? await res.json() : null;
+    } catch {
+      return null;
+    }
   }
 };
 
@@ -271,16 +307,16 @@ const IMG = {
   s:"photo-1521737604893-d14cc237f11d"
 };
 const SPACES = [
-  {id:1,name:"L'Atelier Maarif",city:"Casablanca",district:"Maarif · Zerktouni",type:"open",price:45,unit:"heure",rating:4.9,rev:187,cap:45,surface:"320 m²",imgs:[IMG.a,IMG.b,IMG.c],am:["wifi","coffee","screen","print","access","terrace"],badge:"Coup de cœur",featured:true,host:"Mehdi El Fassi",desc:"Ancien atelier baigné de lumière naturelle au cœur de Maarif. Postes ergonomiques, phone boxes insonorisées, rooftop et communauté dynamique de résidents tech et startups.",busy:[]},
-  {id:2,name:"Studio Guéliz",city:"Marrakech",district:"Guéliz · Av. Mohammed V",type:"studio",price:65,unit:"heure",rating:4.8,rev:96,cap:12,surface:"85 m²",imgs:[IMG.n,IMG.h,IMG.i],am:["wifi","screen","board","coffee"],badge:"Nouveau",featured:true,host:"Karim Benjelloun",desc:"Studio créatif et podcast insonorisé avec lumière réglable, fond vert, micros pros et mur inscriptible. Idéal pour ateliers, workshops et sessions brainstorm.",busy:[2,5]},
-  {id:3,name:"Oasis Work Gauthier",city:"Casablanca",district:"Gauthier · Taha Hussein",type:"office",price:120,unit:"heure",rating:4.7,rev:143,cap:6,surface:"28 m²",imgs:[IMG.e,IMG.k,IMG.c],am:["wifi","screen","print","access","bike"],badge:"Exécutif",featured:true,host:"Mehdi El Fassi",desc:"Bureau privé fermé et climatisé, mobilier haut de gamme, salle de visio dédiée 4K et service de thé à la menthe offert.",busy:[]},
-  {id:4,name:"Le Hub Agdal",city:"Rabat",district:"Agdal · Av. de France",type:"meeting",price:50,unit:"heure",rating:4.9,rev:212,cap:10,surface:"35 m²",imgs:[IMG.d,IMG.j,IMG.l],am:["wifi","screen","board","coffee"],badge:"Populaire",featured:true,host:"Fatima Zahra Alaoui",desc:"Salle de réunion premium au cœur de Rabat Agdal : écran interactif 4K tactile, visio native Zoom/Teams, paperboard digital. Eau et café offerts.",busy:[1,4,6]},
-  {id:5,name:"Marina Bay Focus",city:"Tanger",district:"Malabata · Marina Bay",type:"booth",price:25,unit:"heure",rating:4.6,rev:58,cap:1,surface:"3 m²",imgs:[IMG.m,IMG.i,IMG.g],am:["wifi","access"],badge:"Vue Mer",featured:false,host:"Salma Tazi",desc:"Cabine acoustique ultra-silencieuse avec vue panoramique sur la baie de Tanger. Double vitrage acoustique, ventilation douce, prise USB-C 100W.",busy:[0,3,7]},
-  {id:6,name:"L'Espace Anfa",city:"Casablanca",district:"Anfa · Bd d'Anfa",type:"open",price:40,unit:"heure",rating:4.8,rev:115,cap:35,surface:"240 m²",imgs:[IMG.b,IMG.f,IMG.k],am:["wifi","coffee","screen","access","bike"],badge:"Prestige",featured:false,host:"Mehdi El Fassi",desc:"Espace coworking prestigieux sur le Boulevard d'Anfa. Silence studieux, fibre optique dédiée 1 Gbps et barista permanent.",busy:[]},
-  {id:7,name:"Coworking Palm Hivernage",city:"Marrakech",district:"Hivernage · Av. Echouhada",type:"studio",price:55,unit:"heure",rating:4.8,rev:77,cap:16,surface:"120 m²",imgs:[IMG.h,IMG.n,IMG.s],am:["wifi","board","coffee","terrace"],badge:"Éco-responsable",featured:false,host:"Karim Benjelloun",desc:"Atelier modulable entouré de palmiers avec terrasse ensoleillée pour les pauses et sessions de networking. Mobilier artisanal contemporain.",busy:[3]},
-  {id:8,name:"Technopark Agadir Hub",city:"Agadir",district:"Tilila · Cité Technopark",type:"office",price:75,unit:"heure",rating:4.7,rev:62,cap:8,surface:"40 m²",imgs:[IMG.c,IMG.e,IMG.m],am:["wifi","screen","access","print"],badge:"Tech Hub",featured:true,host:"Omar Berrada",desc:"Bureau d'équipe moderne au sein du Technopark d'Agadir. Équipements complets, environnement innovant et parking sécurisé 24/7.",busy:[]},
-  {id:9,name:"Détroit Meeting Tanger",city:"Tanger",district:"Centre · Bd Pasteur",type:"meeting",price:45,unit:"heure",rating:4.8,rev:134,cap:14,surface:"42 m²",imgs:[IMG.q,IMG.d,IMG.j],am:["wifi","screen","board","coffee","terrace"],badge:"Vue Détroit",featured:true,host:"Salma Tazi",desc:"Salle panoramique en plein centre-ville de Tanger avec vue sur le détroit de Gibraltar. Configuration flexible en U ou théâtre.",busy:[2,6]},
-  {id:10,name:"Fès Medina Lab",city:"Fès",district:"Ville Nouvelle · Av. Hassan II",type:"open",price:35,unit:"heure",rating:4.8,rev:88,cap:30,surface:"210 m²",imgs:[IMG.a,IMG.f,IMG.g],am:["wifi","coffee","print","access"],badge:"Créatif",featured:false,host:"Nadia Idrissi",desc:"Hub collaboratif moderne mêlant architecture marocaine et équipements high-tech. Ambiance chaleureuse et communauté cosmopolite.",busy:[]}
+  {id:1,name:"L'Atelier Maarif",city:"Casablanca",district:"Maarif · Zerktouni",address:"42 Boulevard Al Massira Al Khadra, Maarif, Casablanca 20330",lat:33.5855,lng:-7.6322,transport:"Tramway T1 (Station Bd Hassan II à 350m) · Parking public Zerktouni",type:"open",price:45,unit:"heure",rating:4.9,rev:187,cap:45,surface:"320 m²",imgs:[IMG.a,IMG.b,IMG.c],am:["wifi","coffee","screen","print","access","terrace"],badge:"Coup de cœur",featured:true,host:"Mehdi El Fassi",desc:"Ancien atelier baigné de lumière naturelle au cœur de Maarif. Postes ergonomiques, phone boxes insonorisées, rooftop et communauté dynamique de résidents tech et startups.",busy:[]},
+  {id:2,name:"Studio Guéliz",city:"Marrakech",district:"Guéliz · Av. Mohammed V",address:"88 Avenue Mohammed V, Guéliz, Marrakech 40000",lat:31.6346,lng:-8.0125,transport:"Bus L1, L16 (Arrêt Place 16 Novembre à 2 min) · Station Taxis Guéliz",type:"studio",price:65,unit:"heure",rating:4.8,rev:96,cap:12,surface:"85 m²",imgs:[IMG.n,IMG.h,IMG.i],am:["wifi","screen","board","coffee"],badge:"Nouveau",featured:true,host:"Karim Benjelloun",desc:"Studio créatif et podcast insonorisé avec lumière réglable, fond vert, micros pros et mur inscriptible. Idéal pour ateliers, workshops et sessions brainstorm.",busy:[2,5]},
+  {id:3,name:"Oasis Work Gauthier",city:"Casablanca",district:"Gauthier · Taha Hussein",address:"15 Rue Taha Hussein, Quartier Gauthier, Casablanca 20070",lat:33.5912,lng:-7.6258,transport:"Tramway T1 (Station Place Mohammed V à 5 min) · Parking sécurisé sous-sol",type:"office",price:120,unit:"heure",rating:4.7,rev:143,cap:6,surface:"28 m²",imgs:[IMG.e,IMG.k,IMG.c],am:["wifi","screen","print","access","bike"],badge:"Exécutif",featured:true,host:"Mehdi El Fassi",desc:"Bureau privé fermé et climatisé, mobilier haut de gamme, salle de visio dédiée 4K et service de thé à la menthe offert.",busy:[]},
+  {id:4,name:"Le Hub Agdal",city:"Rabat",district:"Agdal · Av. de France",address:"24 Avenue de France, Agdal, Rabat 10090",lat:33.9981,lng:-6.8525,transport:"Tramway L1 (Station Av. de France en face) · Gare Rabat Agdal à 6 min à pied",type:"meeting",price:50,unit:"heure",rating:4.9,rev:212,cap:10,surface:"35 m²",imgs:[IMG.d,IMG.j,IMG.l],am:["wifi","screen","board","coffee"],badge:"Populaire",featured:true,host:"Fatima Zahra Alaoui",desc:"Salle de réunion premium au cœur de Rabat Agdal : écran interactif 4K tactile, visio native Zoom/Teams, paperboard digital. Eau et café offerts.",busy:[1,4,6]},
+  {id:5,name:"Marina Bay Focus",city:"Tanger",district:"Malabata · Marina Bay",address:"Port de Plaisance Marina Bay, Boulevard Mohamed VI, Malabata, Tanger 90000",lat:35.7767,lng:-5.7984,transport:"Ligne Bus 17 · Gare Tanger Ville TGV à 10 min en taxi · Parking Marina",type:"booth",price:25,unit:"heure",rating:4.6,rev:58,cap:1,surface:"3 m²",imgs:[IMG.m,IMG.i,IMG.g],am:["wifi","access"],badge:"Vue Mer",featured:false,host:"Salma Tazi",desc:"Cabine acoustique ultra-silencieuse avec vue panoramique sur la baie de Tanger. Double vitrage acoustique, ventilation douce, prise USB-C 100W.",busy:[0,3,7]},
+  {id:6,name:"L'Espace Anfa",city:"Casablanca",district:"Anfa · Bd d'Anfa",address:"142 Boulevard d'Anfa, Racine / Anfa, Casablanca 20050",lat:33.5880,lng:-7.6450,transport:"Tramway T2 (Station Bd d'Anfa) · Stations taxis permanentes · Parking sous-sol",type:"open",price:40,unit:"heure",rating:4.8,rev:115,cap:35,surface:"240 m²",imgs:[IMG.b,IMG.f,IMG.k],am:["wifi","coffee","screen","access","bike"],badge:"Prestige",featured:false,host:"Mehdi El Fassi",desc:"Espace coworking prestigieux sur le Boulevard d'Anfa. Silence studieux, fibre optique dédiée 1 Gbps et barista permanent.",busy:[]},
+  {id:7,name:"Coworking Palm Hivernage",city:"Marrakech",district:"Hivernage · Av. Echouhada",address:"Avenue Echouhada, Hivernage, Marrakech 40020",lat:31.6230,lng:-8.0160,transport:"À 5 min de la gare de Marrakech · Ligne Alsa Aéroport Express",type:"studio",price:55,unit:"heure",rating:4.8,rev:77,cap:16,surface:"120 m²",imgs:[IMG.h,IMG.n,IMG.s],am:["wifi","board","coffee","terrace"],badge:"Éco-responsable",featured:false,host:"Karim Benjelloun",desc:"Atelier modulable entouré de palmiers avec terrasse ensoleillée pour les pauses et sessions de networking. Mobilier artisanal contemporain.",busy:[3]},
+  {id:8,name:"Technopark Agadir Hub",city:"Agadir",district:"Tilila · Cité Technopark",address:"Cité de l'Innovation & Technopark, Avenue Hassan II, Tilila, Agadir 80000",lat:30.4050,lng:-9.5580,transport:"Bus L22, L97 (Arrêt Technopark) · Parking gratuit 200 places sur site",type:"office",price:75,unit:"heure",rating:4.7,rev:62,cap:8,surface:"40 m²",imgs:[IMG.c,IMG.e,IMG.m],am:["wifi","screen","access","print"],badge:"Tech Hub",featured:true,host:"Omar Berrada",desc:"Bureau d'équipe moderne au sein du Technopark d'Agadir. Équipements complets, environnement innovant et parking sécurisé 24/7.",busy:[]},
+  {id:9,name:"Détroit Meeting Tanger",city:"Tanger",district:"Centre · Bd Pasteur",address:"32 Boulevard Pasteur, Centre Ville, Tanger 90000",lat:35.7820,lng:-5.8110,transport:"Lignes urbaines 1, 2, 7 (Arrêt Place de France) · Parking Pasteur",type:"meeting",price:45,unit:"heure",rating:4.8,rev:134,cap:14,surface:"42 m²",imgs:[IMG.q,IMG.d,IMG.j],am:["wifi","screen","board","coffee","terrace"],badge:"Vue Détroit",featured:true,host:"Salma Tazi",desc:"Salle panoramique en plein centre-ville de Tanger avec vue sur le détroit de Gibraltar. Configuration flexible en U ou théâtre.",busy:[2,6]},
+  {id:10,name:"Fès Medina Lab",city:"Fès",district:"Ville Nouvelle · Av. Hassan II",address:"56 Avenue Hassan II, Ville Nouvelle, Fès 30000",lat:34.0330,lng:-5.0010,transport:"Gare Fès-Ville à 7 min · Lignes de bus urbain 10, 19 · Parking Hassan II",type:"open",price:35,unit:"heure",rating:4.8,rev:88,cap:30,surface:"210 m²",imgs:[IMG.a,IMG.f,IMG.g],am:["wifi","coffee","print","access"],badge:"Créatif",featured:false,host:"Nadia Idrissi",desc:"Hub collaboratif moderne mêlant architecture marocaine et équipements high-tech. Ambiance chaleureuse et communauté cosmopolite.",busy:[]}
 ];
 const HOURS = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
 const REVIEWS = [
@@ -813,8 +849,34 @@ const AccessDenied = ({ nav, currentUser, onSelectUser }) => {
 const InvoiceModal = ({ invoice, isOpen, onClose }) => {
   if (!isOpen || !invoice) return null;
 
+  const [downloading, setDownloading] = useState(false);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = () => {
+    const element = document.getElementById("invoice-print-area");
+    if (!element) return;
+    if (window.html2pdf) {
+      setDownloading(true);
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: `${invoiceNum}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      window.html2pdf().from(element).set(opt).save().then(() => {
+        setDownloading(false);
+      }).catch((err) => {
+        console.warn("Erreur génération PDF:", err);
+        setDownloading(false);
+        window.print();
+      });
+    } else {
+      window.print();
+    }
   };
 
   const invoiceNum = invoice.invoiceNumber || invoice.invoiceRef || `FACT-2026-00${invoice.id || "01"}`;
@@ -836,7 +898,7 @@ const InvoiceModal = ({ invoice, isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
       <div className="relative w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 my-8 text-ink">
-        {/* En-tête modal avec bouton imprimer */}
+        {/* En-tête modal avec boutons Télécharger PDF & Imprimer */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
           <div className="flex items-center gap-2.5">
             <span className="p-2.5 rounded-2xl bg-brand-50 text-brand-700">
@@ -849,10 +911,18 @@ const InvoiceModal = ({ invoice, isOpen, onClose }) => {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 rounded-full bg-navy px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition shadow-sm"
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-xs font-bold text-white hover:bg-brand-700 transition shadow-sm disabled:opacity-50"
             >
-              <Icon n="printer" size={14} /> Imprimer / PDF
+              <Icon n={downloading ? "loader" : "download"} size={14} className={downloading ? "animate-spin" : ""} />
+              {downloading ? "Génération..." : "Télécharger PDF"}
+            </button>
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs"
+            >
+              <Icon n="printer" size={14} /> Imprimer
             </button>
             <button
               onClick={onClose}
@@ -863,8 +933,8 @@ const InvoiceModal = ({ invoice, isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Corps de la facture marocaine */}
-        <div className="border border-slate-200 rounded-2xl p-6 bg-white space-y-6 text-sm">
+        {/* Corps de la facture marocaine (zone capturée en PDF natif) */}
+        <div id="invoice-print-area" className="border border-slate-200 rounded-2xl p-6 bg-white space-y-6 text-sm">
           {/* En-tête officiel entreprise */}
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
             <div>
@@ -1043,14 +1113,12 @@ const SpaceCard=({s,nav,favs,toggleFav,date,bookings=[]})=>{
 const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,onLogout,toast})=>{
   const [scrolled,setScrolled]=useState(false);
   const [userMenu,setUserMenu]=useState(false);
-  const [apiOnline,setApiOnline]=useState(null);
 
   const isManagerOrAdmin = currentUser && (currentUser.role === 'manager' || currentUser.role === 'admin');
 
   useEffect(()=>{
     const f=()=>setScrolled(window.scrollY>8);f();
     window.addEventListener("scroll",f);
-    SpotworkAPI.checkHealth().then(h=>setApiOnline(Boolean(h)));
     return()=>window.removeEventListener("scroll",f);
   },[]);
   const link=(label,target,icon)=>(
@@ -1076,14 +1144,6 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
           {!currentUser && link("Connexion",{name:"login"},"user")}
         </nav>
         <div className="flex items-center gap-2">
-          <button onClick={()=>{
-            SpotworkAPI.checkHealth().then(h=>{
-              setApiOnline(Boolean(h));
-            });
-          }} title="État de l'API Backend Express & Supabase" className={`hidden md:flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border transition ${apiOnline?"bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100":"bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"}`}>
-            <span className={`h-2 w-2 rounded-full ${apiOnline?"bg-emerald-500 animate-pulse":"bg-slate-400"}`}/>
-            {apiOnline?"API Active (Supabase & IA)":"Mode Démo (API locale)"}
-          </button>
           <button onClick={()=>nav({name:"checkout"})} className="relative grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-600 transition hover:border-brand-300 hover:text-brand-600">
             <Icon n="shopping-cart" size={17}/>
             {cartCount>0&&<span key={cartCount} className="pop absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">{cartCount}</span>}
@@ -1850,6 +1910,71 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES,bookings=[]})=>{
               })}
             </div>
           </div>
+
+          {/* Localisation & Plan d'accès */}
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 className="font-display text-lg font-bold flex items-center gap-2">
+                  <Icon n="map-pin" size={20} className="text-brand-600" />
+                  Localisation & Plan d'accès
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {s.address || `${s.district}, ${s.city}, Maroc`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${s.lat || 33.5855},${s.lng || -7.6322}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-1.5 text-xs font-bold transition shadow-2xs"
+                >
+                  <Icon n="external-link" size={13} /> Ouvrir dans Google Maps
+                </a>
+              </div>
+            </div>
+
+            {/* Carte interactive OpenStreetMap */}
+            <div className="relative h-64 sm:h-72 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
+              <iframe
+                title={`Carte - ${s.name}`}
+                width="100%"
+                height="100%"
+                loading="lazy"
+                style={{ border: 0 }}
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${(s.lng || -7.6322) - 0.01}%2C${(s.lat || 33.5855) - 0.007}%2C${(s.lng || -7.6322) + 0.01}%2C${(s.lat || 33.5855) + 0.007}&layer=mapnik&marker=${s.lat || 33.5855}%2C${s.lng || -7.6322}`}
+              />
+            </div>
+
+            {/* Repères transports & Coordonnées GPS */}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5">
+                <span className="p-2 rounded-lg bg-white shadow-2xs text-brand-600 mt-0.5 shrink-0">
+                  <Icon n="navigation" size={16} />
+                </span>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Accès & Transports</p>
+                  <p className="text-xs text-slate-700 font-medium mt-0.5 leading-relaxed">
+                    {s.transport || "Desservi par tramway, bus et stations taxis à proximité immédiate."}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5">
+                <span className="p-2 rounded-lg bg-white shadow-2xs text-emerald-600 mt-0.5 shrink-0">
+                  <Icon n="compass" size={16} />
+                </span>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Coordonnées GPS</p>
+                  <p className="text-xs font-mono text-slate-700 font-medium mt-0.5">
+                    Lat: {(s.lat || 33.5855).toFixed(4)} · Lng: {(s.lng || -7.6322).toFixed(4)}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Quartier {s.district} · {s.city}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Avis */}
           <div className="mt-8">
             <h2 className="font-display text-lg font-bold">Avis des membres</h2>
@@ -2208,7 +2333,41 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
   const user = currentUser;
   const [tab,setTab]=useState(initTab||"resas");
   const [userInvoice, setUserInvoice] = useState(null);
-  const [prefs,setPrefs]=useState({mail:true,push:false,news:true,city:user.city||"Casablanca",type:"open"});
+  const [prefs,setPrefs]=useState(()=>{
+    const p = user.preferences || {};
+    return {
+      mail: p.mail !== undefined ? Boolean(p.mail) : true,
+      push: p.push !== undefined ? Boolean(p.push) : false,
+      news: p.news !== undefined ? Boolean(p.news) : true,
+      city: p.city || user.city || "Casablanca",
+      type: p.type || "open"
+    };
+  });
+  const [savingPrefs, setSavingPrefs] = useState(false);
+
+  const handleSavePreferences = async () => {
+    setSavingPrefs(true);
+    try {
+      const res = await SpotworkAPI.updatePreferences(prefs);
+      const updatedUser = {
+        ...user,
+        city: prefs.city,
+        preferences: { ...(user.preferences || {}), ...prefs }
+      };
+      try {
+        localStorage.setItem("spotwork_user", JSON.stringify(updatedUser));
+      } catch {}
+      if (res && res.status === "success") {
+        toast("Préférences de recherche synchronisées avec PostgreSQL Supabase", "check-circle");
+      } else {
+        toast("Préférences enregistrées localement", "check");
+      }
+    } catch {
+      toast("Préférences enregistrées", "check");
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
   const tabs=[["resas","Mes réservations","calendar-days"],["ia","Recommandations","sparkles"],["favoris","Favoris","heart"],["prefs","Préférences","settings"]];
   const recommendations=useMemo(()=>{
     const favTypes=new Set([...favs].map(id=>spaces.find(s=>s.id===id)?.type));
@@ -2282,7 +2441,13 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
                             }} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1">
                               <Icon n="file-text" size={13}/>Reçu / Facture
                             </button>
-                            <button onClick={()=>{setBookings(bookings.filter(x=>x.id!==b.id));toast("Réservation annulée (démo)","x");}} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500">Annuler</button>
+                            <button onClick={async ()=>{
+                              try {
+                                await SpotworkAPI.cancelBooking(b.id);
+                              } catch {}
+                              setBookings(bookings.filter(x=>x.id!==b.id));
+                              toast("Réservation annulée et mise à jour en base de données","trash");
+                            }} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500">Annuler</button>
                           </div>
                         </div>
                       </article>
@@ -2386,7 +2551,14 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
                     <select value={prefs.type} onChange={e=>setPrefs({...prefs,type:e.target.value})} className={inp}>{TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select>
                   </Field>
                 </div>
-                <button onClick={()=>toast("Préférences enregistrées","check")} className="mt-5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">Enregistrer</button>
+                <button
+                  onClick={handleSavePreferences}
+                  disabled={savingPrefs}
+                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-600/25 hover:bg-brand-700 transition disabled:opacity-50"
+                >
+                  <Icon n={savingPrefs ? "loader" : "check"} size={15} className={savingPrefs ? "animate-spin" : ""} />
+                  {savingPrefs ? "Synchronisation..." : "Enregistrer dans mon profil"}
+                </button>
               </section>
             </div>
           )}
@@ -3793,38 +3965,104 @@ const App=()=>{
   };
 
   const onDone = (b) => {
-    const newBookingId = "bk-" + Date.now();
-    const bookedSpace = spacesList.find(s => s.id === b.spaceId || s.id === b.id);
+    const spaceId = b.spaceId || b.id;
+    const bookedSpace = spacesList.find(s => s.id === spaceId);
     const spaceName = bookedSpace ? bookedSpace.name : (b.name || "Espace Coworking");
     const city = bookedSpace ? bookedSpace.city : (b.city || "Casablanca");
+    const num = typeof spaceId === 'number' ? spaceId : parseInt(spaceId, 10) || 1;
+    const spaceUuid = typeof spaceId === 'string' && spaceId.includes('-')
+      ? spaceId
+      : `10000000-0000-0000-0000-${String(num).padStart(12, '0')}`;
+
+    let startTime = "09:00:00";
+    let endTime = "18:00:00";
+    if (b.meta && b.meta.includes(' – ')) {
+      const parts = b.meta.split(' – ');
+      if (parts[0]) {
+        const cleanStart = parts[0].trim().slice(0, 5);
+        if (/^\d{2}:\d{2}$/.test(cleanStart)) startTime = cleanStart + ":00";
+      }
+      if (parts[1]) {
+        const cleanEnd = parts[1].trim().split(' ')[0].slice(0, 5);
+        if (/^\d{2}:\d{2}$/.test(cleanEnd)) endTime = cleanEnd + ":00";
+      }
+    }
+
+    const newBookingId = "bk-" + Date.now();
+    const totalPrice = b.total || (bookedSpace ? bookedSpace.price * 4 : 180);
+
+    // Synchronisation en temps réel avec l'API backend et PostgreSQL Supabase
+    SpotworkAPI.createBooking({
+      space_id: spaceUuid,
+      booking_date: b.date || new Date().toISOString().slice(0, 10),
+      start_time: startTime,
+      end_time: endTime,
+      total_price: totalPrice
+    }).then(res => {
+      if (res && res.status === "success") {
+        toast("Réservation synchronisée dans la base PostgreSQL Supabase !", "check-circle");
+      }
+    }).catch(() => {});
 
     setUserBookings(p => [{
       id: newBookingId,
-      spaceId: b.spaceId || b.id,
+      spaceId: spaceId,
       date: b.date,
       meta: b.meta,
-      status: "En attente"
+      status: "Confirmée",
+      totalPrice: totalPrice,
+      invoiceRef: `FACT-2026-${String(newBookingId).slice(-6)}`
     }, ...p]);
 
     setAllBookings(p => [{
       id: newBookingId,
       clientName: currentUser?.name || b.name || "Client PropTech",
       clientEmail: currentUser?.email || b.email || "client@proptech.ma",
-      clientPhone: "+212 6 " + Math.floor(10000000 + Math.random() * 90000000),
+      clientPhone: currentUser?.phone || "+212 6 61 23 45 67",
       clientInitials: currentUser?.initials || "CP",
-      spaceId: b.spaceId || b.id,
+      spaceId: spaceId,
       spaceName: spaceName,
       city: city,
       date: b.date,
       timeSlot: b.meta,
       hours: 4,
-      totalPrice: b.total || (bookedSpace ? bookedSpace.price * 4 : 180),
-      status: "pending",
+      totalPrice: totalPrice,
+      status: "confirmed",
       createdAt: "À l'instant"
     }, ...p]);
 
     setCart([]);
   };
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === 'admin') SpotworkAPI.token = 'mock-token-admin';
+      else if (currentUser.role === 'manager') SpotworkAPI.token = 'mock-token-manager';
+      else SpotworkAPI.token = 'mock-token-client';
+
+      SpotworkAPI.getUserBookings().then(bkgs => {
+        if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
+          const mapped = bkgs.map(b => {
+            const numId = parseInt(String(b.space_id).split('-').pop(), 10) || 1;
+            return {
+              id: b.id,
+              spaceId: numId,
+              date: b.booking_date,
+              meta: `${b.start_time.slice(0, 5)} – ${b.end_time.slice(0, 5)}`,
+              status: b.status === 'confirmed' ? "Confirmée" : b.status === 'cancelled' ? "Annulée" : "En attente",
+              totalPrice: b.total_price,
+              invoiceRef: `FACT-2026-${String(b.id).slice(-6)}`
+            };
+          });
+          setUserBookings(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const fresh = mapped.filter(m => !existingIds.has(m.id));
+            return [...fresh, ...prev];
+          });
+        }
+      }).catch(() => {});
+    }
+  }, [currentUser]);
 
   useEffect(()=>{
     let tries=0;

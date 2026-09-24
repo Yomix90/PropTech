@@ -207,6 +207,42 @@ const SpotworkAPI = {
     } catch {
       return null;
     }
+  },
+  async updatePreferences(preferences) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/preferences`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SpotworkAPI.token}`
+        },
+        body: JSON.stringify(preferences)
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: "error", message: e.message };
+    }
+  },
+  async cancelBooking(id) {
+    try {
+      const res = await fetch(`${API_BASE}/bookings/${id}/cancel`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token}` }
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: "error", message: e.message };
+    }
+  },
+  async getProfile() {
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, {
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token}` }
+      });
+      return res.ok ? await res.json() : null;
+    } catch {
+      return null;
+    }
   }
 };
 const PRESET_ACCOUNTS = [
@@ -287,16 +323,16 @@ const IMG = {
   s: "photo-1521737604893-d14cc237f11d"
 };
 const SPACES = [
-  { id: 1, name: "L'Atelier Maarif", city: "Casablanca", district: "Maarif \xB7 Zerktouni", type: "open", price: 45, unit: "heure", rating: 4.9, rev: 187, cap: 45, surface: "320 m\xB2", imgs: [IMG.a, IMG.b, IMG.c], am: ["wifi", "coffee", "screen", "print", "access", "terrace"], badge: "Coup de c\u0153ur", featured: true, host: "Mehdi El Fassi", desc: "Ancien atelier baign\xE9 de lumi\xE8re naturelle au c\u0153ur de Maarif. Postes ergonomiques, phone boxes insonoris\xE9es, rooftop et communaut\xE9 dynamique de r\xE9sidents tech et startups.", busy: [] },
-  { id: 2, name: "Studio Gu\xE9liz", city: "Marrakech", district: "Gu\xE9liz \xB7 Av. Mohammed V", type: "studio", price: 65, unit: "heure", rating: 4.8, rev: 96, cap: 12, surface: "85 m\xB2", imgs: [IMG.n, IMG.h, IMG.i], am: ["wifi", "screen", "board", "coffee"], badge: "Nouveau", featured: true, host: "Karim Benjelloun", desc: "Studio cr\xE9atif et podcast insonoris\xE9 avec lumi\xE8re r\xE9glable, fond vert, micros pros et mur inscriptible. Id\xE9al pour ateliers, workshops et sessions brainstorm.", busy: [2, 5] },
-  { id: 3, name: "Oasis Work Gauthier", city: "Casablanca", district: "Gauthier \xB7 Taha Hussein", type: "office", price: 120, unit: "heure", rating: 4.7, rev: 143, cap: 6, surface: "28 m\xB2", imgs: [IMG.e, IMG.k, IMG.c], am: ["wifi", "screen", "print", "access", "bike"], badge: "Ex\xE9cutif", featured: true, host: "Mehdi El Fassi", desc: "Bureau priv\xE9 ferm\xE9 et climatis\xE9, mobilier haut de gamme, salle de visio d\xE9di\xE9e 4K et service de th\xE9 \xE0 la menthe offert.", busy: [] },
-  { id: 4, name: "Le Hub Agdal", city: "Rabat", district: "Agdal \xB7 Av. de France", type: "meeting", price: 50, unit: "heure", rating: 4.9, rev: 212, cap: 10, surface: "35 m\xB2", imgs: [IMG.d, IMG.j, IMG.l], am: ["wifi", "screen", "board", "coffee"], badge: "Populaire", featured: true, host: "Fatima Zahra Alaoui", desc: "Salle de r\xE9union premium au c\u0153ur de Rabat Agdal : \xE9cran interactif 4K tactile, visio native Zoom/Teams, paperboard digital. Eau et caf\xE9 offerts.", busy: [1, 4, 6] },
-  { id: 5, name: "Marina Bay Focus", city: "Tanger", district: "Malabata \xB7 Marina Bay", type: "booth", price: 25, unit: "heure", rating: 4.6, rev: 58, cap: 1, surface: "3 m\xB2", imgs: [IMG.m, IMG.i, IMG.g], am: ["wifi", "access"], badge: "Vue Mer", featured: false, host: "Salma Tazi", desc: "Cabine acoustique ultra-silencieuse avec vue panoramique sur la baie de Tanger. Double vitrage acoustique, ventilation douce, prise USB-C 100W.", busy: [0, 3, 7] },
-  { id: 6, name: "L'Espace Anfa", city: "Casablanca", district: "Anfa \xB7 Bd d'Anfa", type: "open", price: 40, unit: "heure", rating: 4.8, rev: 115, cap: 35, surface: "240 m\xB2", imgs: [IMG.b, IMG.f, IMG.k], am: ["wifi", "coffee", "screen", "access", "bike"], badge: "Prestige", featured: false, host: "Mehdi El Fassi", desc: "Espace coworking prestigieux sur le Boulevard d'Anfa. Silence studieux, fibre optique d\xE9di\xE9e 1 Gbps et barista permanent.", busy: [] },
-  { id: 7, name: "Coworking Palm Hivernage", city: "Marrakech", district: "Hivernage \xB7 Av. Echouhada", type: "studio", price: 55, unit: "heure", rating: 4.8, rev: 77, cap: 16, surface: "120 m\xB2", imgs: [IMG.h, IMG.n, IMG.s], am: ["wifi", "board", "coffee", "terrace"], badge: "\xC9co-responsable", featured: false, host: "Karim Benjelloun", desc: "Atelier modulable entour\xE9 de palmiers avec terrasse ensoleill\xE9e pour les pauses et sessions de networking. Mobilier artisanal contemporain.", busy: [3] },
-  { id: 8, name: "Technopark Agadir Hub", city: "Agadir", district: "Tilila \xB7 Cit\xE9 Technopark", type: "office", price: 75, unit: "heure", rating: 4.7, rev: 62, cap: 8, surface: "40 m\xB2", imgs: [IMG.c, IMG.e, IMG.m], am: ["wifi", "screen", "access", "print"], badge: "Tech Hub", featured: true, host: "Omar Berrada", desc: "Bureau d'\xE9quipe moderne au sein du Technopark d'Agadir. \xC9quipements complets, environnement innovant et parking s\xE9curis\xE9 24/7.", busy: [] },
-  { id: 9, name: "D\xE9troit Meeting Tanger", city: "Tanger", district: "Centre \xB7 Bd Pasteur", type: "meeting", price: 45, unit: "heure", rating: 4.8, rev: 134, cap: 14, surface: "42 m\xB2", imgs: [IMG.q, IMG.d, IMG.j], am: ["wifi", "screen", "board", "coffee", "terrace"], badge: "Vue D\xE9troit", featured: true, host: "Salma Tazi", desc: "Salle panoramique en plein centre-ville de Tanger avec vue sur le d\xE9troit de Gibraltar. Configuration flexible en U ou th\xE9\xE2tre.", busy: [2, 6] },
-  { id: 10, name: "F\xE8s Medina Lab", city: "F\xE8s", district: "Ville Nouvelle \xB7 Av. Hassan II", type: "open", price: 35, unit: "heure", rating: 4.8, rev: 88, cap: 30, surface: "210 m\xB2", imgs: [IMG.a, IMG.f, IMG.g], am: ["wifi", "coffee", "print", "access"], badge: "Cr\xE9atif", featured: false, host: "Nadia Idrissi", desc: "Hub collaboratif moderne m\xEAlant architecture marocaine et \xE9quipements high-tech. Ambiance chaleureuse et communaut\xE9 cosmopolite.", busy: [] }
+  { id: 1, name: "L'Atelier Maarif", city: "Casablanca", district: "Maarif \xB7 Zerktouni", address: "42 Boulevard Al Massira Al Khadra, Maarif, Casablanca 20330", lat: 33.5855, lng: -7.6322, transport: "Tramway T1 (Station Bd Hassan II \xE0 350m) \xB7 Parking public Zerktouni", type: "open", price: 45, unit: "heure", rating: 4.9, rev: 187, cap: 45, surface: "320 m\xB2", imgs: [IMG.a, IMG.b, IMG.c], am: ["wifi", "coffee", "screen", "print", "access", "terrace"], badge: "Coup de c\u0153ur", featured: true, host: "Mehdi El Fassi", desc: "Ancien atelier baign\xE9 de lumi\xE8re naturelle au c\u0153ur de Maarif. Postes ergonomiques, phone boxes insonoris\xE9es, rooftop et communaut\xE9 dynamique de r\xE9sidents tech et startups.", busy: [] },
+  { id: 2, name: "Studio Gu\xE9liz", city: "Marrakech", district: "Gu\xE9liz \xB7 Av. Mohammed V", address: "88 Avenue Mohammed V, Gu\xE9liz, Marrakech 40000", lat: 31.6346, lng: -8.0125, transport: "Bus L1, L16 (Arr\xEAt Place 16 Novembre \xE0 2 min) \xB7 Station Taxis Gu\xE9liz", type: "studio", price: 65, unit: "heure", rating: 4.8, rev: 96, cap: 12, surface: "85 m\xB2", imgs: [IMG.n, IMG.h, IMG.i], am: ["wifi", "screen", "board", "coffee"], badge: "Nouveau", featured: true, host: "Karim Benjelloun", desc: "Studio cr\xE9atif et podcast insonoris\xE9 avec lumi\xE8re r\xE9glable, fond vert, micros pros et mur inscriptible. Id\xE9al pour ateliers, workshops et sessions brainstorm.", busy: [2, 5] },
+  { id: 3, name: "Oasis Work Gauthier", city: "Casablanca", district: "Gauthier \xB7 Taha Hussein", address: "15 Rue Taha Hussein, Quartier Gauthier, Casablanca 20070", lat: 33.5912, lng: -7.6258, transport: "Tramway T1 (Station Place Mohammed V \xE0 5 min) \xB7 Parking s\xE9curis\xE9 sous-sol", type: "office", price: 120, unit: "heure", rating: 4.7, rev: 143, cap: 6, surface: "28 m\xB2", imgs: [IMG.e, IMG.k, IMG.c], am: ["wifi", "screen", "print", "access", "bike"], badge: "Ex\xE9cutif", featured: true, host: "Mehdi El Fassi", desc: "Bureau priv\xE9 ferm\xE9 et climatis\xE9, mobilier haut de gamme, salle de visio d\xE9di\xE9e 4K et service de th\xE9 \xE0 la menthe offert.", busy: [] },
+  { id: 4, name: "Le Hub Agdal", city: "Rabat", district: "Agdal \xB7 Av. de France", address: "24 Avenue de France, Agdal, Rabat 10090", lat: 33.9981, lng: -6.8525, transport: "Tramway L1 (Station Av. de France en face) \xB7 Gare Rabat Agdal \xE0 6 min \xE0 pied", type: "meeting", price: 50, unit: "heure", rating: 4.9, rev: 212, cap: 10, surface: "35 m\xB2", imgs: [IMG.d, IMG.j, IMG.l], am: ["wifi", "screen", "board", "coffee"], badge: "Populaire", featured: true, host: "Fatima Zahra Alaoui", desc: "Salle de r\xE9union premium au c\u0153ur de Rabat Agdal : \xE9cran interactif 4K tactile, visio native Zoom/Teams, paperboard digital. Eau et caf\xE9 offerts.", busy: [1, 4, 6] },
+  { id: 5, name: "Marina Bay Focus", city: "Tanger", district: "Malabata \xB7 Marina Bay", address: "Port de Plaisance Marina Bay, Boulevard Mohamed VI, Malabata, Tanger 90000", lat: 35.7767, lng: -5.7984, transport: "Ligne Bus 17 \xB7 Gare Tanger Ville TGV \xE0 10 min en taxi \xB7 Parking Marina", type: "booth", price: 25, unit: "heure", rating: 4.6, rev: 58, cap: 1, surface: "3 m\xB2", imgs: [IMG.m, IMG.i, IMG.g], am: ["wifi", "access"], badge: "Vue Mer", featured: false, host: "Salma Tazi", desc: "Cabine acoustique ultra-silencieuse avec vue panoramique sur la baie de Tanger. Double vitrage acoustique, ventilation douce, prise USB-C 100W.", busy: [0, 3, 7] },
+  { id: 6, name: "L'Espace Anfa", city: "Casablanca", district: "Anfa \xB7 Bd d'Anfa", address: "142 Boulevard d'Anfa, Racine / Anfa, Casablanca 20050", lat: 33.588, lng: -7.645, transport: "Tramway T2 (Station Bd d'Anfa) \xB7 Stations taxis permanentes \xB7 Parking sous-sol", type: "open", price: 40, unit: "heure", rating: 4.8, rev: 115, cap: 35, surface: "240 m\xB2", imgs: [IMG.b, IMG.f, IMG.k], am: ["wifi", "coffee", "screen", "access", "bike"], badge: "Prestige", featured: false, host: "Mehdi El Fassi", desc: "Espace coworking prestigieux sur le Boulevard d'Anfa. Silence studieux, fibre optique d\xE9di\xE9e 1 Gbps et barista permanent.", busy: [] },
+  { id: 7, name: "Coworking Palm Hivernage", city: "Marrakech", district: "Hivernage \xB7 Av. Echouhada", address: "Avenue Echouhada, Hivernage, Marrakech 40020", lat: 31.623, lng: -8.016, transport: "\xC0 5 min de la gare de Marrakech \xB7 Ligne Alsa A\xE9roport Express", type: "studio", price: 55, unit: "heure", rating: 4.8, rev: 77, cap: 16, surface: "120 m\xB2", imgs: [IMG.h, IMG.n, IMG.s], am: ["wifi", "board", "coffee", "terrace"], badge: "\xC9co-responsable", featured: false, host: "Karim Benjelloun", desc: "Atelier modulable entour\xE9 de palmiers avec terrasse ensoleill\xE9e pour les pauses et sessions de networking. Mobilier artisanal contemporain.", busy: [3] },
+  { id: 8, name: "Technopark Agadir Hub", city: "Agadir", district: "Tilila \xB7 Cit\xE9 Technopark", address: "Cit\xE9 de l'Innovation & Technopark, Avenue Hassan II, Tilila, Agadir 80000", lat: 30.405, lng: -9.558, transport: "Bus L22, L97 (Arr\xEAt Technopark) \xB7 Parking gratuit 200 places sur site", type: "office", price: 75, unit: "heure", rating: 4.7, rev: 62, cap: 8, surface: "40 m\xB2", imgs: [IMG.c, IMG.e, IMG.m], am: ["wifi", "screen", "access", "print"], badge: "Tech Hub", featured: true, host: "Omar Berrada", desc: "Bureau d'\xE9quipe moderne au sein du Technopark d'Agadir. \xC9quipements complets, environnement innovant et parking s\xE9curis\xE9 24/7.", busy: [] },
+  { id: 9, name: "D\xE9troit Meeting Tanger", city: "Tanger", district: "Centre \xB7 Bd Pasteur", address: "32 Boulevard Pasteur, Centre Ville, Tanger 90000", lat: 35.782, lng: -5.811, transport: "Lignes urbaines 1, 2, 7 (Arr\xEAt Place de France) \xB7 Parking Pasteur", type: "meeting", price: 45, unit: "heure", rating: 4.8, rev: 134, cap: 14, surface: "42 m\xB2", imgs: [IMG.q, IMG.d, IMG.j], am: ["wifi", "screen", "board", "coffee", "terrace"], badge: "Vue D\xE9troit", featured: true, host: "Salma Tazi", desc: "Salle panoramique en plein centre-ville de Tanger avec vue sur le d\xE9troit de Gibraltar. Configuration flexible en U ou th\xE9\xE2tre.", busy: [2, 6] },
+  { id: 10, name: "F\xE8s Medina Lab", city: "F\xE8s", district: "Ville Nouvelle \xB7 Av. Hassan II", address: "56 Avenue Hassan II, Ville Nouvelle, F\xE8s 30000", lat: 34.033, lng: -5.001, transport: "Gare F\xE8s-Ville \xE0 7 min \xB7 Lignes de bus urbain 10, 19 \xB7 Parking Hassan II", type: "open", price: 35, unit: "heure", rating: 4.8, rev: 88, cap: 30, surface: "210 m\xB2", imgs: [IMG.a, IMG.f, IMG.g], am: ["wifi", "coffee", "print", "access"], badge: "Cr\xE9atif", featured: false, host: "Nadia Idrissi", desc: "Hub collaboratif moderne m\xEAlant architecture marocaine et \xE9quipements high-tech. Ambiance chaleureuse et communaut\xE9 cosmopolite.", busy: [] }
 ];
 const HOURS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
 const REVIEWS = [
@@ -737,8 +773,32 @@ const AccessDenied = ({ nav, currentUser, onSelectUser }) => {
 };
 const InvoiceModal = ({ invoice, isOpen, onClose }) => {
   if (!isOpen || !invoice) return null;
+  const [downloading, setDownloading] = useState(false);
   const handlePrint = () => {
     window.print();
+  };
+  const handleDownloadPdf = () => {
+    const element = document.getElementById("invoice-print-area");
+    if (!element) return;
+    if (window.html2pdf) {
+      setDownloading(true);
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: `${invoiceNum}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      };
+      window.html2pdf().from(element).set(opt).save().then(() => {
+        setDownloading(false);
+      }).catch((err) => {
+        console.warn("Erreur g\xE9n\xE9ration PDF:", err);
+        setDownloading(false);
+        window.print();
+      });
+    } else {
+      window.print();
+    }
   };
   const invoiceNum = invoice.invoiceNumber || invoice.invoiceRef || `FACT-2026-00${invoice.id || "01"}`;
   const clientName = invoice.clientName || invoice.name || "Client PropTech";
@@ -758,11 +818,20 @@ const InvoiceModal = ({ invoice, isOpen, onClose }) => {
   return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto" }, /* @__PURE__ */ React.createElement("div", { className: "relative w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 my-8 text-ink" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-4 mb-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2.5 rounded-2xl bg-brand-50 text-brand-700" }, /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 22 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-display font-bold text-base" }, "Facture L\xE9gale & Re\xE7u CMI"), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400 font-mono" }, invoiceNum))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(
     "button",
     {
+      onClick: handleDownloadPdf,
+      disabled: downloading,
+      className: "inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-xs font-bold text-white hover:bg-brand-700 transition shadow-sm disabled:opacity-50"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: downloading ? "loader" : "download", size: 14, className: downloading ? "animate-spin" : "" }),
+    downloading ? "G\xE9n\xE9ration..." : "T\xE9l\xE9charger PDF"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
       onClick: handlePrint,
-      className: "inline-flex items-center gap-1.5 rounded-full bg-navy px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition shadow-sm"
+      className: "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs"
     },
     /* @__PURE__ */ React.createElement(Icon, { n: "printer", size: 14 }),
-    " Imprimer / PDF"
+    " Imprimer"
   ), /* @__PURE__ */ React.createElement(
     "button",
     {
@@ -770,7 +839,7 @@ const InvoiceModal = ({ invoice, isOpen, onClose }) => {
       className: "p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
     },
     /* @__PURE__ */ React.createElement(Icon, { n: "x", size: 18 })
-  ))), /* @__PURE__ */ React.createElement("div", { className: "border border-slate-200 rounded-2xl p-6 bg-white space-y-6 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-brand-600 text-white font-bold text-sm" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 16 })), /* @__PURE__ */ React.createElement("span", { className: "font-display text-lg font-bold" }, "SPOTWORK MAROC SARL AU")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1" }, "142 Boulevard d'Anfa, 5\xE8me \xE9tage"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "20050 Casablanca, Maroc"), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400 mt-1 font-mono leading-tight" }, "IF : 45892014 \xB7 ICE : 002938475000089", /* @__PURE__ */ React.createElement("br", null), "RC Casablanca : 512948 \xB7 Patente : 34109284")), /* @__PURE__ */ React.createElement("div", { className: "text-right" }, /* @__PURE__ */ React.createElement("span", { className: "inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2" }, "\u2713 Facture Acquitt\xE9e"), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "R\xE9f : ", /* @__PURE__ */ React.createElement("b", { className: "font-mono text-ink" }, invoiceNum)), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "Date d'\xE9mission : ", /* @__PURE__ */ React.createElement("b", null, dateStr)), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "R\xE8glement : ", /* @__PURE__ */ React.createElement("b", null, paymentMethod)))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-4 border border-slate-100" }, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1" }, "Client factur\xE9 :"), /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink" }, clientName), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, clientEmail, " \xB7 ", clientPhone), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, clientCity, ", Maroc")), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { className: "border-b border-slate-200 text-slate-400 uppercase tracking-wider text-[10px]" }, /* @__PURE__ */ React.createElement("th", { className: "py-2.5" }, "Description de la prestation"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-center" }, "Date & Cr\xE9neau"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "Prix HT"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "TVA (20%)"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "Total TTC"))), /* @__PURE__ */ React.createElement("tbody", { className: "divide-y divide-slate-100" }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { className: "py-3.5 font-semibold text-ink" }, "Location Espace : ", spaceName, /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 font-normal" }, "Acc\xE8s garanti coworking & \xE9quipements inclus")), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-center text-slate-500" }, dateStr, /* @__PURE__ */ React.createElement("br", null), timeSlot), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-mono" }, ht, " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-mono" }, vat, " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-bold font-mono text-ink" }, gross.toFixed(2), " DH"))))), /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-200 pt-4 flex justify-end" }, /* @__PURE__ */ React.createElement("div", { className: "w-72 space-y-1.5 text-xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Sous-total HT :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, ht, " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "TVA marocaine (20%) :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, vat, " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service plateforme (8%) :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, fee.toFixed(2), " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between pt-2 border-t border-slate-200 text-sm font-bold text-ink" }, /* @__PURE__ */ React.createElement("span", null, "Total TTC R\xE9gl\xE9 :"), /* @__PURE__ */ React.createElement("span", { className: "font-display font-bold text-brand-600" }, gross.toFixed(2), " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-[11px] text-slate-400 pt-1" }, /* @__PURE__ */ React.createElement("span", null, "Net revers\xE9 au gestionnaire :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono font-semibold text-emerald-700" }, net.toFixed(2), " DH")))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-dashed border-slate-200 p-3.5 bg-slate-50/70 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 17, className: "text-emerald-600" }), /* @__PURE__ */ React.createElement("span", null, "Certifi\xE9 CMI Maroc \xB7 3D-Secure v2.2 \xB7 Transaction confirm\xE9e (", paidAt, ")")), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200" }, "Cachet \xC9lectronique Spotwork"))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 flex justify-end" }, /* @__PURE__ */ React.createElement(
+  ))), /* @__PURE__ */ React.createElement("div", { id: "invoice-print-area", className: "border border-slate-200 rounded-2xl p-6 bg-white space-y-6 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-brand-600 text-white font-bold text-sm" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 16 })), /* @__PURE__ */ React.createElement("span", { className: "font-display text-lg font-bold" }, "SPOTWORK MAROC SARL AU")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1" }, "142 Boulevard d'Anfa, 5\xE8me \xE9tage"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "20050 Casablanca, Maroc"), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400 mt-1 font-mono leading-tight" }, "IF : 45892014 \xB7 ICE : 002938475000089", /* @__PURE__ */ React.createElement("br", null), "RC Casablanca : 512948 \xB7 Patente : 34109284")), /* @__PURE__ */ React.createElement("div", { className: "text-right" }, /* @__PURE__ */ React.createElement("span", { className: "inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2" }, "\u2713 Facture Acquitt\xE9e"), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "R\xE9f : ", /* @__PURE__ */ React.createElement("b", { className: "font-mono text-ink" }, invoiceNum)), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "Date d'\xE9mission : ", /* @__PURE__ */ React.createElement("b", null, dateStr)), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "R\xE8glement : ", /* @__PURE__ */ React.createElement("b", null, paymentMethod)))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-4 border border-slate-100" }, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1" }, "Client factur\xE9 :"), /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink" }, clientName), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, clientEmail, " \xB7 ", clientPhone), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, clientCity, ", Maroc")), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { className: "border-b border-slate-200 text-slate-400 uppercase tracking-wider text-[10px]" }, /* @__PURE__ */ React.createElement("th", { className: "py-2.5" }, "Description de la prestation"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-center" }, "Date & Cr\xE9neau"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "Prix HT"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "TVA (20%)"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "Total TTC"))), /* @__PURE__ */ React.createElement("tbody", { className: "divide-y divide-slate-100" }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { className: "py-3.5 font-semibold text-ink" }, "Location Espace : ", spaceName, /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 font-normal" }, "Acc\xE8s garanti coworking & \xE9quipements inclus")), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-center text-slate-500" }, dateStr, /* @__PURE__ */ React.createElement("br", null), timeSlot), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-mono" }, ht, " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-mono" }, vat, " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-bold font-mono text-ink" }, gross.toFixed(2), " DH"))))), /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-200 pt-4 flex justify-end" }, /* @__PURE__ */ React.createElement("div", { className: "w-72 space-y-1.5 text-xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Sous-total HT :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, ht, " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "TVA marocaine (20%) :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, vat, " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service plateforme (8%) :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, fee.toFixed(2), " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between pt-2 border-t border-slate-200 text-sm font-bold text-ink" }, /* @__PURE__ */ React.createElement("span", null, "Total TTC R\xE9gl\xE9 :"), /* @__PURE__ */ React.createElement("span", { className: "font-display font-bold text-brand-600" }, gross.toFixed(2), " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-[11px] text-slate-400 pt-1" }, /* @__PURE__ */ React.createElement("span", null, "Net revers\xE9 au gestionnaire :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono font-semibold text-emerald-700" }, net.toFixed(2), " DH")))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-dashed border-slate-200 p-3.5 bg-slate-50/70 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 17, className: "text-emerald-600" }), /* @__PURE__ */ React.createElement("span", null, "Certifi\xE9 CMI Maroc \xB7 3D-Secure v2.2 \xB7 Transaction confirm\xE9e (", paidAt, ")")), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200" }, "Cachet \xC9lectronique Spotwork"))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 flex justify-end" }, /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: onClose,
@@ -813,13 +882,11 @@ const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
 const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSelectUser, onLogout, toast }) => {
   const [scrolled, setScrolled] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
-  const [apiOnline, setApiOnline] = useState(null);
   const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 8);
     f();
     window.addEventListener("scroll", f);
-    SpotworkAPI.checkHealth().then((h) => setApiOnline(Boolean(h)));
     return () => window.removeEventListener("scroll", f);
   }, []);
   const link = (label, target, icon) => /* @__PURE__ */ React.createElement(
@@ -836,11 +903,7 @@ const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSe
     icon && /* @__PURE__ */ React.createElement(Icon, { n: icon, size: 15 }),
     label
   );
-  return /* @__PURE__ */ React.createElement("header", { className: `sticky top-0 z-50 transition-all ${scrolled ? "bg-white/92 backdrop-blur-md shadow-[0_1px_0_rgba(13,44,90,.08)]" : "bg-white"}` }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "home" }), className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 18 })), /* @__PURE__ */ React.createElement("div", { className: "text-left" }, /* @__PURE__ */ React.createElement("span", { className: "font-display text-lg font-bold tracking-tight block leading-tight" }, "Spotwork"), /* @__PURE__ */ React.createElement("span", { className: "text-[10px] font-semibold tracking-wider uppercase text-brand-600 hidden sm:block" }, "PropTech Maroc"))), /* @__PURE__ */ React.createElement("nav", { className: "hidden lg:flex items-center gap-1" }, link("Accueil", { name: "home" }), link("Explorer", { name: "explore" }, "search"), link("Mes r\xE9servations", { name: "user" }, "calendar-days"), isManagerOrAdmin && link("Gestionnaire", { name: "admin" }, "bar-chart-3"), !currentUser && link("Connexion", { name: "login" }, "user")), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => {
-    SpotworkAPI.checkHealth().then((h) => {
-      setApiOnline(Boolean(h));
-    });
-  }, title: "\xC9tat de l'API Backend Express & Supabase", className: `hidden md:flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border transition ${apiOnline ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"}` }, /* @__PURE__ */ React.createElement("span", { className: `h-2 w-2 rounded-full ${apiOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}` }), apiOnline ? "API Active (Supabase & IA)" : "Mode D\xE9mo (API locale)"), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "checkout" }), className: "relative grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-600 transition hover:border-brand-300 hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "shopping-cart", size: 17 }), cartCount > 0 && /* @__PURE__ */ React.createElement("span", { key: cartCount, className: "pop absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white" }, cartCount)), currentUser ? /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setUserMenu(!userMenu), className: "flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-3 transition hover:border-brand-300 bg-white" }, /* @__PURE__ */ React.createElement("span", { className: `grid h-8 w-8 place-items-center rounded-full font-bold text-white text-[11px] shadow-sm ${currentUser.avatarBg || "bg-brand-600"}` }, currentUser.initials || "U"), /* @__PURE__ */ React.createElement("div", { className: "hidden sm:flex items-center gap-1.5 text-left" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm font-semibold text-slate-800" }, currentUser.firstName || currentUser.name), /* @__PURE__ */ React.createElement("span", { className: `text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${currentUser.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}` }, currentUser.roleLabel || currentUser.role)), /* @__PURE__ */ React.createElement(Icon, { n: "chevron-down", size: 14, className: "text-slate-400" })), userMenu && /* @__PURE__ */ React.createElement("div", { className: "absolute right-0 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-lift z-50" }, /* @__PURE__ */ React.createElement("div", { className: "p-3 bg-mist rounded-xl mb-1.5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: `grid h-9 w-9 place-items-center rounded-xl font-bold text-white text-xs ${currentUser.avatarBg || "bg-brand-600"}` }, currentUser.initials || "U"), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink truncate" }, currentUser.name), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400 truncate" }, currentUser.email))), /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex items-center justify-between text-[11px]" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-500 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 11 }), currentUser.city || "Maroc"), /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full font-bold border ${currentUser.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}` }, currentUser.roleLabel || currentUser.role))), [
+  return /* @__PURE__ */ React.createElement("header", { className: `sticky top-0 z-50 transition-all ${scrolled ? "bg-white/92 backdrop-blur-md shadow-[0_1px_0_rgba(13,44,90,.08)]" : "bg-white"}` }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "home" }), className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 18 })), /* @__PURE__ */ React.createElement("div", { className: "text-left" }, /* @__PURE__ */ React.createElement("span", { className: "font-display text-lg font-bold tracking-tight block leading-tight" }, "Spotwork"), /* @__PURE__ */ React.createElement("span", { className: "text-[10px] font-semibold tracking-wider uppercase text-brand-600 hidden sm:block" }, "PropTech Maroc"))), /* @__PURE__ */ React.createElement("nav", { className: "hidden lg:flex items-center gap-1" }, link("Accueil", { name: "home" }), link("Explorer", { name: "explore" }, "search"), link("Mes r\xE9servations", { name: "user" }, "calendar-days"), isManagerOrAdmin && link("Gestionnaire", { name: "admin" }, "bar-chart-3"), !currentUser && link("Connexion", { name: "login" }, "user")), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "checkout" }), className: "relative grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-600 transition hover:border-brand-300 hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "shopping-cart", size: 17 }), cartCount > 0 && /* @__PURE__ */ React.createElement("span", { key: cartCount, className: "pop absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white" }, cartCount)), currentUser ? /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setUserMenu(!userMenu), className: "flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-3 transition hover:border-brand-300 bg-white" }, /* @__PURE__ */ React.createElement("span", { className: `grid h-8 w-8 place-items-center rounded-full font-bold text-white text-[11px] shadow-sm ${currentUser.avatarBg || "bg-brand-600"}` }, currentUser.initials || "U"), /* @__PURE__ */ React.createElement("div", { className: "hidden sm:flex items-center gap-1.5 text-left" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm font-semibold text-slate-800" }, currentUser.firstName || currentUser.name), /* @__PURE__ */ React.createElement("span", { className: `text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${currentUser.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}` }, currentUser.roleLabel || currentUser.role)), /* @__PURE__ */ React.createElement(Icon, { n: "chevron-down", size: 14, className: "text-slate-400" })), userMenu && /* @__PURE__ */ React.createElement("div", { className: "absolute right-0 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-lift z-50" }, /* @__PURE__ */ React.createElement("div", { className: "p-3 bg-mist rounded-xl mb-1.5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: `grid h-9 w-9 place-items-center rounded-xl font-bold text-white text-xs ${currentUser.avatarBg || "bg-brand-600"}` }, currentUser.initials || "U"), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink truncate" }, currentUser.name), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400 truncate" }, currentUser.email))), /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex items-center justify-between text-[11px]" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-500 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 11 }), currentUser.city || "Maroc"), /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full font-bold border ${currentUser.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}` }, currentUser.roleLabel || currentUser.role))), [
     ["Mon espace client", "layout-grid", () => nav({ name: "user" })],
     ["Mes favoris", "heart", () => nav({ name: "user", params: { tab: "favoris" } })],
     ...isManagerOrAdmin ? [["Espace gestionnaire / Admin", "bar-chart-3", () => nav({ name: "admin" })]] : []
@@ -1125,7 +1188,27 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
   )))), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4" }, [["users", "Capacit\xE9 totale", `${s.cap} pers.`], ["user-check", "Places libres", `${availability.availableSeats} pers.`], ["ruler", "Surface", s.surface], ["clock", "R\xE9servation", isHour ? "\xC0 l'heure" : "\xC0 la journ\xE9e"]].map(([i, l, v]) => /* @__PURE__ */ React.createElement("div", { key: l, className: "rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement(Icon, { n: i, size: 17, className: "text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400" }, l), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold text-ink" }, v)))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC0 propos de cet espace"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[15px] leading-relaxed text-slate-600" }, s.desc), /* @__PURE__ */ React.createElement("div", { className: "mt-4 flex items-center gap-3 rounded-2xl bg-mist p-4" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-full bg-navy text-sm font-bold text-white" }, s.host.split(" ").map((w) => w[0]).join("")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, "G\xE9r\xE9 par ", s.host), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "R\xE9pond en ~1 h \xB7 Membre certifi\xE9 PropTech Maroc")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC9quipements inclus"), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex flex-wrap gap-2.5" }, s.am.map((a) => {
     const am = AMENITIES.find((x) => x.id === a);
     return /* @__PURE__ */ React.createElement("span", { key: a, className: "flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white" }, /* @__PURE__ */ React.createElement(Icon, { n: am.icon, size: 14, className: "text-brand-600" }), am.label);
-  }))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "Avis des membres"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-6 md:grid-cols-[220px_1fr]" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 p-5 text-center h-fit bg-white" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-4xl font-bold" }, s.rating.toLocaleString("fr-FR")), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex justify-center" }, /* @__PURE__ */ React.createElement(Stars, { v: s.rating })), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, s.rev, " avis"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-1.5" }, [70, 20, 6, 3, 1].map((w, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center gap-2 text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "w-3" }, 5 - i), /* @__PURE__ */ React.createElement("div", { className: "h-1.5 flex-1 rounded-full bg-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full bg-amber-400", style: { width: w + "%" } })))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, REVIEWS.map((r) => /* @__PURE__ */ React.createElement("article", { key: r.n, className: "rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" }, r.n[0]), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, r.n), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400" }, r.role, " \xB7 ", r.d)), /* @__PURE__ */ React.createElement("div", { className: "ml-auto" }, /* @__PURE__ */ React.createElement(Stars, { v: r.stars, size: 11 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm leading-relaxed text-slate-600" }, r.t))))))), /* @__PURE__ */ React.createElement("aside", { className: "lg:sticky lg:top-24 h-fit" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, EUR.format(s.price), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, " /", s.unit)), /* @__PURE__ */ React.createElement("button", { onClick: () => toggleFav(s.id), className: `grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 17, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" }))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-3.5" }, /* @__PURE__ */ React.createElement(Field, { label: "Date souhait\xE9e" }, /* @__PURE__ */ React.createElement(
+  }))), /* @__PURE__ */ React.createElement("div", { className: "mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 mb-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 20, className: "text-brand-600" }), "Localisation & Plan d'acc\xE8s"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-0.5" }, s.address || `${s.district}, ${s.city}, Maroc`)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(
+    "a",
+    {
+      href: `https://www.google.com/maps/search/?api=1&query=${s.lat || 33.5855},${s.lng || -7.6322}`,
+      target: "_blank",
+      rel: "noopener noreferrer",
+      className: "inline-flex items-center gap-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-1.5 text-xs font-bold transition shadow-2xs"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "external-link", size: 13 }),
+    " Ouvrir dans Google Maps"
+  ))), /* @__PURE__ */ React.createElement("div", { className: "relative h-64 sm:h-72 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100" }, /* @__PURE__ */ React.createElement(
+    "iframe",
+    {
+      title: `Carte - ${s.name}`,
+      width: "100%",
+      height: "100%",
+      loading: "lazy",
+      style: { border: 0 },
+      src: `https://www.openstreetmap.org/export/embed.html?bbox=${(s.lng || -7.6322) - 0.01}%2C${(s.lat || 33.5855) - 7e-3}%2C${(s.lng || -7.6322) + 0.01}%2C${(s.lat || 33.5855) + 7e-3}&layer=mapnik&marker=${s.lat || 33.5855}%2C${s.lng || -7.6322}`
+    }
+  )), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-3 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-brand-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "navigation", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Acc\xE8s & Transports"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-700 font-medium mt-0.5 leading-relaxed" }, s.transport || "Desservi par tramway, bus et stations taxis \xE0 proximit\xE9 imm\xE9diate."))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-emerald-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "compass", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Coordonn\xE9es GPS"), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-mono text-slate-700 font-medium mt-0.5" }, "Lat: ", (s.lat || 33.5855).toFixed(4), " \xB7 Lng: ", (s.lng || -7.6322).toFixed(4)), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, "Quartier ", s.district, " \xB7 ", s.city))))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "Avis des membres"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-6 md:grid-cols-[220px_1fr]" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 p-5 text-center h-fit bg-white" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-4xl font-bold" }, s.rating.toLocaleString("fr-FR")), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex justify-center" }, /* @__PURE__ */ React.createElement(Stars, { v: s.rating })), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, s.rev, " avis"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-1.5" }, [70, 20, 6, 3, 1].map((w, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center gap-2 text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "w-3" }, 5 - i), /* @__PURE__ */ React.createElement("div", { className: "h-1.5 flex-1 rounded-full bg-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full bg-amber-400", style: { width: w + "%" } })))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, REVIEWS.map((r) => /* @__PURE__ */ React.createElement("article", { key: r.n, className: "rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" }, r.n[0]), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, r.n), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400" }, r.role, " \xB7 ", r.d)), /* @__PURE__ */ React.createElement("div", { className: "ml-auto" }, /* @__PURE__ */ React.createElement(Stars, { v: r.stars, size: 11 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm leading-relaxed text-slate-600" }, r.t))))))), /* @__PURE__ */ React.createElement("aside", { className: "lg:sticky lg:top-24 h-fit" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, EUR.format(s.price), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, " /", s.unit)), /* @__PURE__ */ React.createElement("button", { onClick: () => toggleFav(s.id), className: `grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 17, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" }))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-3.5" }, /* @__PURE__ */ React.createElement(Field, { label: "Date souhait\xE9e" }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "date",
@@ -1251,7 +1334,41 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
   const user = currentUser;
   const [tab, setTab] = useState(initTab || "resas");
   const [userInvoice, setUserInvoice] = useState(null);
-  const [prefs, setPrefs] = useState({ mail: true, push: false, news: true, city: user.city || "Casablanca", type: "open" });
+  const [prefs, setPrefs] = useState(() => {
+    const p = user.preferences || {};
+    return {
+      mail: p.mail !== void 0 ? Boolean(p.mail) : true,
+      push: p.push !== void 0 ? Boolean(p.push) : false,
+      news: p.news !== void 0 ? Boolean(p.news) : true,
+      city: p.city || user.city || "Casablanca",
+      type: p.type || "open"
+    };
+  });
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const handleSavePreferences = async () => {
+    setSavingPrefs(true);
+    try {
+      const res = await SpotworkAPI.updatePreferences(prefs);
+      const updatedUser = {
+        ...user,
+        city: prefs.city,
+        preferences: { ...user.preferences || {}, ...prefs }
+      };
+      try {
+        localStorage.setItem("spotwork_user", JSON.stringify(updatedUser));
+      } catch {
+      }
+      if (res && res.status === "success") {
+        toast("Pr\xE9f\xE9rences de recherche synchronis\xE9es avec PostgreSQL Supabase", "check-circle");
+      } else {
+        toast("Pr\xE9f\xE9rences enregistr\xE9es localement", "check");
+      }
+    } catch {
+      toast("Pr\xE9f\xE9rences enregistr\xE9es", "check");
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
   const tabs = [["resas", "Mes r\xE9servations", "calendar-days"], ["ia", "Recommandations", "sparkles"], ["favoris", "Favoris", "heart"], ["prefs", "Pr\xE9f\xE9rences", "settings"]];
   const recommendations = useMemo(() => {
     const favTypes = new Set([...favs].map((id) => spaces.find((s) => s.id === id)?.type));
@@ -1289,9 +1406,13 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
         paidAt: "01/10/2026 10:15",
         status: b.status === "Confirm\xE9e" ? "paid" : "pending"
       });
-    }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 13 }), "Re\xE7u / Facture"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+    }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 13 }), "Re\xE7u / Facture"), /* @__PURE__ */ React.createElement("button", { onClick: async () => {
+      try {
+        await SpotworkAPI.cancelBooking(b.id);
+      } catch {
+      }
       setBookings(bookings.filter((x) => x.id !== b.id));
-      toast("R\xE9servation annul\xE9e (d\xE9mo)", "x");
+      toast("R\xE9servation annul\xE9e et mise \xE0 jour en base de donn\xE9es", "trash");
     }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500" }, "Annuler"))));
   }))), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display text-lg font-bold" }, "Historique"), /* @__PURE__ */ React.createElement("div", { className: "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card" }, PAST_BOOKINGS.map((b, i) => {
     const s = spaces.find((x) => x.id === b.spaceId);
@@ -1320,7 +1441,16 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
       /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 11 }),
       "Facture"
     ), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "text-slate-300 transition hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "chevron-right", size: 17 })));
-  })))), tab === "ia" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mb-5 flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 18, className: "mt-0.5 shrink-0 text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-brand-900" }, "Suggestions g\xE9n\xE9r\xE9es \xE0 partir de vos favoris, de vos r\xE9servations pass\xE9es et de vos pr\xE9f\xE9rences. Elles s'affinent \xE0 chaque interaction.")), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 md:grid-cols-3" }, recommendations.map(({ s, score, reason }, i) => /* @__PURE__ */ React.createElement("article", { key: s.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lift", "data-reveal": true, style: { transitionDelay: `${i * 80}ms` } }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 500), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: "absolute left-3 top-3 rounded-full bg-ink/80 px-2 py-1 text-[10px] font-bold text-white backdrop-blur" }, "Match ", score, "%")), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-display text-sm font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, s.city, " \xB7 ", EUR.format(s.price), "/", s.unit)), /* @__PURE__ */ React.createElement(Ring, { v: score })), /* @__PURE__ */ React.createElement("p", { className: "mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 11, className: "mt-0.5 shrink-0 text-brand-500" }), reason), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "mt-3 w-full rounded-full bg-navy py-2 text-xs font-bold text-white transition hover:bg-brand-700" }, "D\xE9couvrir")))))), tab === "favoris" && (favs.size === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center text-sm text-slate-400" }, "Aucun favori pour le moment \u2014 cliquez sur le \u2665 d'un espace.") : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, spaces.filter((s) => favs.has(s.id)).map((s) => /* @__PURE__ */ React.createElement(SpaceCard, { key: s.id, s, nav, favs, toggleFav })))), tab === "prefs" && /* @__PURE__ */ React.createElement("div", { className: "max-w-xl space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Notifications"), [["mail", "R\xE9capitulatifs par e-mail"], ["push", "Alertes de disponibilit\xE9 en temps r\xE9el"], ["news", "Newsletter mensuelle & bons plans"]].map(([k, l]) => /* @__PURE__ */ React.createElement("div", { key: k, className: "mt-4 flex items-center justify-between border-b border-slate-100 pb-4 last:border-0 last:pb-0" }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-600" }, l), /* @__PURE__ */ React.createElement(Toggle, { on: prefs[k], onClick: () => setPrefs({ ...prefs, [k]: !prefs[k] }) })))), /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Pr\xE9f\xE9rences de recherche"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Ville par d\xE9faut" }, /* @__PURE__ */ React.createElement("select", { value: prefs.city, onChange: (e) => setPrefs({ ...prefs, city: e.target.value }), className: inp }, CITIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c }, c)))), /* @__PURE__ */ React.createElement(Field, { label: "Type favori" }, /* @__PURE__ */ React.createElement("select", { value: prefs.type, onChange: (e) => setPrefs({ ...prefs, type: e.target.value }), className: inp }, TYPES.map((t) => /* @__PURE__ */ React.createElement("option", { key: t.id, value: t.id }, t.label))))), /* @__PURE__ */ React.createElement("button", { onClick: () => toast("Pr\xE9f\xE9rences enregistr\xE9es", "check"), className: "mt-5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white" }, "Enregistrer"))))), /* @__PURE__ */ React.createElement(
+  })))), tab === "ia" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mb-5 flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 18, className: "mt-0.5 shrink-0 text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-brand-900" }, "Suggestions g\xE9n\xE9r\xE9es \xE0 partir de vos favoris, de vos r\xE9servations pass\xE9es et de vos pr\xE9f\xE9rences. Elles s'affinent \xE0 chaque interaction.")), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 md:grid-cols-3" }, recommendations.map(({ s, score, reason }, i) => /* @__PURE__ */ React.createElement("article", { key: s.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lift", "data-reveal": true, style: { transitionDelay: `${i * 80}ms` } }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 500), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: "absolute left-3 top-3 rounded-full bg-ink/80 px-2 py-1 text-[10px] font-bold text-white backdrop-blur" }, "Match ", score, "%")), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-display text-sm font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, s.city, " \xB7 ", EUR.format(s.price), "/", s.unit)), /* @__PURE__ */ React.createElement(Ring, { v: score })), /* @__PURE__ */ React.createElement("p", { className: "mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 11, className: "mt-0.5 shrink-0 text-brand-500" }), reason), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "mt-3 w-full rounded-full bg-navy py-2 text-xs font-bold text-white transition hover:bg-brand-700" }, "D\xE9couvrir")))))), tab === "favoris" && (favs.size === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center text-sm text-slate-400" }, "Aucun favori pour le moment \u2014 cliquez sur le \u2665 d'un espace.") : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, spaces.filter((s) => favs.has(s.id)).map((s) => /* @__PURE__ */ React.createElement(SpaceCard, { key: s.id, s, nav, favs, toggleFav })))), tab === "prefs" && /* @__PURE__ */ React.createElement("div", { className: "max-w-xl space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Notifications"), [["mail", "R\xE9capitulatifs par e-mail"], ["push", "Alertes de disponibilit\xE9 en temps r\xE9el"], ["news", "Newsletter mensuelle & bons plans"]].map(([k, l]) => /* @__PURE__ */ React.createElement("div", { key: k, className: "mt-4 flex items-center justify-between border-b border-slate-100 pb-4 last:border-0 last:pb-0" }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-600" }, l), /* @__PURE__ */ React.createElement(Toggle, { on: prefs[k], onClick: () => setPrefs({ ...prefs, [k]: !prefs[k] }) })))), /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Pr\xE9f\xE9rences de recherche"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Ville par d\xE9faut" }, /* @__PURE__ */ React.createElement("select", { value: prefs.city, onChange: (e) => setPrefs({ ...prefs, city: e.target.value }), className: inp }, CITIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c }, c)))), /* @__PURE__ */ React.createElement(Field, { label: "Type favori" }, /* @__PURE__ */ React.createElement("select", { value: prefs.type, onChange: (e) => setPrefs({ ...prefs, type: e.target.value }), className: inp }, TYPES.map((t) => /* @__PURE__ */ React.createElement("option", { key: t.id, value: t.id }, t.label))))), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: handleSavePreferences,
+      disabled: savingPrefs,
+      className: "mt-5 inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-600/25 hover:bg-brand-700 transition disabled:opacity-50"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: savingPrefs ? "loader" : "check", size: 15, className: savingPrefs ? "animate-spin" : "" }),
+    savingPrefs ? "Synchronisation..." : "Enregistrer dans mon profil"
+  ))))), /* @__PURE__ */ React.createElement(
     InvoiceModal,
     {
       invoice: userInvoice,
@@ -2081,35 +2211,95 @@ const App = () => {
     }
   };
   const onDone = (b) => {
-    const newBookingId = "bk-" + Date.now();
-    const bookedSpace = spacesList.find((s) => s.id === b.spaceId || s.id === b.id);
+    const spaceId = b.spaceId || b.id;
+    const bookedSpace = spacesList.find((s) => s.id === spaceId);
     const spaceName = bookedSpace ? bookedSpace.name : b.name || "Espace Coworking";
     const city = bookedSpace ? bookedSpace.city : b.city || "Casablanca";
+    const num = typeof spaceId === "number" ? spaceId : parseInt(spaceId, 10) || 1;
+    const spaceUuid = typeof spaceId === "string" && spaceId.includes("-") ? spaceId : `10000000-0000-0000-0000-${String(num).padStart(12, "0")}`;
+    let startTime = "09:00:00";
+    let endTime = "18:00:00";
+    if (b.meta && b.meta.includes(" \u2013 ")) {
+      const parts = b.meta.split(" \u2013 ");
+      if (parts[0]) {
+        const cleanStart = parts[0].trim().slice(0, 5);
+        if (/^\d{2}:\d{2}$/.test(cleanStart)) startTime = cleanStart + ":00";
+      }
+      if (parts[1]) {
+        const cleanEnd = parts[1].trim().split(" ")[0].slice(0, 5);
+        if (/^\d{2}:\d{2}$/.test(cleanEnd)) endTime = cleanEnd + ":00";
+      }
+    }
+    const newBookingId = "bk-" + Date.now();
+    const totalPrice = b.total || (bookedSpace ? bookedSpace.price * 4 : 180);
+    SpotworkAPI.createBooking({
+      space_id: spaceUuid,
+      booking_date: b.date || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+      start_time: startTime,
+      end_time: endTime,
+      total_price: totalPrice
+    }).then((res) => {
+      if (res && res.status === "success") {
+        toast("R\xE9servation synchronis\xE9e dans la base PostgreSQL Supabase !", "check-circle");
+      }
+    }).catch(() => {
+    });
     setUserBookings((p) => [{
       id: newBookingId,
-      spaceId: b.spaceId || b.id,
+      spaceId,
       date: b.date,
       meta: b.meta,
-      status: "En attente"
+      status: "Confirm\xE9e",
+      totalPrice,
+      invoiceRef: `FACT-2026-${String(newBookingId).slice(-6)}`
     }, ...p]);
     setAllBookings((p) => [{
       id: newBookingId,
       clientName: currentUser?.name || b.name || "Client PropTech",
       clientEmail: currentUser?.email || b.email || "client@proptech.ma",
-      clientPhone: "+212 6 " + Math.floor(1e7 + Math.random() * 9e7),
+      clientPhone: currentUser?.phone || "+212 6 61 23 45 67",
       clientInitials: currentUser?.initials || "CP",
-      spaceId: b.spaceId || b.id,
+      spaceId,
       spaceName,
       city,
       date: b.date,
       timeSlot: b.meta,
       hours: 4,
-      totalPrice: b.total || (bookedSpace ? bookedSpace.price * 4 : 180),
-      status: "pending",
+      totalPrice,
+      status: "confirmed",
       createdAt: "\xC0 l'instant"
     }, ...p]);
     setCart([]);
   };
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === "admin") SpotworkAPI.token = "mock-token-admin";
+      else if (currentUser.role === "manager") SpotworkAPI.token = "mock-token-manager";
+      else SpotworkAPI.token = "mock-token-client";
+      SpotworkAPI.getUserBookings().then((bkgs) => {
+        if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
+          const mapped = bkgs.map((b) => {
+            const numId = parseInt(String(b.space_id).split("-").pop(), 10) || 1;
+            return {
+              id: b.id,
+              spaceId: numId,
+              date: b.booking_date,
+              meta: `${b.start_time.slice(0, 5)} \u2013 ${b.end_time.slice(0, 5)}`,
+              status: b.status === "confirmed" ? "Confirm\xE9e" : b.status === "cancelled" ? "Annul\xE9e" : "En attente",
+              totalPrice: b.total_price,
+              invoiceRef: `FACT-2026-${String(b.id).slice(-6)}`
+            };
+          });
+          setUserBookings((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const fresh = mapped.filter((m) => !existingIds.has(m.id));
+            return [...fresh, ...prev];
+          });
+        }
+      }).catch(() => {
+      });
+    }
+  }, [currentUser]);
   useEffect(() => {
     let tries = 0;
     const t = setInterval(() => {
