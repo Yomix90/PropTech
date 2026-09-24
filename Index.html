@@ -6,22 +6,11 @@
 <title>Spotwork — Réservez votre espace de travail</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  theme: { extend: {
-    colors: {
-      ink:"#0A1B33", navy:"#0D2C5A", mist:"#F6F8FC",
-      brand:{50:"#F0F5FF",100:"#DBE7FF",200:"#BCD2FF",300:"#9AB9FF",400:"#5B90F7",500:"#2E6BEA",600:"#1F56D6",700:"#183FA8",800:"#142F7A",900:"#102557"}
-    },
-    fontFamily: { display:["Space Grotesk","sans-serif"], body:["Instrument Sans","sans-serif"] },
-    boxShadow: {
-      card:"0 1px 2px rgba(16,24,40,.05),0 10px 28px -14px rgba(13,44,90,.16)",
-      lift:"0 26px 50px -18px rgba(13,44,90,.28)"
-    }
-  }}
-}
-</script>
+<link rel="stylesheet" href="styles.css">
+<!-- React 18, ReactDOM, Babel Standalone & Lucide Icons -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
   *{-webkit-tap-highlight-color:transparent}
@@ -63,7 +52,7 @@ const {useState,useEffect,useMemo,useRef}=React;
 const EUR=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
 const fmtDate=v=>v?new Date(v+"T12:00").toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):"—";
 const todayISO=()=>new Date().toISOString().slice(0,10);
-const U=(id,w=900)=>`https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
+const U=(id,w=900)=>!id?"":id.startsWith("http")?id:`https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
 
 const serializeNodes=(nodes)=>(nodes||[]).map(n=>{
   const [t,a={},ch=[]]=n;
