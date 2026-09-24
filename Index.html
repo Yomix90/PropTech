@@ -92,9 +92,14 @@ const smoothPath=pts=>{
 
 /* ================= SPOTWORK BACKEND CLIENT (API EXPRESS + SUPABASE + CLAUDE) ================= */
 const API_BASE = "http://localhost:5000/api";
+const SUPABASE_URL = "https://yhtgqugdsfwgqvmpulcy.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Ju2xF0_S1YInzEMXECbL5A_XuKfXubO";
+
 const SpotworkAPI = {
   token: "mock-token-client",
   managerToken: "mock-token-manager",
+  supabaseUrl: SUPABASE_URL,
+  supabaseKey: SUPABASE_ANON_KEY,
   async checkHealth() {
     try {
       const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(2500) });

@@ -1,10 +1,10 @@
 import { createApp } from './app.js';
 import { env } from './config/env.js';
-import { isLiveSupabase } from './config/supabase.js';
+import { isLiveSupabase, verifySupabaseSchema } from './config/supabase.js';
 
 const app = createApp();
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, async () => {
   console.log(`====================================================`);
   console.log(`🚀 SPOTWORK BACKEND API RUNNING ON PORT ${env.PORT}`);
   console.log(`📡 Environment: ${env.NODE_ENV}`);
@@ -13,6 +13,8 @@ const server = app.listen(env.PORT, () => {
   console.log(`🔗 Health Check: http://localhost:${env.PORT}/api/health`);
   console.log(`🏢 Spaces List: http://localhost:${env.PORT}/api/spaces`);
   console.log(`====================================================`);
+
+  await verifySupabaseSchema();
 });
 
 const handleShutdown = (signal: string) => {

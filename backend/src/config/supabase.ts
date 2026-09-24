@@ -264,7 +264,8 @@ export class LocalDataStore {
 export const localStore = new LocalDataStore();
 
 // Check if live Supabase is configured
-export const isLiveSupabase = Boolean(
+export const isLiveSupabaseConfigured = Boolean(
+  env.NODE_ENV !== 'test' &&
   env.SUPABASE_URL &&
     !env.SUPABASE_URL.includes('mock.supabase.co') &&
     env.SUPABASE_ANON_KEY &&
@@ -275,3 +276,38 @@ export const supabase: SupabaseClient = createClient(
   env.SUPABASE_URL,
   env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY
 );
+
+export let isLiveSupabase = false;
+
+export async function verifySupabaseSchema(): Promise<boolean> {
+  if (env.NODE_ENV === 'test' || !isLiveSupabaseConfigured) {
+    isLiveSupabase = false;
+    return false;
+  }
+
+  try {
+    const { error } = await supabase.from('spaces').select('id').limit(1);
+    if (!error) {
+      isLiveSupabase = true;
+      console.log('✅ Schéma PostgreSQL Supabase validé et opérationnel !');
+      return true;
+    }
+    if (error.code === 'PGRST205') {
+      isLiveSupabase = false;
+      const projectRef = env.SUPABASE_URL.replace('https://', '').split('.')[0];
+      console.warn('\n========================================================================');
+      console.warn('⚠️ Supabase Cloud est connecté, mais les tables ne sont pas encore créées.');
+      console.warn('👉 Exécutez le script supabase/setup_complete.sql dans le SQL Editor Supabase :');
+      console.warn(`   https://supabase.com/dashboard/project/${projectRef}/sql/new`);
+      console.warn('💡 Le backend bascule automatiquement sur le store de données local en attendant.');
+      console.warn('========================================================================\n');
+      return false;
+    }
+    return false;
+  } catch {
+    isLiveSupabase = false;
+    return false;
+  }
+}
+
+
