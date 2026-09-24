@@ -189,6 +189,18 @@ const SpotworkAPI = {
     } catch (e) {
       return { status: "error", message: e.message };
     }
+  },
+  async getPayments() {
+    try {
+      const res = await fetch(`${API_BASE}/manager/payments`, {
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` }
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data;
+    } catch {
+      return null;
+    }
   }
 };
 
@@ -309,11 +321,71 @@ const INITIAL_MANAGER_BOOKINGS = [
     spaceName: "L'Atelier Maarif",
     city: "Casablanca",
     date: "2026-10-01",
-    timeSlot: "09:00 – 18:00 (Journée)",
-    hours: 8,
-    totalPrice: 360,
+    timeSlot: "09:00 – 18:00 (Journée complète)",
+    hours: 9,
+    seats: 45,
+    totalPrice: 405,
     status: "confirmed",
-    createdAt: "Il y a 2h"
+    createdAt: "Il y a 2h",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0041"
+  },
+  {
+    id: "req-1b",
+    clientName: "OCP Solutions & Tech",
+    clientEmail: "contact@ocp-solutions.ma",
+    clientPhone: "+212 5 22 99 88 77",
+    clientInitials: "OS",
+    spaceId: 1,
+    spaceName: "L'Atelier Maarif",
+    city: "Casablanca",
+    date: "2026-10-02",
+    timeSlot: "09:00 – 18:00 (Journée complète)",
+    hours: 9,
+    seats: 45,
+    totalPrice: 405,
+    status: "confirmed",
+    createdAt: "Il y a 4h",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0042"
+  },
+  {
+    id: "req-3a",
+    clientName: "Casablanca Finance City Group",
+    clientEmail: "corporate@cfc.ma",
+    clientPhone: "+212 5 22 45 12 34",
+    clientInitials: "CF",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-01",
+    timeSlot: "09:00 – 18:00 (Journée complète)",
+    hours: 9,
+    seats: 6,
+    totalPrice: 1080,
+    status: "confirmed",
+    createdAt: "Hier",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0043"
+  },
+  {
+    id: "req-3b",
+    clientName: "Casablanca Finance City Group",
+    clientEmail: "corporate@cfc.ma",
+    clientPhone: "+212 5 22 45 12 34",
+    clientInitials: "CF",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-02",
+    timeSlot: "09:00 – 18:00 (Journée complète)",
+    hours: 9,
+    seats: 6,
+    totalPrice: 1080,
+    status: "confirmed",
+    createdAt: "Hier",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0044"
   },
   {
     id: "req-2",
@@ -327,9 +399,12 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-10-05",
     timeSlot: "14:00 – 17:00 (3h)",
     hours: 3,
+    seats: 10,
     totalPrice: 150,
     status: "pending",
-    createdAt: "Il y a 35 min"
+    createdAt: "Il y a 35 min",
+    paymentMethod: "Pré-autorisation CB CMI",
+    invoiceRef: "FACT-2026-0045"
   },
   {
     id: "req-3",
@@ -343,9 +418,12 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-10-06",
     timeSlot: "10:00 – 13:00 (3h)",
     hours: 3,
+    seats: 4,
     totalPrice: 195,
     status: "pending",
-    createdAt: "Il y a 1h"
+    createdAt: "Il y a 1h",
+    paymentMethod: "Pré-autorisation CB CMI",
+    invoiceRef: "FACT-2026-0046"
   },
   {
     id: "req-4",
@@ -359,9 +437,12 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-10-08",
     timeSlot: "14:00 – 17:00 (3h)",
     hours: 3,
+    seats: 1,
     totalPrice: 75,
     status: "confirmed",
-    createdAt: "Hier"
+    createdAt: "Hier",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0047"
   },
   {
     id: "req-5",
@@ -375,9 +456,12 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-10-10",
     timeSlot: "09:00 – 12:00 (3h)",
     hours: 3,
+    seats: 2,
     totalPrice: 360,
     status: "pending",
-    createdAt: "Il y a 10 min"
+    createdAt: "Il y a 10 min",
+    paymentMethod: "Pré-autorisation CB CMI",
+    invoiceRef: "FACT-2026-0048"
   },
   {
     id: "req-6",
@@ -391,11 +475,224 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-09-28",
     timeSlot: "09:00 – 17:00 (8h)",
     hours: 8,
+    seats: 1,
     totalPrice: 320,
     status: "cancelled",
-    createdAt: "Il y a 3j"
+    createdAt: "Il y a 3j",
+    paymentMethod: "Remboursement Carte CMI",
+    invoiceRef: "FACT-2026-0049"
   }
 ];
+
+const INITIAL_TRANSACTIONS = [
+  {
+    id: "TXN-2026-8801",
+    bookingId: "req-1",
+    clientName: "Youssef Amrani",
+    clientEmail: "youssef@proptech.ma",
+    clientPhone: "+212 6 61 23 45 67",
+    clientCity: "Casablanca",
+    spaceId: 1,
+    spaceName: "L'Atelier Maarif",
+    city: "Casablanca",
+    date: "2026-10-01",
+    timeSlot: "09:00 – 18:00 (Journée)",
+    paidAt: "01/10/2026 09:12",
+    grossAmount: 405,
+    feeAmount: 32.40,
+    netAmount: 372.60,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "4242",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0041"
+  },
+  {
+    id: "TXN-2026-8802",
+    bookingId: "req-1b",
+    clientName: "OCP Solutions & Tech",
+    clientEmail: "contact@ocp-solutions.ma",
+    clientPhone: "+212 5 22 99 88 77",
+    clientCity: "Casablanca",
+    spaceId: 1,
+    spaceName: "L'Atelier Maarif",
+    city: "Casablanca",
+    date: "2026-10-02",
+    timeSlot: "09:00 – 18:00 (Journée)",
+    paidAt: "01/10/2026 14:30",
+    grossAmount: 405,
+    feeAmount: 32.40,
+    netAmount: 372.60,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "8891",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0042"
+  },
+  {
+    id: "TXN-2026-8803",
+    bookingId: "req-3a",
+    clientName: "Casablanca Finance City Group",
+    clientEmail: "corporate@cfc.ma",
+    clientPhone: "+212 5 22 45 12 34",
+    clientCity: "Casablanca",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-01",
+    timeSlot: "09:00 – 18:00 (Journée)",
+    paidAt: "30/09/2026 18:45",
+    grossAmount: 1080,
+    feeAmount: 86.40,
+    netAmount: 993.60,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "1092",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0043"
+  },
+  {
+    id: "TXN-2026-8804",
+    bookingId: "req-3b",
+    clientName: "Casablanca Finance City Group",
+    clientEmail: "corporate@cfc.ma",
+    clientPhone: "+212 5 22 45 12 34",
+    clientCity: "Casablanca",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-02",
+    timeSlot: "09:00 – 18:00 (Journée)",
+    paidAt: "30/09/2026 18:47",
+    grossAmount: 1080,
+    feeAmount: 86.40,
+    netAmount: 993.60,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "1092",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0044"
+  },
+  {
+    id: "TXN-2026-8805",
+    bookingId: "req-4",
+    clientName: "Nadia Idrissi",
+    clientEmail: "nadia.idrissi@digital.ma",
+    clientPhone: "+212 6 64 12 34 56",
+    clientCity: "Tanger",
+    spaceId: 5,
+    spaceName: "Marina Bay Focus",
+    city: "Tanger",
+    date: "2026-10-08",
+    timeSlot: "14:00 – 17:00 (3h)",
+    paidAt: "24/09/2026 15:03",
+    grossAmount: 75,
+    feeAmount: 6.00,
+    netAmount: 69.00,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "5512",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0045"
+  },
+  {
+    id: "TXN-2026-8806",
+    bookingId: "req-2",
+    clientName: "Salma Tazi",
+    clientEmail: "salma.tazi@techmaroc.ma",
+    clientPhone: "+212 6 62 89 01 23",
+    clientCity: "Rabat",
+    spaceId: 4,
+    spaceName: "Le Hub Agdal",
+    city: "Rabat",
+    date: "2026-10-05",
+    timeSlot: "14:00 – 17:00 (3h)",
+    paidAt: "En attente de validation",
+    grossAmount: 150,
+    feeAmount: 12.00,
+    netAmount: 138.00,
+    paymentMethod: "Pré-autorisation CB CMI",
+    cardLast4: "9934",
+    status: "pending",
+    invoiceNumber: "FACT-2026-0046"
+  }
+];
+
+/* ================= MOTEUR DE GESTION DU PLANNING & DES DISPONIBILITÉS ================= */
+const getSpaceAvailability = (space, dateStr, bookings = []) => {
+  if (!space) return { availableSeats: 0, totalCapacity: 0, isSoldOut: false, isFullDay: false, bookedHours: [] };
+  const cap = space.cap || 1;
+
+  if (!dateStr) {
+    return { availableSeats: cap, totalCapacity: cap, isSoldOut: false, isFullDay: false, bookedHours: [] };
+  }
+
+  // Active bookings on this space and date
+  const dayBookings = (bookings || []).filter(b => 
+    (b.spaceId === space.id || b.id === space.id) &&
+    b.date === dateStr &&
+    b.status !== "cancelled"
+  );
+
+  let bookedSeats = 0;
+  const bookedHoursSet = new Set();
+  let isFullDay = false;
+
+  for (const b of dayBookings) {
+    const isExclusiveRoom = ["office", "meeting", "booth", "studio"].includes(space.type);
+    const isJournee = (b.timeSlot && b.timeSlot.includes("Journée")) || (b.meta && b.meta.includes("Journée")) || (b.hours && b.hours >= 8);
+
+    if (isJournee) {
+      isFullDay = true;
+      bookedSeats = cap;
+      HOURS.forEach(h => bookedHoursSet.add(h));
+    } else {
+      const slotText = b.timeSlot || b.meta || "";
+      const match = slotText.match(/(\d{2}:\d{2})\s*–\s*(\d{2}:\d{2})/);
+      if (match) {
+        const start = match[1];
+        const end = match[2];
+        const startIdx = HOURS.indexOf(start);
+        const endIdx = HOURS.indexOf(end);
+        if (startIdx !== -1 && endIdx !== -1) {
+          for (let i = startIdx; i < endIdx; i++) {
+            bookedHoursSet.add(HOURS[i]);
+          }
+        }
+      }
+      if (isExclusiveRoom) {
+        bookedSeats = cap;
+      } else {
+        bookedSeats += (b.seats || 1);
+      }
+    }
+  }
+
+  const availableSeats = Math.max(0, cap - bookedSeats);
+  const isSoldOut = isFullDay || availableSeats === 0 || (bookedHoursSet.size >= HOURS.length);
+
+  return {
+    availableSeats,
+    totalCapacity: cap,
+    isSoldOut,
+    isFullDay,
+    bookedHours: Array.from(bookedHoursSet)
+  };
+};
+
+const getNextAvailableDates = (space, bookings = [], daysAhead = 7) => {
+  const dates = [];
+  const base = new Date();
+  for (let i = 0; i < daysAhead; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const avail = getSpaceAvailability(space, dateStr, bookings);
+    dates.push({
+      date: dateStr,
+      availableSeats: avail.availableSeats,
+      totalCapacity: avail.totalCapacity,
+      isSoldOut: avail.isSoldOut,
+      label: d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+    });
+  }
+  return dates;
+};
 
 /* ================= UI ATOMS ================= */
 const Stars=({v,size=13})=>(
@@ -438,16 +735,271 @@ const Field=({label,err,children})=>(
 const inp="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10";
 const inpErr="border-rose-400 focus:border-rose-500 focus:ring-rose-500/10";
 
-/* ================= CARTE ESPACE ================= */
-const SpaceCard=({s,nav,favs,toggleFav})=>{
-  const liked=favs.has(s.id);
+/* ================= ACCÈS RESTREINT (403 RBAC GESTIONNAIRE) ================= */
+const AccessDenied = ({ nav, currentUser, onSelectUser }) => {
   return (
-    <article onClick={()=>nav({name:"space",params:{id:s.id}})}
-      className="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift">
+    <main className="min-h-[75vh] flex items-center justify-center py-12 px-4 bg-mist">
+      <div className="max-w-lg w-full text-center bg-white rounded-3xl border border-slate-200/90 p-8 md:p-10 shadow-card">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-5 shadow-sm">
+          <Icon n="shield-alert" size={32} />
+        </div>
+        <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-100 text-rose-700 mb-3">
+          Erreur 403 · Accès Restreint
+        </span>
+        <h1 className="font-display text-2xl font-bold text-slate-900 mb-2">
+          Espace Réservé aux Gestionnaires
+        </h1>
+        <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+          {currentUser ? (
+            <>
+              Vous êtes actuellement connecté en tant que <b>{currentUser.name}</b> (<span className="text-brand-600 font-semibold">{currentUser.roleLabel || currentUser.role}</span>). Ce tableau de bord est strictement réservé aux gestionnaires d'espaces et administrateurs autorisés.
+            </>
+          ) : (
+            <>
+              Vous devez être connecté avec un compte gestionnaire ou administrateur pour accéder à la gestion des espaces, aux plannings et aux revenus.
+            </>
+          )}
+        </p>
+
+        <div className="space-y-3 text-left">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-1">
+            Basculer sur un compte autorisé :
+          </p>
+          {PRESET_ACCOUNTS.filter(a => a.role === 'manager' || a.role === 'admin').map(acc => (
+            <button
+              key={acc.id}
+              onClick={() => {
+                if (onSelectUser) onSelectUser(acc);
+                nav({ name: "admin" });
+              }}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-brand-200 bg-brand-50/50 hover:bg-brand-50 hover:border-brand-300 transition text-left text-xs font-semibold text-brand-900"
+            >
+              <div className="flex items-center gap-3">
+                <span className={`w-8 h-8 rounded-xl text-white font-bold grid place-items-center text-xs shadow-sm ${acc.avatarBg}`}>
+                  {acc.initials}
+                </span>
+                <div>
+                  <p className="font-bold text-ink">{acc.name}</p>
+                  <p className="text-[11px] text-slate-500">{acc.roleLabel} · {acc.city}</p>
+                </div>
+              </div>
+              <span className="text-brand-600 font-bold flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-brand-200 shadow-2xs">
+                Se connecter <Icon n="arrow-right" size={13} />
+              </span>
+            </button>
+          ))}
+
+          <div className="pt-3 flex gap-2.5">
+            <button
+              onClick={() => nav({ name: "explore" })}
+              className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition text-center"
+            >
+              Explorer les espaces
+            </button>
+            <button
+              onClick={() => nav({ name: "home" })}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-navy text-xs font-bold text-white hover:bg-slate-800 transition text-center"
+            >
+              Retour à l'accueil
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+};
+
+/* ================= MODALE FACTURE & REÇU FISCAL MAROC ================= */
+const InvoiceModal = ({ invoice, isOpen, onClose }) => {
+  if (!isOpen || !invoice) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const invoiceNum = invoice.invoiceNumber || invoice.invoiceRef || `FACT-2026-00${invoice.id || "01"}`;
+  const clientName = invoice.clientName || invoice.name || "Client PropTech";
+  const clientEmail = invoice.clientEmail || invoice.email || "client@proptech.ma";
+  const clientPhone = invoice.clientPhone || "+212 6 61 00 00 00";
+  const clientCity = invoice.clientCity || invoice.city || "Casablanca";
+  const spaceName = invoice.spaceName || invoice.name || "Espace Coworking";
+  const dateStr = invoice.date || "01/10/2026";
+  const timeSlot = invoice.timeSlot || invoice.meta || "09:00 – 18:00 (Journée)";
+  const gross = Number(invoice.grossAmount || invoice.totalPrice || invoice.total || 300);
+  const fee = Number(invoice.feeAmount || (gross * 0.08).toFixed(2));
+  const net = Number(invoice.netAmount || (gross - fee).toFixed(2));
+  const ht = (gross / 1.2).toFixed(2);
+  const vat = (gross - Number(ht)).toFixed(2);
+  const paymentMethod = invoice.paymentMethod || "Carte Bancaire Maroc CMI (3D Secure)";
+  const paidAt = invoice.paidAt || "01/10/2026 10:15";
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 my-8 text-ink">
+        {/* En-tête modal avec bouton imprimer */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2.5 rounded-2xl bg-brand-50 text-brand-700">
+              <Icon n="file-text" size={22} />
+            </span>
+            <div>
+              <p className="font-display font-bold text-base">Facture Légale & Reçu CMI</p>
+              <p className="text-[11px] text-slate-400 font-mono">{invoiceNum}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center gap-1.5 rounded-full bg-navy px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition shadow-sm"
+            >
+              <Icon n="printer" size={14} /> Imprimer / PDF
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+            >
+              <Icon n="x" size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Corps de la facture marocaine */}
+        <div className="border border-slate-200 rounded-2xl p-6 bg-white space-y-6 text-sm">
+          {/* En-tête officiel entreprise */}
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-600 text-white font-bold text-sm">
+                  <Icon n="map-pin" size={16} />
+                </span>
+                <span className="font-display text-lg font-bold">SPOTWORK MAROC SARL AU</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">142 Boulevard d'Anfa, 5ème étage</p>
+              <p className="text-xs text-slate-500">20050 Casablanca, Maroc</p>
+              <p className="text-[11px] text-slate-400 mt-1 font-mono leading-tight">
+                IF : 45892014 · ICE : 002938475000089<br />
+                RC Casablanca : 512948 · Patente : 34109284
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
+                ✓ Facture Acquittée
+              </span>
+              <p className="text-xs font-semibold text-slate-500">Réf : <b className="font-mono text-ink">{invoiceNum}</b></p>
+              <p className="text-xs text-slate-500">Date d'émission : <b>{dateStr}</b></p>
+              <p className="text-xs text-slate-500">Règlement : <b>{paymentMethod}</b></p>
+            </div>
+          </div>
+
+          {/* Coordonnées Client */}
+          <div className="rounded-xl bg-slate-50 p-4 border border-slate-100">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Client facturé :</p>
+            <p className="font-bold text-sm text-ink">{clientName}</p>
+            <p className="text-xs text-slate-500">{clientEmail} · {clientPhone}</p>
+            <p className="text-xs text-slate-500">{clientCity}, Maroc</p>
+          </div>
+
+          {/* Tableau des prestations */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-400 uppercase tracking-wider text-[10px]">
+                  <th className="py-2.5">Description de la prestation</th>
+                  <th className="py-2.5 text-center">Date & Créneau</th>
+                  <th className="py-2.5 text-right">Prix HT</th>
+                  <th className="py-2.5 text-right">TVA (20%)</th>
+                  <th className="py-2.5 text-right">Total TTC</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                <tr>
+                  <td className="py-3.5 font-semibold text-ink">
+                    Location Espace : {spaceName}
+                    <p className="text-[10px] text-slate-400 font-normal">Accès garanti coworking & équipements inclus</p>
+                  </td>
+                  <td className="py-3.5 text-center text-slate-500">{dateStr}<br/>{timeSlot}</td>
+                  <td className="py-3.5 text-right font-mono">{ht} DH</td>
+                  <td className="py-3.5 text-right font-mono">{vat} DH</td>
+                  <td className="py-3.5 text-right font-bold font-mono text-ink">{gross.toFixed(2)} DH</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Synthèse financière marocaine */}
+          <div className="border-t border-slate-200 pt-4 flex justify-end">
+            <div className="w-72 space-y-1.5 text-xs">
+              <div className="flex justify-between text-slate-500">
+                <span>Sous-total HT :</span>
+                <span className="font-mono">{ht} DH</span>
+              </div>
+              <div className="flex justify-between text-slate-500">
+                <span>TVA marocaine (20%) :</span>
+                <span className="font-mono">{vat} DH</span>
+              </div>
+              <div className="flex justify-between text-slate-500">
+                <span>Frais de service plateforme (8%) :</span>
+                <span className="font-mono">{fee.toFixed(2)} DH</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-slate-200 text-sm font-bold text-ink">
+                <span>Total TTC Réglé :</span>
+                <span className="font-display font-bold text-brand-600">{gross.toFixed(2)} DH</span>
+              </div>
+              <div className="flex justify-between text-[11px] text-slate-400 pt-1">
+                <span>Net reversé au gestionnaire :</span>
+                <span className="font-mono font-semibold text-emerald-700">{net.toFixed(2)} DH</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer note & cachet numérique */}
+          <div className="rounded-xl border border-dashed border-slate-200 p-3.5 bg-slate-50/70 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Icon n="shield-check" size={17} className="text-emerald-600" />
+              <span>Certifié CMI Maroc · 3D-Secure v2.2 · Transaction confirmée ({paidAt})</span>
+            </div>
+            <span className="font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">Cachet Électronique Spotwork</span>
+          </div>
+        </div>
+
+        {/* Fermeture */}
+        <div className="mt-5 flex justify-end">
+          <button
+            onClick={onClose}
+            className="rounded-full bg-slate-100 hover:bg-slate-200 px-5 py-2 text-xs font-bold text-slate-700 transition"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ================= CARTE ESPACE AVEC SYNCHRONISATION DES PLACES EN DIRECT ================= */
+const SpaceCard=({s,nav,favs,toggleFav,date,bookings=[]})=>{
+  const liked=favs.has(s.id);
+  const avail = getSpaceAvailability(s, date, bookings);
+  return (
+    <article onClick={()=>nav({name:"space",params:{id:s.id,date}})}
+      className={`group cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift ${avail.isSoldOut ? "border-rose-200" : "border-slate-200/80"}`}>
       <div className="relative h-44 md:h-48 overflow-hidden">
         <img src={U(s.imgs[0],700)} alt={s.name} loading="lazy"
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.07]"/>
-        <div className="absolute left-3 top-3"><Badge label={s.badge}/></div>
+        <div className="absolute left-3 top-3 flex flex-col gap-1 items-start">
+          <Badge label={s.badge}/>
+          {date && (
+            avail.isSoldOut ? (
+              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-rose-600 text-white shadow-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse"/>COMPLET (0 place)
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-emerald-600 text-white shadow-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-white"/>{avail.availableSeats} place{avail.availableSeats>1?"s":""} libre{avail.availableSeats>1?"s":""}
+              </span>
+            )
+          )}
+        </div>
         <button onClick={e=>{e.stopPropagation();toggleFav(s.id);}}
           className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full backdrop-blur transition ${liked?"bg-white text-rose-500":"bg-white/85 text-slate-500 hover:text-rose-500"}`}>
           <Icon n="heart" size={16} fill={liked?"currentColor":"none"} className={liked?"pop":""}/>
@@ -464,11 +1016,22 @@ const SpaceCard=({s,nav,favs,toggleFav})=>{
         <p className="mt-0.5 flex items-center gap-1 text-[13px] text-slate-500">
           <Icon n="map-pin" size={12}/>{s.city} · {s.district}
         </p>
-        <p className="mt-1 text-xs text-slate-400">{TYPES.find(t=>t.id===s.type).label} · {s.cap} pers. · {s.surface}</p>
+        <div className="mt-1 flex items-center justify-between text-xs">
+          <span className="text-slate-400">{TYPES.find(t=>t.id===s.type).label} · {s.surface}</span>
+          {avail.isSoldOut ? (
+            <span className="font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+              0 / {avail.totalCapacity} place
+            </span>
+          ) : (
+            <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              {avail.availableSeats} / {avail.totalCapacity} places libres
+            </span>
+          )}
+        </div>
         <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
           <p className="text-[15px]"><b className="font-display">{EUR.format(s.price)}</b><span className="text-slate-400 text-xs"> /{s.unit}</span></p>
-          <span className="flex items-center gap-1 text-xs font-semibold text-brand-600 transition-transform group-hover:translate-x-1">
-            Voir l'espace<Icon n="arrow-right" size={13}/>
+          <span className={`flex items-center gap-1 text-xs font-semibold transition-transform group-hover:translate-x-1 ${avail.isSoldOut ? "text-slate-400" : "text-brand-600"}`}>
+            {avail.isSoldOut ? "Voir planning" : "Voir l'espace"}<Icon n="arrow-right" size={13}/>
           </span>
         </div>
       </div>
@@ -481,6 +1044,8 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
   const [scrolled,setScrolled]=useState(false);
   const [userMenu,setUserMenu]=useState(false);
   const [apiOnline,setApiOnline]=useState(null);
+
+  const isManagerOrAdmin = currentUser && (currentUser.role === 'manager' || currentUser.role === 'admin');
 
   useEffect(()=>{
     const f=()=>setScrolled(window.scrollY>8);f();
@@ -507,7 +1072,7 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
           {link("Accueil",{name:"home"})}
           {link("Explorer",{name:"explore"},"search")}
           {link("Mes réservations",{name:"user"},"calendar-days")}
-          {link("Gestionnaire",{name:"admin"},"bar-chart-3")}
+          {isManagerOrAdmin && link("Gestionnaire",{name:"admin"},"bar-chart-3")}
           {!currentUser && link("Connexion",{name:"login"},"user")}
         </nav>
         <div className="flex items-center gap-2">
@@ -561,7 +1126,7 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
                   {[
                     ["Mon espace client","layout-grid",()=>nav({name:"user"})],
                     ["Mes favoris","heart",()=>nav({name:"user",params:{tab:"favoris"}})],
-                    ["Espace gestionnaire / Admin","bar-chart-3",()=>nav({name:"admin"})]
+                    ...(isManagerOrAdmin ? [["Espace gestionnaire / Admin","bar-chart-3",()=>nav({name:"admin"})]] : [])
                   ].map(([l,i,f])=>(
                     <button key={l} onClick={()=>{f();setUserMenu(false);}} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-mist hover:text-ink">
                       <Icon n={i} size={15} className="text-slate-400"/>{l}
@@ -615,7 +1180,7 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
             {link("Accueil",{name:"home"},"home")}
             {link("Explorer les espaces",{name:"explore"},"search")}
             {link("Mes réservations",{name:"user"},"calendar-days")}
-            {link("Tableau de bord gestionnaire",{name:"admin"},"bar-chart-3")}
+            {isManagerOrAdmin && link("Tableau de bord gestionnaire",{name:"admin"},"bar-chart-3")}
             {currentUser ? (
               <button onClick={()=>{onLogout();setMenuOpen(false);}} className="flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">
                 <Icon n="log-out" size={16}/>Déconnexion ({currentUser.firstName || currentUser.name})
@@ -839,7 +1404,7 @@ const Ring=({v})=>(
 );
 
 /* ================= HOME ================= */
-const Home=({nav,favs,toggleFav,spaces=SPACES})=>{
+const Home=({nav,favs,toggleFav,spaces=SPACES,bookings=[]})=>{
   const featured=spaces.filter(s=>s.featured);
   return (
     <main>
@@ -889,7 +1454,7 @@ const Home=({nav,favs,toggleFav,spaces=SPACES})=>{
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((s,i)=>(
               <div key={s.id} data-reveal style={{transitionDelay:`${i*70}ms`}}>
-                <SpaceCard s={s} nav={nav} favs={favs} toggleFav={toggleFav}/>
+                <SpaceCard s={s} nav={nav} favs={favs} toggleFav={toggleFav} bookings={bookings}/>
               </div>
             ))}
           </div>
@@ -1047,39 +1612,72 @@ const FilterPanel=({f,setF})=>{
   );
 };
 
-const Explore=({params,nav,favs,toggleFav,spaces=SPACES})=>{
+const Explore=({params,nav,favs,toggleFav,spaces=SPACES,bookings=[]})=>{
   const [f,setF]=useState(()=>({
     city:params?.city||"",types:params?.type?[params.type]:[],
-    max:params?.budget?+params.budget:150,am:[]
+    max:params?.budget?+params.budget:150,am:[],
+    date:params?.date||"2026-10-01",
+    onlyAvailable:false
   }));
   const [sort,setSort]=useState("reco");
   const [open,setOpen]=useState(false);
   const results=useMemo(()=>{
-    let r=spaces.filter(s=>
-      (!f.city||s.city===f.city)&&
-      (!f.types.length||f.types.includes(s.type))&&
-      (f.max>=150||s.price<=f.max)&&
-      f.am.every(a=>s.am.includes(a))
-    );
+    let r=spaces.filter(s=>{
+      const matchCity = !f.city || s.city === f.city;
+      const matchType = !f.types.length || f.types.includes(s.type);
+      const matchBudget = f.max >= 150 || s.price <= f.max;
+      const matchAm = f.am.every(a => s.am.includes(a));
+      if (!matchCity || !matchType || !matchBudget || !matchAm) return false;
+      if (f.onlyAvailable && f.date) {
+        const avail = getSpaceAvailability(s, f.date, bookings);
+        if (avail.isSoldOut) return false;
+      }
+      return true;
+    });
     if(sort==="asc")r=[...r].sort((a,b)=>a.price-b.price);
     if(sort==="desc")r=[...r].sort((a,b)=>b.price-a.price);
     if(sort==="note")r=[...r].sort((a,b)=>b.rating-a.rating);
     return r;
-  },[f,sort,spaces]);
+  },[f,sort,spaces,bookings]);
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Kicker>Catalogue</Kicker>
+          <Kicker>Catalogue & Disponibilités en temps réel</Kicker>
           <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">Explorer les espaces</h1>
-          <p className="mt-1 text-sm text-slate-500"><b className="text-ink">{results.length}</b> espace{results.length>1?"s":""} disponible{results.length>1?"s":""}
-            {f.city&&<span> à <b className="text-brand-600">{f.city}</b></span>}</p>
+          <p className="mt-1 text-sm text-slate-500"><b className="text-ink">{results.length}</b> espace{results.length>1?"s":""} {f.onlyAvailable ? "avec places libres" : "référencé" + (results.length>1?"s":"")}
+            {f.city&&<span> à <b className="text-brand-600">{f.city}</b></span>}
+            {f.date&&<span> pour le <b>{fmtDate(f.date)}</b></span>}
+          </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button onClick={()=>setOpen(!open)} className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold lg:hidden">
-            <Icon n="sliders-horizontal" size={15}/>Filtres
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Quick Date Selector */}
+          <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold shadow-2xs">
+            <Icon n="calendar" size={13} className="text-brand-600"/>
+            <span className="text-slate-400">Date :</span>
+            <input
+              type="date"
+              value={f.date}
+              onChange={e=>setF(prev=>({...prev, date:e.target.value}))}
+              className="border-none bg-transparent outline-none text-xs font-bold text-ink cursor-pointer"
+            />
+          </div>
+          {/* Toggle Only Available */}
+          <button
+            onClick={()=>setF(prev=>({...prev, onlyAvailable:!prev.onlyAvailable}))}
+            className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition border ${
+              f.onlyAvailable
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"
+            }`}
+          >
+            <Icon n={f.onlyAvailable ? "check-circle-2" : "filter"} size={13}/>
+            <span>Places libres uniquement</span>
           </button>
-          <select value={sort} onChange={e=>setSort(e.target.value)} className="rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold outline-none focus:border-brand-500">
+          <button onClick={()=>setOpen(!open)} className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold lg:hidden">
+            <Icon n="sliders-horizontal" size={13}/>Filtres
+          </button>
+          <select value={sort} onChange={e=>setSort(e.target.value)} className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold outline-none focus:border-brand-500">
             <option value="reco">Recommandés</option><option value="note">Mieux notés</option>
             <option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option>
           </select>
@@ -1097,15 +1695,15 @@ const Explore=({params,nav,favs,toggleFav,spaces=SPACES})=>{
               <div>
                 <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-mist text-slate-400"><Icon n="search-x" size={24}/></span>
                 <p className="mt-4 font-display font-bold">Aucun espace ne correspond</p>
-                <p className="mt-1 text-sm text-slate-500">Essayez d'élargir vos critères.</p>
-                <button onClick={()=>setF({city:"",types:[],max:150,am:[]})} className="mt-4 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">Effacer les filtres</button>
+                <p className="mt-1 text-sm text-slate-500">{f.onlyAvailable ? "Tous les espaces sont complets pour cette date ou vos filtres sont trop stricts." : "Essayez d'élargir vos critères."}</p>
+                <button onClick={()=>setF({city:"",types:[],max:150,am:[],date:"2026-10-01",onlyAvailable:false})} className="mt-4 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">Effacer les filtres</button>
               </div>
             </div>
           ):(
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {results.map((s,i)=>(
                 <div key={s.id} data-reveal style={{transitionDelay:`${(i%3)*60}ms`}}>
-                  <SpaceCard s={s} nav={nav} favs={favs} toggleFav={toggleFav}/>
+                  <SpaceCard s={s} nav={nav} favs={favs} toggleFav={toggleFav} date={f.date} bookings={bookings}/>
                 </div>
               ))}
             </div>
@@ -1116,26 +1714,53 @@ const Explore=({params,nav,favs,toggleFav,spaces=SPACES})=>{
   );
 };
 
-/* ================= DÉTAIL ESPACE ================= */
-const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
+/* ================= DÉTAIL ESPACE AVEC SYNCHRONISATION DES PLACES ET DU PLANNING ================= */
+const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES,bookings=[]})=>{
   const s=spaces.find(x=>x.id===id);
   const [img,setImg]=useState(0);
-  const [date,setDate]=useState(()=>{const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);});
+  const [date,setDate]=useState(()=>{
+    const d=new Date();
+    d.setDate(d.getDate()+1);
+    return d.toISOString().slice(0,10);
+  });
   const [days,setDays]=useState(1);
   const [slots,setSlots]=useState([]);
   const [err,setErr]=useState("");
+
   if(!s)return <main className="py-24 text-center">Espace introuvable.</main>;
   const liked=favs.has(s.id);
   const isHour=s.unit==="heure";
   const base=isHour?slots.length*s.price:days*s.price;
   const fees=Math.round(base*0.08*100)/100;
-  const flipSlot=h=>setSlots(p=>p.includes(h)?p.filter(x=>x!==h):[...p,h].sort());
+
+  // Calcul dynamique des places et disponibilités selon les réservations enregistrées
+  const availability = useMemo(() => getSpaceAvailability(s, date, bookings), [s, date, bookings]);
+  const upcomingDates = useMemo(() => getNextAvailableDates(s, bookings, 7), [s, bookings]);
+  const bookedHoursSet = useMemo(() => new Set(availability.bookedHours || []), [availability]);
+
+  const flipSlot=h=>{
+    if (availability.isSoldOut) return;
+    setSlots(p=>p.includes(h)?p.filter(x=>x!==h):[...p,h].sort());
+  };
+
   const book=()=>{
+    if (availability.isSoldOut) {
+      setErr(`Cet espace est complet pour le ${fmtDate(date)}. Choisissez une autre date disponible.`);
+      return;
+    }
     if(isHour&&slots.length===0){setErr("Sélectionnez au moins un créneau horaire.");return;}
     setErr("");
-    reserve({key:Date.now(),id:s.id,name:s.name,img:s.imgs[0],city:s.city,date,
-      meta:isHour?`${fmtDate(date)} · ${slots.length} h`:`${fmtDate(date)} · ${days} jour${days>1?"s":""}`,
-      total:base+fees});
+    reserve({
+      key:Date.now(),
+      id:s.id,
+      name:s.name,
+      img:s.imgs[0],
+      city:s.city,
+      date,
+      seats: 1,
+      meta:isHour?`${fmtDate(date)} · ${slots.length} h (${slots.join(', ')})`:`${fmtDate(date)} · ${days} jour${days>1?"s":""}`,
+      total:base+fees
+    });
   };
   const similar=spaces.filter(x=>x.id!==s.id&&(x.city===s.city||x.type===s.type)).slice(0,3);
   return (
@@ -1143,7 +1768,7 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
       <button onClick={()=>nav({name:"explore"})} className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink">
         <Icon n="arrow-left" size={16}/>Retour aux résultats
       </button>
-      <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_380px]">
+      <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_400px]">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge label={s.badge}/>
@@ -1154,6 +1779,34 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
             <span className="flex items-center gap-1"><Icon n="map-pin" size={13}/>{s.city} · {s.district}</span>
             <span className="flex items-center gap-1"><Icon n="star" size={13} fill="currentColor" className="text-amber-400"/><b className="text-ink">{s.rating.toLocaleString('fr-FR')}</b>({s.rev} avis)</span>
           </p>
+
+          {/* Statut disponibilité dynamique */}
+          {availability.isSoldOut ? (
+            <div className="mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs">
+              <div className="flex items-center gap-2 text-rose-800 font-bold text-sm">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white">
+                  <Icon n="alert-triangle" size={13}/>
+                </span>
+                COMPLET pour le {fmtDate(date)} — 0 place disponible
+              </div>
+              <p className="mt-1 text-xs text-rose-700 leading-relaxed">
+                Cet espace est entièrement réservé sur cette date. Consultez les autres dates disponibles ci-contre ou dans le sélecteur ci-dessous.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white">
+                  <Icon n="check" size={13}/>
+                </span>
+                <span>{availability.availableSeats} place{availability.availableSeats>1?"s":""} disponible{availability.availableSeats>1?"s":""} sur {availability.totalCapacity} pour le {fmtDate(date)}</span>
+              </div>
+              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full">
+                Réservation ouverte
+              </span>
+            </div>
+          )}
+
           {/* Galerie */}
           <div className="mt-5 grid grid-cols-4 gap-2.5">
             <div className="col-span-4 overflow-hidden rounded-2xl md:col-span-3">
@@ -1170,11 +1823,11 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
           </div>
           {/* Infos clés */}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[["users","Capacité",`${s.cap} pers.`],["ruler","Surface",s.surface],["clock","Réservation",isHour?"À l'heure":"À la journée"],["badge-check","Accueil","Hôte vérifié"]].map(([i,l,v])=>(
-              <div key={l} className="rounded-xl border border-slate-200 p-3.5">
+            {[["users","Capacité totale",`${s.cap} pers.`],["user-check","Places libres",`${availability.availableSeats} pers.`],["ruler","Surface",s.surface],["clock","Réservation",isHour?"À l'heure":"À la journée"]].map(([i,l,v])=>(
+              <div key={l} className="rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs">
                 <Icon n={i} size={17} className="text-brand-600"/>
                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{l}</p>
-                <p className="text-sm font-bold">{v}</p>
+                <p className="text-sm font-bold text-ink">{v}</p>
               </div>
             ))}
           </div>
@@ -1184,7 +1837,7 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
             <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{s.desc}</p>
             <div className="mt-4 flex items-center gap-3 rounded-2xl bg-mist p-4">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-navy text-sm font-bold text-white">{s.host.split(" ").map(w=>w[0]).join("")}</span>
-              <div><p className="text-sm font-bold">Géré par {s.host}</p><p className="text-xs text-slate-500">Répond en ~1 h · Membre depuis 2022</p></div>
+              <div><p className="text-sm font-bold">Géré par {s.host}</p><p className="text-xs text-slate-500">Répond en ~1 h · Membre certifié PropTech Maroc</p></div>
             </div>
           </div>
           {/* Équipements */}
@@ -1193,7 +1846,7 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
             <div className="mt-3 flex flex-wrap gap-2.5">
               {s.am.map(a=>{
                 const am=AMENITIES.find(x=>x.id===a);
-                return <span key={a} className="flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700"><Icon n={am.icon} size={14} className="text-brand-600"/>{am.label}</span>;
+                return <span key={a} className="flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white"><Icon n={am.icon} size={14} className="text-brand-600"/>{am.label}</span>;
               })}
             </div>
           </div>
@@ -1201,7 +1854,7 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
           <div className="mt-8">
             <h2 className="font-display text-lg font-bold">Avis des membres</h2>
             <div className="mt-4 grid gap-6 md:grid-cols-[220px_1fr]">
-              <div className="rounded-2xl border border-slate-200 p-5 text-center h-fit">
+              <div className="rounded-2xl border border-slate-200 p-5 text-center h-fit bg-white">
                 <p className="font-display text-4xl font-bold">{s.rating.toLocaleString('fr-FR')}</p>
                 <div className="mt-1 flex justify-center"><Stars v={s.rating}/></div>
                 <p className="mt-1 text-xs text-slate-400">{s.rev} avis</p>
@@ -1216,7 +1869,7 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
               </div>
               <div className="space-y-4">
                 {REVIEWS.map(r=>(
-                  <article key={r.n} className="rounded-2xl border border-slate-200 p-5">
+                  <article key={r.n} className="rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs">
                     <div className="flex items-center gap-3">
                       <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{r.n[0]}</span>
                       <div><p className="text-sm font-bold">{r.n}</p><p className="text-[11px] text-slate-400">{r.role} · {r.d}</p></div>
@@ -1229,7 +1882,8 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
             </div>
           </div>
         </div>
-        {/* Carte réservation */}
+
+        {/* Carte réservation synchronisée au planning */}
         <aside className="lg:sticky lg:top-24 h-fit">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lift">
             <div className="flex items-baseline justify-between">
@@ -1238,26 +1892,94 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
                 <Icon n="heart" size={17} fill={liked?"currentColor":"none"} className={liked?"pop":""}/>
               </button>
             </div>
+
+            {/* Planning & Sélecteur de date */}
             <div className="mt-4 space-y-3.5">
-              <Field label="Date">
-                <input type="date" min={todayISO()} value={date} onChange={e=>setDate(e.target.value)} className={inp}/>
+              <Field label="Date souhaitée">
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e=>{
+                    setDate(e.target.value);
+                    setSlots([]);
+                    setErr("");
+                  }}
+                  className={inp}
+                />
               </Field>
+
+              {/* Calendrier rapide des 7 prochains jours */}
+              <div>
+                <p className="text-xs font-semibold text-slate-600 mb-1.5 flex items-center justify-between">
+                  <span>Disponibilités des 7 prochains jours :</span>
+                </p>
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                  {upcomingDates.map(item => {
+                    const isSelected = item.date === date;
+                    return (
+                      <button
+                        key={item.date}
+                        type="button"
+                        onClick={() => {
+                          setDate(item.date);
+                          setSlots([]);
+                          setErr("");
+                        }}
+                        className={`p-2 rounded-xl border text-left text-xs transition ${
+                          isSelected
+                            ? "border-brand-600 bg-brand-50/70 ring-2 ring-brand-600/30"
+                            : item.isSoldOut
+                            ? "border-rose-200 bg-rose-50/50 hover:bg-rose-50"
+                            : "border-slate-200 hover:border-brand-300 bg-white"
+                        }`}
+                      >
+                        <p className="font-bold text-ink truncate capitalize">{item.label}</p>
+                        <span className={`inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.2 rounded ${
+                          item.isSoldOut ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-800"
+                        }`}>
+                          {item.isSoldOut ? "Complet (0)" : `${item.availableSeats} libre${item.availableSeats>1?"s":""}`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {isHour?(
-                <Field label={`Créneaux (${slots.length} sélectionné${slots.length>1?"s":""})`} err={err}>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {HOURS.map((h,i)=>{
-                      const busy=s.busy.includes(i);const on=slots.includes(h);
-                      return (
-                        <button key={h} disabled={busy} onClick={()=>flipSlot(h)}
-                          className={`rounded-lg border px-1 py-2 text-[11px] font-bold transition ${busy?"cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300 line-through":on?"border-brand-600 bg-brand-600 text-white":"border-slate-200 text-slate-600 hover:border-brand-400"}`}>
-                          {h}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <Field label={`Créneaux horaires (${slots.length} sélectionné${slots.length>1?"s":""})`} err={err}>
+                  {availability.isSoldOut ? (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-xs text-rose-700 font-semibold">
+                      Tous les créneaux sont réservés pour cette journée
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {HOURS.map((h,i)=>{
+                        const busyByDefault = s.busy.includes(i);
+                        const busyByBooking = bookedHoursSet.has(h);
+                        const busy = busyByDefault || busyByBooking || availability.isFullDay;
+                        const on = slots.includes(h);
+                        return (
+                          <button
+                            key={h}
+                            disabled={busy}
+                            onClick={()=>flipSlot(h)}
+                            title={busy ? "Créneau déjà réservé" : "Disponible"}
+                            className={`rounded-lg border px-1 py-2 text-[11px] font-bold transition ${
+                              busy
+                                ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300 line-through"
+                                : on
+                                ? "border-brand-600 bg-brand-600 text-white shadow-sm"
+                                : "border-slate-200 text-slate-600 hover:border-brand-400 bg-white"
+                            }`}>
+                            {h}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </Field>
               ):(
-                <Field label="Durée">
+                <Field label="Durée de location">
                   <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
                     <button onClick={()=>setDays(Math.max(1,days-1))} className="grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50"><Icon n="minus" size={14}/></button>
                     <span className="text-sm font-bold">{days} jour{days>1?"s":""}</span>
@@ -1266,23 +1988,45 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
                 </Field>
               )}
             </div>
+
             <div className="mt-5 space-y-2 border-t border-dashed border-slate-200 pt-4 text-sm">
               <div className="flex justify-between text-slate-500"><span>{isHour?`${slots.length} × ${EUR.format(s.price)}`:`${days} × ${EUR.format(s.price)}`}</span><span>{EUR.format(base)}</span></div>
               <div className="flex justify-between text-slate-500"><span>Frais de service (8 %)</span><span>{EUR.format(fees)}</span></div>
-              <div className="flex justify-between pt-1 font-display text-base font-bold"><span>Total</span><span>{EUR.format(base+fees)}</span></div>
+              <div className="flex justify-between pt-1 font-display text-base font-bold"><span>Total TTC</span><span>{EUR.format(base+fees)}</span></div>
             </div>
-            <button onClick={book} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700 active:scale-[.98]">
-              <Icon n="zap" size={16}/>Réserver cet espace
+
+            {/* Bouton de réservation avec blocage en cas de complet */}
+            <button
+              onClick={book}
+              disabled={availability.isSoldOut}
+              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold shadow-lg transition ${
+                availability.isSoldOut
+                  ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
+                  : "bg-brand-600 text-white shadow-brand-600/30 hover:bg-brand-700 active:scale-[.98]"
+              }`}
+            >
+              <Icon n={availability.isSoldOut ? "slash" : "zap"} size={16}/>
+              {availability.isSoldOut ? "Complet pour cette date" : "Réserver cet espace"}
             </button>
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400"><Icon n="shield-check" size={13} className="text-emerald-500"/>Confirmation immédiate · Annulation gratuite 24 h</p>
+
+            {availability.isSoldOut ? (
+              <p className="mt-3 text-center text-xs text-rose-600 font-semibold">
+                Sélectionnez une autre date ci-dessus pour réserver.
+              </p>
+            ) : (
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                <Icon n="shield-check" size={13} className="text-emerald-500"/>Confirmation immédiate · Paiement CMI sécurisé
+              </p>
+            )}
           </div>
         </aside>
       </div>
+
       {/* Similaires */}
       <div className="mt-14">
         <SecHead kicker="Continuez l'exploration" title="Espaces similaires"/>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {similar.map(x=><SpaceCard key={x.id} s={x} nav={nav} favs={favs} toggleFav={toggleFav}/>)}
+          {similar.map(x=><SpaceCard key={x.id} s={x} nav={nav} favs={favs} toggleFav={toggleFav} date={date} bookings={bookings}/>)}
         </div>
       </div>
     </main>
@@ -1463,6 +2207,7 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
   }
   const user = currentUser;
   const [tab,setTab]=useState(initTab||"resas");
+  const [userInvoice, setUserInvoice] = useState(null);
   const [prefs,setPrefs]=useState({mail:true,push:false,news:true,city:user.city||"Casablanca",type:"open"});
   const tabs=[["resas","Mes réservations","calendar-days"],["ia","Recommandations","sparkles"],["favoris","Favoris","heart"],["prefs","Préférences","settings"]];
   const recommendations=useMemo(()=>{
@@ -1517,9 +2262,27 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
                             <span className="flex items-center gap-1"><Icon n="calendar-days" size={12}/>{fmtDate(b.date)}</span>
                             <span className="flex items-center gap-1"><Icon n="clock" size={12}/>{b.meta}</span>
                           </p>
-                          <div className="mt-3.5 flex gap-2">
+                          <div className="mt-3.5 flex flex-wrap gap-2">
                             <button onClick={()=>nav({name:"space",params:{id:s.id}})} className="flex-1 rounded-full bg-brand-50 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100">Voir l'espace</button>
-                            <button onClick={()=>{setBookings(bookings.filter(x=>x.id!==b.id));toast("Réservation annulée (démo)","x");}} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500">Annuler</button>
+                            <button onClick={()=>{
+                              setUserInvoice({
+                                invoiceNumber: b.invoiceRef || `FACT-2026-004${b.id.toString().slice(-1) || '1'}`,
+                                clientName: user.name,
+                                clientEmail: user.email,
+                                clientPhone: user.phone || "+212 6 61 23 45 67",
+                                clientCity: user.city || "Casablanca",
+                                spaceName: s.name,
+                                date: b.date,
+                                timeSlot: b.meta,
+                                grossAmount: b.totalPrice || (s.price * (b.hours || 3)),
+                                paymentMethod: b.paymentMethod || "Carte Bancaire Maroc CMI (3D Secure)",
+                                paidAt: "01/10/2026 10:15",
+                                status: b.status === "Confirmée" ? "paid" : "pending"
+                              });
+                            }} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1">
+                              <Icon n="file-text" size={13}/>Reçu / Facture
+                            </button>
+                            <button onClick={()=>{setBookings(bookings.filter(x=>x.id!==b.id));toast("Réservation annulée (démo)","x");}} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500">Annuler</button>
                           </div>
                         </div>
                       </article>
@@ -1541,6 +2304,27 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
                         </div>
                         <span className="hidden sm:block text-xs font-semibold text-slate-400">{EUR.format(s.price)}</span>
                         <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}`}>{b.status}</span>
+                        <button
+                          onClick={()=>{
+                            setUserInvoice({
+                              invoiceNumber: `FACT-2026-003${b.id.toString().slice(-1) || '0'}`,
+                              clientName: user.name,
+                              clientEmail: user.email,
+                              clientPhone: user.phone || "+212 6 61 23 45 67",
+                              clientCity: user.city || "Casablanca",
+                              spaceName: s.name,
+                              date: b.date,
+                              timeSlot: b.meta,
+                              grossAmount: s.price * 4,
+                              paymentMethod: "Carte Bancaire Maroc CMI (3D Secure)",
+                              paidAt: "20/09/2026 14:00",
+                              status: "paid"
+                            });
+                          }}
+                          className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-brand-600 hover:bg-slate-50 transition"
+                        >
+                          <Icon n="file-text" size={11}/>Facture
+                        </button>
                         <button onClick={()=>nav({name:"space",params:{id:s.id}})} className="text-slate-300 transition hover:text-brand-600"><Icon n="chevron-right" size={17}/></button>
                       </div>
                     );
@@ -1608,6 +2392,13 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
           )}
         </div>
       </div>
+
+      {/* Modale Facture / Reçu pour le client */}
+      <InvoiceModal
+        invoice={userInvoice}
+        isOpen={Boolean(userInvoice)}
+        onClose={() => setUserInvoice(null)}
+      />
     </main>
   );
 };
@@ -1943,46 +2734,22 @@ const AdminDash=({
   const [range, setRange] = useState("30j");
   const [cityFilter, setCityFilter] = useState("");
   const [bookingFilter, setBookingFilter] = useState("all");
+  const [paymentsStatus, setPaymentsStatus] = useState("all");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [txns, setTxns] = useState(INITIAL_TRANSACTIONS);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSpace, setEditingSpace] = useState(null);
 
-  if (!currentUser) {
-    return (
-      <main className="mx-auto max-w-4xl px-4 py-16">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 md:p-12 text-center shadow-card">
-          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-600 mb-4">
-            <Icon n="lock" size={30}/>
-          </span>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-ink">Espace Gestionnaire & Administration</h1>
-          <p className="mt-3 text-sm text-slate-500 max-w-lg mx-auto">
-            Vous devez être connecté avec un compte Gestionnaire ou Administrateur pour gérer les espaces au Maroc, ajuster les tarifs en Dirhams et valider les demandes de réservation.
-          </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 max-w-lg mx-auto">
-            <button
-              onClick={() => {
-                onSelectUser(PRESET_ACCOUNTS[1]);
-                if (toast) toast("Connecté en tant que Gestionnaire (Mehdi El Fassi)", "check");
-              }}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/25 hover:bg-indigo-700 transition">
-              <Icon n="bar-chart-2" size={16}/>Connexion Gestionnaire (Mehdi)
-            </button>
-            <button
-              onClick={() => {
-                onSelectUser(PRESET_ACCOUNTS[2]);
-                if (toast) toast("Connectée en tant qu'Administratrice (Fatima Zahra Alaoui)", "check");
-              }}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-navy px-5 py-3.5 text-xs font-bold text-white shadow-lg shadow-navy/25 hover:bg-slate-800 transition">
-              <Icon n="shield" size={16}/>Connexion Admin (Fatima Zahra)
-            </button>
-          </div>
-          <button
-            onClick={() => nav({ name: "login" })}
-            className="mt-6 text-xs font-semibold text-slate-400 hover:text-slate-600 transition">
-            Ouvrir la page de connexion complète →
-          </button>
-        </div>
-      </main>
-    );
+  useEffect(() => {
+    SpotworkAPI.getPayments().then(res => {
+      if (res && res.transactions && res.transactions.length > 0) {
+        setTxns(res.transactions);
+      }
+    });
+  }, []);
+
+  if (!currentUser || (currentUser.role !== "manager" && currentUser.role !== "admin")) {
+    return <AccessDenied nav={nav} currentUser={currentUser} onSelectUser={onSelectUser} />;
   }
 
   const user = currentUser;
@@ -2011,17 +2778,6 @@ const AdminDash=({
 
   return (
     <main className="bg-mist min-h-screen pb-16">
-      {user.role === "client" && (
-        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 font-medium">
-            <Icon n="info" size={14} className="text-amber-600"/>
-            Aperçu Gestionnaire : vous êtes actuellement connecté en tant que <b>{user.name}</b> (Client).
-          </span>
-          <button onClick={() => onSelectUser(PRESET_ACCOUNTS[1])} className="font-bold underline text-brand-700 hover:text-brand-900">
-            Basculer sur le compte Gestionnaire (Mehdi El Fassi) →
-          </button>
-        </div>
-      )}
 
       <div className="bg-navy">
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
@@ -2050,6 +2806,7 @@ const AdminDash=({
               { id: "overview", label: "Vue d'ensemble", icon: "bar-chart-3" },
               { id: "spaces", label: `Espaces & Tarifs (${spaces.length})`, icon: "building" },
               { id: "bookings", label: `Demandes de réservation`, icon: "calendar-days", badge: pendingBookings.length },
+              { id: "payments", label: `Paiements & Revenus`, icon: "credit-card" },
               { id: "users", label: `Membres & Rôles (${PRESET_ACCOUNTS.length})`, icon: "users" }
             ].map(t => (
               <button
@@ -2439,6 +3196,164 @@ const AdminDash=({
           </div>
         )}
 
+        {tab === "payments" && (
+          <div className="space-y-6">
+            {/* KPI financiers */}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Chiffre d'Affaires Brut</p>
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><Icon n="trending-up" size={15}/></span>
+                </div>
+                <p className="mt-2 font-display text-2xl font-bold text-ink">
+                  {txns.filter(t => t.status === "paid").reduce((acc, t) => acc + (t.grossAmount || 0), 0).toLocaleString('fr-FR')} DH
+                </p>
+                <p className="mt-1 text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                  <Icon n="check-circle-2" size={12}/>Encaissements validés CMI Maroc
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Commissions Spotwork (8%)</p>
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600"><Icon n="percent" size={15}/></span>
+                </div>
+                <p className="mt-2 font-display text-2xl font-bold text-brand-600">
+                  {txns.filter(t => t.status === "paid").reduce((acc, t) => acc + (t.feeAmount || 0), 0).toFixed(2)} DH
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Frais de service & passerelle bancaire
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Revenu Net Reversé</p>
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-purple-50 text-purple-600"><Icon n="wallet" size={15}/></span>
+                </div>
+                <p className="mt-2 font-display text-2xl font-bold text-purple-700">
+                  {txns.filter(t => t.status === "paid").reduce((acc, t) => acc + (t.netAmount || 0), 0).toFixed(2)} DH
+                </p>
+                <p className="mt-1 text-xs text-purple-600 font-semibold flex items-center gap-1">
+                  <Icon n="arrow-up-right" size={12}/>Virements bancaires aux gestionnaires
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Succès Règlements CMI</p>
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-600"><Icon n="shield-check" size={15}/></span>
+                </div>
+                <p className="mt-2 font-display text-2xl font-bold text-ink">100 %</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Protocole 3D-Secure certifié Maroc
+                </p>
+              </div>
+            </div>
+
+            {/* Filtres & Recherche de transactions */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">Statut :</span>
+                {[
+                  { id: "all", label: `Tous (${txns.length})` },
+                  { id: "paid", label: `Payés (${txns.filter(t => t.status === "paid").length})` },
+                  { id: "pending", label: `En attente (${txns.filter(t => t.status === "pending").length})` }
+                ].map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setPaymentsStatus(s.id)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${paymentsStatus === s.id ? "bg-navy text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => toast("Export comptable des transactions au format Excel / CSV", "download")}
+                className="flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+              >
+                <Icon n="file-spreadsheet" size={13}/>Exporter Journal Comptable
+              </button>
+            </div>
+
+            {/* Table des transactions financières */}
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]">
+                      <th className="py-3 px-4 font-bold">Transaction / Facture</th>
+                      <th className="py-3 px-4 font-bold">Date & Heure</th>
+                      <th className="py-3 px-4 font-bold">Espace & Ville</th>
+                      <th className="py-3 px-4 font-bold">Client</th>
+                      <th className="py-3 px-4 font-bold">Règlement</th>
+                      <th className="py-3 px-4 font-bold text-right">Brut (DH)</th>
+                      <th className="py-3 px-4 font-bold text-right">Frais (8%)</th>
+                      <th className="py-3 px-4 font-bold text-right">Net Reversé (DH)</th>
+                      <th className="py-3 px-4 font-bold text-center">Statut</th>
+                      <th className="py-3 px-4 font-bold text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {txns.filter(t => paymentsStatus === "all" || t.status === paymentsStatus).map(txn => (
+                      <tr key={txn.id} className="hover:bg-slate-50/60 transition">
+                        <td className="py-3.5 px-4">
+                          <p className="font-bold text-ink">{txn.id}</p>
+                          <p className="text-[10px] text-brand-600 font-mono font-semibold">{txn.invoiceNumber}</p>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500">
+                          <p className="font-semibold text-slate-700">{txn.date}</p>
+                          <p className="text-[10px] text-slate-400">{txn.paidAt}</p>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-bold text-ink">{txn.spaceName}</p>
+                          <p className="text-[10px] text-slate-500">{txn.city} · {txn.timeSlot}</p>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-bold text-ink">{txn.clientName}</p>
+                          <p className="text-[10px] text-slate-400 truncate max-w-[140px]">{txn.clientEmail}</p>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600">
+                          <p className="font-semibold text-xs flex items-center gap-1">
+                            <Icon n="credit-card" size={12} className="text-brand-600"/>
+                            CMI ···· {txn.cardLast4 || "4242"}
+                          </p>
+                          <p className="text-[10px] text-slate-400">{txn.paymentMethod}</p>
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-ink">
+                          {txn.grossAmount.toFixed(2)} DH
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono text-slate-500">
+                          {txn.feeAmount.toFixed(2)} DH
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700">
+                          {txn.netAmount.toFixed(2)} DH
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            txn.status === "paid" ? "bg-emerald-100 text-emerald-800" : txn.status === "pending" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"
+                          }`}>
+                            {txn.status === "paid" ? "✓ Payé" : txn.status === "pending" ? "En attente" : "Annulé"}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <button
+                            onClick={() => setSelectedInvoice(txn)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-bold text-brand-700 hover:bg-brand-100 transition shadow-2xs"
+                          >
+                            <Icon n="file-text" size={12}/>Facture
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {tab === "users" && (
           <div className="space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
@@ -2493,6 +3408,11 @@ const AdminDash=({
         isOpen={Boolean(editingSpace)}
         onClose={() => setEditingSpace(null)}
         onUpdateSpace={onUpdateSpace}
+      />
+      <InvoiceModal
+        invoice={selectedInvoice}
+        isOpen={Boolean(selectedInvoice)}
+        onClose={() => setSelectedInvoice(null)}
       />
     </main>
   );
@@ -2951,15 +3871,34 @@ const App=()=>{
     </div>
   );
 
+  const isManagerOrAdmin = currentUser && (currentUser.role === 'manager' || currentUser.role === 'admin');
+
   return (
     <div className="font-body">
       <Navbar view={view} nav={nav} cartCount={cart.length} menuOpen={menuOpen} setMenuOpen={setMenuOpen} currentUser={currentUser} onSelectUser={onLogin} onLogout={onLogout} toast={toast}/>
-      {view.name==="home"&&<Home nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList}/>}
-      {view.name==="explore"&&<Explore params={view.params} nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList}/>}
-      {view.name==="space"&&<SpaceDetail id={view.params.id} nav={nav} favs={favs} toggleFav={toggleFav} reserve={reserve} spaces={spacesList}/>}
+      {view.name==="home"&&<Home nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList} bookings={allBookings}/>}
+      {view.name==="explore"&&<Explore params={view.params} nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList} bookings={allBookings}/>}
+      {view.name==="space"&&<SpaceDetail id={view.params.id} nav={nav} favs={favs} toggleFav={toggleFav} reserve={reserve} spaces={spacesList} bookings={allBookings}/>}
       {view.name==="checkout"&&<Checkout cart={cart} setCart={setCart} nav={nav} onDone={onDone} toast={toast} currentUser={currentUser}/>}
       {view.name==="user"&&<UserDash initTab={view.params?.tab} bookings={userBookings} setBookings={setUserBookings} favs={favs} toggleFav={toggleFav} nav={nav} toast={toast} currentUser={currentUser} spaces={spacesList}/>}
-      {view.name==="admin"&&<AdminDash nav={nav} toast={toast} currentUser={currentUser} onSelectUser={onLogin} spaces={spacesList} onUpdateSpace={handleUpdateSpace} onCreateSpace={handleCreateSpace} onDeleteSpace={handleDeleteSpace} bookings={allBookings} onUpdateBookingStatus={handleUpdateBookingStatus}/>}
+      {view.name==="admin" && (
+        isManagerOrAdmin ? (
+          <AdminDash
+            nav={nav}
+            toast={toast}
+            currentUser={currentUser}
+            onSelectUser={onLogin}
+            spaces={spacesList}
+            onUpdateSpace={handleUpdateSpace}
+            onCreateSpace={handleCreateSpace}
+            onDeleteSpace={handleDeleteSpace}
+            bookings={allBookings}
+            onUpdateBookingStatus={handleUpdateBookingStatus}
+          />
+        ) : (
+          <AccessDenied nav={nav} currentUser={currentUser} onSelectUser={onLogin} />
+        )
+      )}
       {view.name==="login"&&<LoginPage currentUser={currentUser} onLogin={onLogin} nav={nav} toast={toast}/>}
       <Footer nav={nav} toast={toast}/>
       {/* Toasts */}

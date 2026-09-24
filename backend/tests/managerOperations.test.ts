@@ -85,4 +85,26 @@ describe('API Manager Operations - Gestion des espaces & demandes', () => {
     expect(res.body.status).toBe('success');
     expect(res.body.message).toContain('supprimé');
   });
+
+  it('bloque la consultation des paiements et revenus pour un client (403)', async () => {
+    const res = await request(app)
+      .get('/api/manager/payments')
+      .set('Authorization', `Bearer ${clientToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('FORBIDDEN');
+  });
+
+  it('permet au gestionnaire d’accéder à l’historique des paiements et revenus (200)', async () => {
+    const res = await request(app)
+      .get('/api/manager/payments')
+      .set('Authorization', `Bearer ${managerToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+    expect(res.body.data.summary).toBeDefined();
+    expect(res.body.data.summary.totalGross).toBeGreaterThan(0);
+    expect(res.body.data.summary.currency).toBe('MAD');
+    expect(Array.isArray(res.body.data.payments)).toBe(true);
+  });
 });

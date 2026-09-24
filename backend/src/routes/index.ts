@@ -78,5 +78,6 @@ router.post('/reviews', authenticate, validateBody(createReviewSchema), ReviewsC
 // ==============================================================================
 router.get('/manager/dashboard', authenticate, requireRole('manager', 'admin'), ManagerController.getDashboard);
 router.get('/manager/bookings', authenticate, requireRole('manager', 'admin'), ManagerController.getManagerBookings);
+router.get('/manager/payments', authenticate, requireRole('manager', 'admin'), ManagerController.getPayments);
 
 export default router;

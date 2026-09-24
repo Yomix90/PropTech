@@ -195,6 +195,18 @@ const SpotworkAPI = {
     } catch (e) {
       return { status: "error", message: e.message };
     }
+  },
+  async getPayments() {
+    try {
+      const res = await fetch(`${API_BASE}/manager/payments`, {
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` }
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data;
+    } catch {
+      return null;
+    }
   }
 };
 const PRESET_ACCOUNTS = [
@@ -324,11 +336,71 @@ const INITIAL_MANAGER_BOOKINGS = [
     spaceName: "L'Atelier Maarif",
     city: "Casablanca",
     date: "2026-10-01",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
-    hours: 8,
-    totalPrice: 360,
+    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e compl\xE8te)",
+    hours: 9,
+    seats: 45,
+    totalPrice: 405,
     status: "confirmed",
-    createdAt: "Il y a 2h"
+    createdAt: "Il y a 2h",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0041"
+  },
+  {
+    id: "req-1b",
+    clientName: "OCP Solutions & Tech",
+    clientEmail: "contact@ocp-solutions.ma",
+    clientPhone: "+212 5 22 99 88 77",
+    clientInitials: "OS",
+    spaceId: 1,
+    spaceName: "L'Atelier Maarif",
+    city: "Casablanca",
+    date: "2026-10-02",
+    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e compl\xE8te)",
+    hours: 9,
+    seats: 45,
+    totalPrice: 405,
+    status: "confirmed",
+    createdAt: "Il y a 4h",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0042"
+  },
+  {
+    id: "req-3a",
+    clientName: "Casablanca Finance City Group",
+    clientEmail: "corporate@cfc.ma",
+    clientPhone: "+212 5 22 45 12 34",
+    clientInitials: "CF",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-01",
+    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e compl\xE8te)",
+    hours: 9,
+    seats: 6,
+    totalPrice: 1080,
+    status: "confirmed",
+    createdAt: "Hier",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0043"
+  },
+  {
+    id: "req-3b",
+    clientName: "Casablanca Finance City Group",
+    clientEmail: "corporate@cfc.ma",
+    clientPhone: "+212 5 22 45 12 34",
+    clientInitials: "CF",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-02",
+    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e compl\xE8te)",
+    hours: 9,
+    seats: 6,
+    totalPrice: 1080,
+    status: "confirmed",
+    createdAt: "Hier",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0044"
   },
   {
     id: "req-2",
@@ -342,9 +414,12 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-10-05",
     timeSlot: "14:00 \u2013 17:00 (3h)",
     hours: 3,
+    seats: 10,
     totalPrice: 150,
     status: "pending",
-    createdAt: "Il y a 35 min"
+    createdAt: "Il y a 35 min",
+    paymentMethod: "Pr\xE9-autorisation CB CMI",
+    invoiceRef: "FACT-2026-0045"
   },
   {
     id: "req-3",
@@ -358,9 +433,12 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-10-06",
     timeSlot: "10:00 \u2013 13:00 (3h)",
     hours: 3,
+    seats: 4,
     totalPrice: 195,
     status: "pending",
-    createdAt: "Il y a 1h"
+    createdAt: "Il y a 1h",
+    paymentMethod: "Pr\xE9-autorisation CB CMI",
+    invoiceRef: "FACT-2026-0046"
   },
   {
     id: "req-4",
@@ -374,9 +452,12 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-10-08",
     timeSlot: "14:00 \u2013 17:00 (3h)",
     hours: 3,
+    seats: 1,
     totalPrice: 75,
     status: "confirmed",
-    createdAt: "Hier"
+    createdAt: "Hier",
+    paymentMethod: "Carte Bancaire CMI (3D Secure)",
+    invoiceRef: "FACT-2026-0047"
   },
   {
     id: "req-5",
@@ -390,9 +471,12 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-10-10",
     timeSlot: "09:00 \u2013 12:00 (3h)",
     hours: 3,
+    seats: 2,
     totalPrice: 360,
     status: "pending",
-    createdAt: "Il y a 10 min"
+    createdAt: "Il y a 10 min",
+    paymentMethod: "Pr\xE9-autorisation CB CMI",
+    invoiceRef: "FACT-2026-0048"
   },
   {
     id: "req-6",
@@ -406,11 +490,210 @@ const INITIAL_MANAGER_BOOKINGS = [
     date: "2026-09-28",
     timeSlot: "09:00 \u2013 17:00 (8h)",
     hours: 8,
+    seats: 1,
     totalPrice: 320,
     status: "cancelled",
-    createdAt: "Il y a 3j"
+    createdAt: "Il y a 3j",
+    paymentMethod: "Remboursement Carte CMI",
+    invoiceRef: "FACT-2026-0049"
   }
 ];
+const INITIAL_TRANSACTIONS = [
+  {
+    id: "TXN-2026-8801",
+    bookingId: "req-1",
+    clientName: "Youssef Amrani",
+    clientEmail: "youssef@proptech.ma",
+    clientPhone: "+212 6 61 23 45 67",
+    clientCity: "Casablanca",
+    spaceId: 1,
+    spaceName: "L'Atelier Maarif",
+    city: "Casablanca",
+    date: "2026-10-01",
+    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
+    paidAt: "01/10/2026 09:12",
+    grossAmount: 405,
+    feeAmount: 32.4,
+    netAmount: 372.6,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "4242",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0041"
+  },
+  {
+    id: "TXN-2026-8802",
+    bookingId: "req-1b",
+    clientName: "OCP Solutions & Tech",
+    clientEmail: "contact@ocp-solutions.ma",
+    clientPhone: "+212 5 22 99 88 77",
+    clientCity: "Casablanca",
+    spaceId: 1,
+    spaceName: "L'Atelier Maarif",
+    city: "Casablanca",
+    date: "2026-10-02",
+    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
+    paidAt: "01/10/2026 14:30",
+    grossAmount: 405,
+    feeAmount: 32.4,
+    netAmount: 372.6,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "8891",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0042"
+  },
+  {
+    id: "TXN-2026-8803",
+    bookingId: "req-3a",
+    clientName: "Casablanca Finance City Group",
+    clientEmail: "corporate@cfc.ma",
+    clientPhone: "+212 5 22 45 12 34",
+    clientCity: "Casablanca",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-01",
+    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
+    paidAt: "30/09/2026 18:45",
+    grossAmount: 1080,
+    feeAmount: 86.4,
+    netAmount: 993.6,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "1092",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0043"
+  },
+  {
+    id: "TXN-2026-8804",
+    bookingId: "req-3b",
+    clientName: "Casablanca Finance City Group",
+    clientEmail: "corporate@cfc.ma",
+    clientPhone: "+212 5 22 45 12 34",
+    clientCity: "Casablanca",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-02",
+    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
+    paidAt: "30/09/2026 18:47",
+    grossAmount: 1080,
+    feeAmount: 86.4,
+    netAmount: 993.6,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "1092",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0044"
+  },
+  {
+    id: "TXN-2026-8805",
+    bookingId: "req-4",
+    clientName: "Nadia Idrissi",
+    clientEmail: "nadia.idrissi@digital.ma",
+    clientPhone: "+212 6 64 12 34 56",
+    clientCity: "Tanger",
+    spaceId: 5,
+    spaceName: "Marina Bay Focus",
+    city: "Tanger",
+    date: "2026-10-08",
+    timeSlot: "14:00 \u2013 17:00 (3h)",
+    paidAt: "24/09/2026 15:03",
+    grossAmount: 75,
+    feeAmount: 6,
+    netAmount: 69,
+    paymentMethod: "Carte Bancaire Maroc CMI",
+    cardLast4: "5512",
+    status: "paid",
+    invoiceNumber: "FACT-2026-0045"
+  },
+  {
+    id: "TXN-2026-8806",
+    bookingId: "req-2",
+    clientName: "Salma Tazi",
+    clientEmail: "salma.tazi@techmaroc.ma",
+    clientPhone: "+212 6 62 89 01 23",
+    clientCity: "Rabat",
+    spaceId: 4,
+    spaceName: "Le Hub Agdal",
+    city: "Rabat",
+    date: "2026-10-05",
+    timeSlot: "14:00 \u2013 17:00 (3h)",
+    paidAt: "En attente de validation",
+    grossAmount: 150,
+    feeAmount: 12,
+    netAmount: 138,
+    paymentMethod: "Pr\xE9-autorisation CB CMI",
+    cardLast4: "9934",
+    status: "pending",
+    invoiceNumber: "FACT-2026-0046"
+  }
+];
+const getSpaceAvailability = (space, dateStr, bookings = []) => {
+  if (!space) return { availableSeats: 0, totalCapacity: 0, isSoldOut: false, isFullDay: false, bookedHours: [] };
+  const cap = space.cap || 1;
+  if (!dateStr) {
+    return { availableSeats: cap, totalCapacity: cap, isSoldOut: false, isFullDay: false, bookedHours: [] };
+  }
+  const dayBookings = (bookings || []).filter(
+    (b) => (b.spaceId === space.id || b.id === space.id) && b.date === dateStr && b.status !== "cancelled"
+  );
+  let bookedSeats = 0;
+  const bookedHoursSet = /* @__PURE__ */ new Set();
+  let isFullDay = false;
+  for (const b of dayBookings) {
+    const isExclusiveRoom = ["office", "meeting", "booth", "studio"].includes(space.type);
+    const isJournee = b.timeSlot && b.timeSlot.includes("Journ\xE9e") || b.meta && b.meta.includes("Journ\xE9e") || b.hours && b.hours >= 8;
+    if (isJournee) {
+      isFullDay = true;
+      bookedSeats = cap;
+      HOURS.forEach((h) => bookedHoursSet.add(h));
+    } else {
+      const slotText = b.timeSlot || b.meta || "";
+      const match = slotText.match(/(\d{2}:\d{2})\s*–\s*(\d{2}:\d{2})/);
+      if (match) {
+        const start = match[1];
+        const end = match[2];
+        const startIdx = HOURS.indexOf(start);
+        const endIdx = HOURS.indexOf(end);
+        if (startIdx !== -1 && endIdx !== -1) {
+          for (let i = startIdx; i < endIdx; i++) {
+            bookedHoursSet.add(HOURS[i]);
+          }
+        }
+      }
+      if (isExclusiveRoom) {
+        bookedSeats = cap;
+      } else {
+        bookedSeats += b.seats || 1;
+      }
+    }
+  }
+  const availableSeats = Math.max(0, cap - bookedSeats);
+  const isSoldOut = isFullDay || availableSeats === 0 || bookedHoursSet.size >= HOURS.length;
+  return {
+    availableSeats,
+    totalCapacity: cap,
+    isSoldOut,
+    isFullDay,
+    bookedHours: Array.from(bookedHoursSet)
+  };
+};
+const getNextAvailableDates = (space, bookings = [], daysAhead = 7) => {
+  const dates = [];
+  const base = /* @__PURE__ */ new Date();
+  for (let i = 0; i < daysAhead; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const avail = getSpaceAvailability(space, dateStr, bookings);
+    dates.push({
+      date: dateStr,
+      availableSeats: avail.availableSeats,
+      totalCapacity: avail.totalCapacity,
+      isSoldOut: avail.isSoldOut,
+      label: d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })
+    });
+  }
+  return dates;
+};
 const Stars = ({ v, size = 13 }) => /* @__PURE__ */ React.createElement("span", { className: "inline-flex gap-0.5 text-amber-400" }, [1, 2, 3, 4, 5].map((i) => /* @__PURE__ */ React.createElement(Icon, { key: i, n: "star", size, fill: i <= Math.round(v) ? "currentColor" : "none", className: i <= Math.round(v) ? "" : "text-slate-300" })));
 const Badge = ({ label }) => {
   if (!label) return null;
@@ -423,13 +706,87 @@ const Toggle = ({ on, onClick }) => /* @__PURE__ */ React.createElement("button"
 const Field = ({ label, err, children }) => /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-slate-600 mb-1.5" }, label), children, err && /* @__PURE__ */ React.createElement("p", { className: "flex items-center gap-1 text-xs text-rose-600 mt-1.5" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-circle", size: 12 }), err));
 const inp = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10";
 const inpErr = "border-rose-400 focus:border-rose-500 focus:ring-rose-500/10";
-const SpaceCard = ({ s, nav, favs, toggleFav }) => {
+const AccessDenied = ({ nav, currentUser, onSelectUser }) => {
+  return /* @__PURE__ */ React.createElement("main", { className: "min-h-[75vh] flex items-center justify-center py-12 px-4 bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-lg w-full text-center bg-white rounded-3xl border border-slate-200/90 p-8 md:p-10 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-5 shadow-sm" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-alert", size: 32 })), /* @__PURE__ */ React.createElement("span", { className: "inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-100 text-rose-700 mb-3" }, "Erreur 403 \xB7 Acc\xE8s Restreint"), /* @__PURE__ */ React.createElement("h1", { className: "font-display text-2xl font-bold text-slate-900 mb-2" }, "Espace R\xE9serv\xE9 aux Gestionnaires"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-500 mb-6 leading-relaxed" }, currentUser ? /* @__PURE__ */ React.createElement(React.Fragment, null, "Vous \xEAtes actuellement connect\xE9 en tant que ", /* @__PURE__ */ React.createElement("b", null, currentUser.name), " (", /* @__PURE__ */ React.createElement("span", { className: "text-brand-600 font-semibold" }, currentUser.roleLabel || currentUser.role), "). Ce tableau de bord est strictement r\xE9serv\xE9 aux gestionnaires d'espaces et administrateurs autoris\xE9s.") : /* @__PURE__ */ React.createElement(React.Fragment, null, "Vous devez \xEAtre connect\xE9 avec un compte gestionnaire ou administrateur pour acc\xE9der \xE0 la gestion des espaces, aux plannings et aux revenus.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-3 text-left" }, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-1" }, "Basculer sur un compte autoris\xE9 :"), PRESET_ACCOUNTS.filter((a) => a.role === "manager" || a.role === "admin").map((acc) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: acc.id,
+      onClick: () => {
+        if (onSelectUser) onSelectUser(acc);
+        nav({ name: "admin" });
+      },
+      className: "w-full flex items-center justify-between p-3.5 rounded-2xl border border-brand-200 bg-brand-50/50 hover:bg-brand-50 hover:border-brand-300 transition text-left text-xs font-semibold text-brand-900"
+    },
+    /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: `w-8 h-8 rounded-xl text-white font-bold grid place-items-center text-xs shadow-sm ${acc.avatarBg}` }, acc.initials), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink" }, acc.name), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-500" }, acc.roleLabel, " \xB7 ", acc.city))),
+    /* @__PURE__ */ React.createElement("span", { className: "text-brand-600 font-bold flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-brand-200 shadow-2xs" }, "Se connecter ", /* @__PURE__ */ React.createElement(Icon, { n: "arrow-right", size: 13 }))
+  )), /* @__PURE__ */ React.createElement("div", { className: "pt-3 flex gap-2.5" }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => nav({ name: "explore" }),
+      className: "flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition text-center"
+    },
+    "Explorer les espaces"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => nav({ name: "home" }),
+      className: "flex-1 py-2.5 px-4 rounded-xl bg-navy text-xs font-bold text-white hover:bg-slate-800 transition text-center"
+    },
+    "Retour \xE0 l'accueil"
+  )))));
+};
+const InvoiceModal = ({ invoice, isOpen, onClose }) => {
+  if (!isOpen || !invoice) return null;
+  const handlePrint = () => {
+    window.print();
+  };
+  const invoiceNum = invoice.invoiceNumber || invoice.invoiceRef || `FACT-2026-00${invoice.id || "01"}`;
+  const clientName = invoice.clientName || invoice.name || "Client PropTech";
+  const clientEmail = invoice.clientEmail || invoice.email || "client@proptech.ma";
+  const clientPhone = invoice.clientPhone || "+212 6 61 00 00 00";
+  const clientCity = invoice.clientCity || invoice.city || "Casablanca";
+  const spaceName = invoice.spaceName || invoice.name || "Espace Coworking";
+  const dateStr = invoice.date || "01/10/2026";
+  const timeSlot = invoice.timeSlot || invoice.meta || "09:00 \u2013 18:00 (Journ\xE9e)";
+  const gross = Number(invoice.grossAmount || invoice.totalPrice || invoice.total || 300);
+  const fee = Number(invoice.feeAmount || (gross * 0.08).toFixed(2));
+  const net = Number(invoice.netAmount || (gross - fee).toFixed(2));
+  const ht = (gross / 1.2).toFixed(2);
+  const vat = (gross - Number(ht)).toFixed(2);
+  const paymentMethod = invoice.paymentMethod || "Carte Bancaire Maroc CMI (3D Secure)";
+  const paidAt = invoice.paidAt || "01/10/2026 10:15";
+  return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto" }, /* @__PURE__ */ React.createElement("div", { className: "relative w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 my-8 text-ink" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-4 mb-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2.5 rounded-2xl bg-brand-50 text-brand-700" }, /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 22 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-display font-bold text-base" }, "Facture L\xE9gale & Re\xE7u CMI"), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400 font-mono" }, invoiceNum))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: handlePrint,
+      className: "inline-flex items-center gap-1.5 rounded-full bg-navy px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition shadow-sm"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "printer", size: 14 }),
+    " Imprimer / PDF"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: onClose,
+      className: "p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "x", size: 18 })
+  ))), /* @__PURE__ */ React.createElement("div", { className: "border border-slate-200 rounded-2xl p-6 bg-white space-y-6 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-brand-600 text-white font-bold text-sm" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 16 })), /* @__PURE__ */ React.createElement("span", { className: "font-display text-lg font-bold" }, "SPOTWORK MAROC SARL AU")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1" }, "142 Boulevard d'Anfa, 5\xE8me \xE9tage"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "20050 Casablanca, Maroc"), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400 mt-1 font-mono leading-tight" }, "IF : 45892014 \xB7 ICE : 002938475000089", /* @__PURE__ */ React.createElement("br", null), "RC Casablanca : 512948 \xB7 Patente : 34109284")), /* @__PURE__ */ React.createElement("div", { className: "text-right" }, /* @__PURE__ */ React.createElement("span", { className: "inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2" }, "\u2713 Facture Acquitt\xE9e"), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "R\xE9f : ", /* @__PURE__ */ React.createElement("b", { className: "font-mono text-ink" }, invoiceNum)), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "Date d'\xE9mission : ", /* @__PURE__ */ React.createElement("b", null, dateStr)), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "R\xE8glement : ", /* @__PURE__ */ React.createElement("b", null, paymentMethod)))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-4 border border-slate-100" }, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1" }, "Client factur\xE9 :"), /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink" }, clientName), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, clientEmail, " \xB7 ", clientPhone), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, clientCity, ", Maroc")), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { className: "border-b border-slate-200 text-slate-400 uppercase tracking-wider text-[10px]" }, /* @__PURE__ */ React.createElement("th", { className: "py-2.5" }, "Description de la prestation"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-center" }, "Date & Cr\xE9neau"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "Prix HT"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "TVA (20%)"), /* @__PURE__ */ React.createElement("th", { className: "py-2.5 text-right" }, "Total TTC"))), /* @__PURE__ */ React.createElement("tbody", { className: "divide-y divide-slate-100" }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { className: "py-3.5 font-semibold text-ink" }, "Location Espace : ", spaceName, /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 font-normal" }, "Acc\xE8s garanti coworking & \xE9quipements inclus")), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-center text-slate-500" }, dateStr, /* @__PURE__ */ React.createElement("br", null), timeSlot), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-mono" }, ht, " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-mono" }, vat, " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 text-right font-bold font-mono text-ink" }, gross.toFixed(2), " DH"))))), /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-200 pt-4 flex justify-end" }, /* @__PURE__ */ React.createElement("div", { className: "w-72 space-y-1.5 text-xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Sous-total HT :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, ht, " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "TVA marocaine (20%) :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, vat, " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service plateforme (8%) :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, fee.toFixed(2), " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between pt-2 border-t border-slate-200 text-sm font-bold text-ink" }, /* @__PURE__ */ React.createElement("span", null, "Total TTC R\xE9gl\xE9 :"), /* @__PURE__ */ React.createElement("span", { className: "font-display font-bold text-brand-600" }, gross.toFixed(2), " DH")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-[11px] text-slate-400 pt-1" }, /* @__PURE__ */ React.createElement("span", null, "Net revers\xE9 au gestionnaire :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono font-semibold text-emerald-700" }, net.toFixed(2), " DH")))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-dashed border-slate-200 p-3.5 bg-slate-50/70 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 17, className: "text-emerald-600" }), /* @__PURE__ */ React.createElement("span", null, "Certifi\xE9 CMI Maroc \xB7 3D-Secure v2.2 \xB7 Transaction confirm\xE9e (", paidAt, ")")), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200" }, "Cachet \xC9lectronique Spotwork"))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 flex justify-end" }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: onClose,
+      className: "rounded-full bg-slate-100 hover:bg-slate-200 px-5 py-2 text-xs font-bold text-slate-700 transition"
+    },
+    "Fermer"
+  ))));
+};
+const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
   const liked = favs.has(s.id);
+  const avail = getSpaceAvailability(s, date, bookings);
   return /* @__PURE__ */ React.createElement(
     "article",
     {
-      onClick: () => nav({ name: "space", params: { id: s.id } }),
-      className: "group cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift"
+      onClick: () => nav({ name: "space", params: { id: s.id, date } }),
+      className: `group cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift ${avail.isSoldOut ? "border-rose-200" : "border-slate-200/80"}`
     },
     /* @__PURE__ */ React.createElement("div", { className: "relative h-44 md:h-48 overflow-hidden" }, /* @__PURE__ */ React.createElement(
       "img",
@@ -439,7 +796,7 @@ const SpaceCard = ({ s, nav, favs, toggleFav }) => {
         loading: "lazy",
         className: "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.07]"
       }
-    ), /* @__PURE__ */ React.createElement("div", { className: "absolute left-3 top-3" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge })), /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("div", { className: "absolute left-3 top-3 flex flex-col gap-1 items-start" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), date && (avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-rose-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white animate-pulse" }), "COMPLET (0 place)") : /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-emerald-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white" }), avail.availableSeats, " place", avail.availableSeats > 1 ? "s" : "", " libre", avail.availableSeats > 1 ? "s" : ""))), /* @__PURE__ */ React.createElement(
       "button",
       {
         onClick: (e) => {
@@ -450,13 +807,14 @@ const SpaceCard = ({ s, nav, favs, toggleFav }) => {
       },
       /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 16, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" })
     ), /* @__PURE__ */ React.createElement("span", { className: "absolute bottom-3 right-3 rounded-full bg-ink/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur" }, s.unit === "heure" ? "\xC0 l'heure" : "\xC0 la journ\xE9e")),
-    /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-semibold text-[15px] leading-snug" }, s.name), /* @__PURE__ */ React.createElement("span", { className: "flex shrink-0 items-center gap-1 text-sm font-semibold" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), s.rating.toLocaleString("fr-FR"))), /* @__PURE__ */ React.createElement("p", { className: "mt-0.5 flex items-center gap-1 text-[13px] text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 12 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, TYPES.find((t) => t.id === s.type).label, " \xB7 ", s.cap, " pers. \xB7 ", s.surface), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex items-center justify-between border-t border-slate-100 pt-3" }, /* @__PURE__ */ React.createElement("p", { className: "text-[15px]" }, /* @__PURE__ */ React.createElement("b", { className: "font-display" }, EUR.format(s.price)), /* @__PURE__ */ React.createElement("span", { className: "text-slate-400 text-xs" }, " /", s.unit)), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1 text-xs font-semibold text-brand-600 transition-transform group-hover:translate-x-1" }, "Voir l'espace", /* @__PURE__ */ React.createElement(Icon, { n: "arrow-right", size: 13 }))))
+    /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-semibold text-[15px] leading-snug" }, s.name), /* @__PURE__ */ React.createElement("span", { className: "flex shrink-0 items-center gap-1 text-sm font-semibold" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), s.rating.toLocaleString("fr-FR"))), /* @__PURE__ */ React.createElement("p", { className: "mt-0.5 flex items-center gap-1 text-[13px] text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 12 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex items-center justify-between text-xs" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-400" }, TYPES.find((t) => t.id === s.type).label, " \xB7 ", s.surface), avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200" }, "0 / ", avail.totalCapacity, " place") : /* @__PURE__ */ React.createElement("span", { className: "font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" }, avail.availableSeats, " / ", avail.totalCapacity, " places libres")), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex items-center justify-between border-t border-slate-100 pt-3" }, /* @__PURE__ */ React.createElement("p", { className: "text-[15px]" }, /* @__PURE__ */ React.createElement("b", { className: "font-display" }, EUR.format(s.price)), /* @__PURE__ */ React.createElement("span", { className: "text-slate-400 text-xs" }, " /", s.unit)), /* @__PURE__ */ React.createElement("span", { className: `flex items-center gap-1 text-xs font-semibold transition-transform group-hover:translate-x-1 ${avail.isSoldOut ? "text-slate-400" : "text-brand-600"}` }, avail.isSoldOut ? "Voir planning" : "Voir l'espace", /* @__PURE__ */ React.createElement(Icon, { n: "arrow-right", size: 13 }))))
   );
 };
 const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSelectUser, onLogout, toast }) => {
   const [scrolled, setScrolled] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const [apiOnline, setApiOnline] = useState(null);
+  const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 8);
     f();
@@ -478,14 +836,14 @@ const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSe
     icon && /* @__PURE__ */ React.createElement(Icon, { n: icon, size: 15 }),
     label
   );
-  return /* @__PURE__ */ React.createElement("header", { className: `sticky top-0 z-50 transition-all ${scrolled ? "bg-white/92 backdrop-blur-md shadow-[0_1px_0_rgba(13,44,90,.08)]" : "bg-white"}` }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "home" }), className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 18 })), /* @__PURE__ */ React.createElement("div", { className: "text-left" }, /* @__PURE__ */ React.createElement("span", { className: "font-display text-lg font-bold tracking-tight block leading-tight" }, "Spotwork"), /* @__PURE__ */ React.createElement("span", { className: "text-[10px] font-semibold tracking-wider uppercase text-brand-600 hidden sm:block" }, "PropTech Maroc"))), /* @__PURE__ */ React.createElement("nav", { className: "hidden lg:flex items-center gap-1" }, link("Accueil", { name: "home" }), link("Explorer", { name: "explore" }, "search"), link("Mes r\xE9servations", { name: "user" }, "calendar-days"), link("Gestionnaire", { name: "admin" }, "bar-chart-3"), !currentUser && link("Connexion", { name: "login" }, "user")), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => {
+  return /* @__PURE__ */ React.createElement("header", { className: `sticky top-0 z-50 transition-all ${scrolled ? "bg-white/92 backdrop-blur-md shadow-[0_1px_0_rgba(13,44,90,.08)]" : "bg-white"}` }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "home" }), className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 18 })), /* @__PURE__ */ React.createElement("div", { className: "text-left" }, /* @__PURE__ */ React.createElement("span", { className: "font-display text-lg font-bold tracking-tight block leading-tight" }, "Spotwork"), /* @__PURE__ */ React.createElement("span", { className: "text-[10px] font-semibold tracking-wider uppercase text-brand-600 hidden sm:block" }, "PropTech Maroc"))), /* @__PURE__ */ React.createElement("nav", { className: "hidden lg:flex items-center gap-1" }, link("Accueil", { name: "home" }), link("Explorer", { name: "explore" }, "search"), link("Mes r\xE9servations", { name: "user" }, "calendar-days"), isManagerOrAdmin && link("Gestionnaire", { name: "admin" }, "bar-chart-3"), !currentUser && link("Connexion", { name: "login" }, "user")), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => {
     SpotworkAPI.checkHealth().then((h) => {
       setApiOnline(Boolean(h));
     });
   }, title: "\xC9tat de l'API Backend Express & Supabase", className: `hidden md:flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border transition ${apiOnline ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"}` }, /* @__PURE__ */ React.createElement("span", { className: `h-2 w-2 rounded-full ${apiOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}` }), apiOnline ? "API Active (Supabase & IA)" : "Mode D\xE9mo (API locale)"), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "checkout" }), className: "relative grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-600 transition hover:border-brand-300 hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "shopping-cart", size: 17 }), cartCount > 0 && /* @__PURE__ */ React.createElement("span", { key: cartCount, className: "pop absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white" }, cartCount)), currentUser ? /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setUserMenu(!userMenu), className: "flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-3 transition hover:border-brand-300 bg-white" }, /* @__PURE__ */ React.createElement("span", { className: `grid h-8 w-8 place-items-center rounded-full font-bold text-white text-[11px] shadow-sm ${currentUser.avatarBg || "bg-brand-600"}` }, currentUser.initials || "U"), /* @__PURE__ */ React.createElement("div", { className: "hidden sm:flex items-center gap-1.5 text-left" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm font-semibold text-slate-800" }, currentUser.firstName || currentUser.name), /* @__PURE__ */ React.createElement("span", { className: `text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${currentUser.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}` }, currentUser.roleLabel || currentUser.role)), /* @__PURE__ */ React.createElement(Icon, { n: "chevron-down", size: 14, className: "text-slate-400" })), userMenu && /* @__PURE__ */ React.createElement("div", { className: "absolute right-0 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-lift z-50" }, /* @__PURE__ */ React.createElement("div", { className: "p-3 bg-mist rounded-xl mb-1.5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: `grid h-9 w-9 place-items-center rounded-xl font-bold text-white text-xs ${currentUser.avatarBg || "bg-brand-600"}` }, currentUser.initials || "U"), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink truncate" }, currentUser.name), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400 truncate" }, currentUser.email))), /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex items-center justify-between text-[11px]" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-500 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 11 }), currentUser.city || "Maroc"), /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full font-bold border ${currentUser.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}` }, currentUser.roleLabel || currentUser.role))), [
     ["Mon espace client", "layout-grid", () => nav({ name: "user" })],
     ["Mes favoris", "heart", () => nav({ name: "user", params: { tab: "favoris" } })],
-    ["Espace gestionnaire / Admin", "bar-chart-3", () => nav({ name: "admin" })]
+    ...isManagerOrAdmin ? [["Espace gestionnaire / Admin", "bar-chart-3", () => nav({ name: "admin" })]] : []
   ].map(([l, i, f]) => /* @__PURE__ */ React.createElement("button", { key: l, onClick: () => {
     f();
     setUserMenu(false);
@@ -508,7 +866,7 @@ const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSe
   }, className: "flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "user", size: 13 }), "G\xE9rer"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
     onLogout();
     setUserMenu(false);
-  }, className: "flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "log-out", size: 13 }), "D\xE9connexion")))) : /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "login" }), className: "flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-brand-700 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "log-in", size: 15 }), /* @__PURE__ */ React.createElement("span", null, "Se connecter")), /* @__PURE__ */ React.createElement("button", { onClick: () => setMenuOpen(!menuOpen), className: "grid h-10 w-10 place-items-center rounded-full border border-slate-200 lg:hidden" }, /* @__PURE__ */ React.createElement(Icon, { n: menuOpen ? "x" : "menu", size: 18 })))), menuOpen && /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-100 bg-white px-4 py-3 lg:hidden" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-col gap-1" }, link("Accueil", { name: "home" }, "home"), link("Explorer les espaces", { name: "explore" }, "search"), link("Mes r\xE9servations", { name: "user" }, "calendar-days"), link("Tableau de bord gestionnaire", { name: "admin" }, "bar-chart-3"), currentUser ? /* @__PURE__ */ React.createElement("button", { onClick: () => {
+  }, className: "flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "log-out", size: 13 }), "D\xE9connexion")))) : /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "login" }), className: "flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-brand-700 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "log-in", size: 15 }), /* @__PURE__ */ React.createElement("span", null, "Se connecter")), /* @__PURE__ */ React.createElement("button", { onClick: () => setMenuOpen(!menuOpen), className: "grid h-10 w-10 place-items-center rounded-full border border-slate-200 lg:hidden" }, /* @__PURE__ */ React.createElement(Icon, { n: menuOpen ? "x" : "menu", size: 18 })))), menuOpen && /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-100 bg-white px-4 py-3 lg:hidden" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-col gap-1" }, link("Accueil", { name: "home" }, "home"), link("Explorer les espaces", { name: "explore" }, "search"), link("Mes r\xE9servations", { name: "user" }, "calendar-days"), isManagerOrAdmin && link("Tableau de bord gestionnaire", { name: "admin" }, "bar-chart-3"), currentUser ? /* @__PURE__ */ React.createElement("button", { onClick: () => {
     onLogout();
     setMenuOpen(false);
   }, className: "flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "log-out", size: 16 }), "D\xE9connexion (", currentUser.firstName || currentUser.name, ")") : link("Se connecter", { name: "login" }, "log-in"), link("Panier", { name: "checkout" }, "shopping-cart"))));
@@ -607,7 +965,7 @@ const Ring = ({ v }) => /* @__PURE__ */ React.createElement("svg", { width: "46"
     transform: "rotate(-90 20 20)"
   }
 ), /* @__PURE__ */ React.createElement("text", { x: "20", y: "24", textAnchor: "middle", fontSize: "10", fontWeight: "700", fill: "#0A1B33" }, v, "%"));
-const Home = ({ nav, favs, toggleFav, spaces = SPACES }) => {
+const Home = ({ nav, favs, toggleFav, spaces = SPACES, bookings = [] }) => {
   const featured = spaces.filter((s) => s.featured);
   return /* @__PURE__ */ React.createElement("main", null, /* @__PURE__ */ React.createElement(Hero, { nav }), /* @__PURE__ */ React.createElement("div", { className: "border-y border-slate-100 bg-white py-4" }, /* @__PURE__ */ React.createElement("div", { className: "overflow-hidden" }, /* @__PURE__ */ React.createElement("div", { className: "marquee flex w-max items-center gap-10 text-sm font-semibold text-slate-400" }, [0, 1].map((k) => /* @__PURE__ */ React.createElement("div", { key: k, className: "flex items-center gap-10" }, [...CITIES, ...CITIES].map((c, i) => /* @__PURE__ */ React.createElement("span", { key: c + i, className: "flex items-center gap-10 whitespace-nowrap" }, /* @__PURE__ */ React.createElement("span", { className: "font-display" }, c), /* @__PURE__ */ React.createElement(Icon, { n: "asterisk", size: 12, className: "text-brand-300" })))))))), /* @__PURE__ */ React.createElement("section", { className: "mx-auto max-w-7xl px-4 py-14 md:px-6" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Parcourir", title: "Explorer par type d'espace" }), /* @__PURE__ */ React.createElement("div", { className: "no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0", "data-reveal": true }, TYPES.map((t, i) => {
     const count = spaces.filter((s) => s.type === t.id).length;
@@ -629,7 +987,7 @@ const Home = ({ nav, favs, toggleFav, spaces = SPACES }) => {
       title: "Espaces en vedette cette semaine",
       action: /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-bold text-brand-600 transition hover:gap-2.5" }, "Tout voir", /* @__PURE__ */ React.createElement(Icon, { n: "arrow-right", size: 15 }))
     }
-  ), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, featured.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i * 70}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav })))))), /* @__PURE__ */ React.createElement("section", { className: "mx-auto max-w-7xl px-4 py-16 md:px-6" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Simple et rapide", title: "R\xE9servez en trois temps" }), /* @__PURE__ */ React.createElement("div", { className: "relative grid gap-10 md:grid-cols-3 md:gap-6" }, /* @__PURE__ */ React.createElement("div", { className: "absolute left-[16%] right-[16%] top-7 hidden border-t-2 border-dashed border-slate-200 md:block" }), [
+  ), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, featured.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i * 70}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav, bookings })))))), /* @__PURE__ */ React.createElement("section", { className: "mx-auto max-w-7xl px-4 py-16 md:px-6" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Simple et rapide", title: "R\xE9servez en trois temps" }), /* @__PURE__ */ React.createElement("div", { className: "relative grid gap-10 md:grid-cols-3 md:gap-6" }, /* @__PURE__ */ React.createElement("div", { className: "absolute left-[16%] right-[16%] top-7 hidden border-t-2 border-dashed border-slate-200 md:block" }), [
     { n: "01", i: "search", t: "Cherchez & comparez", d: "Filtrez par ville, type, budget et \xE9quipements. Photos r\xE9elles, avis v\xE9rifi\xE9s, tarifs transparents." },
     { n: "02", i: "badge-check", t: "R\xE9servez en 2 min", d: "Choisissez votre cr\xE9neau, payez en ligne de fa\xE7on s\xE9curis\xE9e. Confirmation instantan\xE9e par e-mail." },
     { n: "03", i: "calendar-check", t: "Installez-vous", d: "Acc\xE8s direct le jour J. Annulation gratuite jusqu'\xE0 24 h avant, report en un clic." }
@@ -663,27 +1021,54 @@ const FilterPanel = ({ f, setF }) => {
     }
   ), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", null, "10 DH"), /* @__PURE__ */ React.createElement("span", null, "150 DH+"))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500" }, "\xC9quipements"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2.5" }, AMENITIES.slice(0, 6).map((a) => /* @__PURE__ */ React.createElement("label", { key: a.id, className: "flex cursor-pointer items-center gap-2.5 text-sm text-slate-600" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: f.am.includes(a.id), onChange: () => flipAm(a.id), className: "h-4 w-4 rounded accent-[#1F56D6]" }), /* @__PURE__ */ React.createElement(Icon, { n: a.icon, size: 14, className: "text-slate-400" }), a.label)))), /* @__PURE__ */ React.createElement("button", { onClick: () => setF({ city: "", types: [], max: 150, am: [] }), className: "flex items-center gap-1.5 text-xs font-bold text-rose-500 transition hover:text-rose-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "x", size: 13 }), "R\xE9initialiser les filtres"));
 };
-const Explore = ({ params, nav, favs, toggleFav, spaces = SPACES }) => {
+const Explore = ({ params, nav, favs, toggleFav, spaces = SPACES, bookings = [] }) => {
   const [f, setF] = useState(() => ({
     city: params?.city || "",
     types: params?.type ? [params.type] : [],
     max: params?.budget ? +params.budget : 150,
-    am: []
+    am: [],
+    date: params?.date || "2026-10-01",
+    onlyAvailable: false
   }));
   const [sort, setSort] = useState("reco");
   const [open, setOpen] = useState(false);
   const results = useMemo(() => {
-    let r = spaces.filter(
-      (s) => (!f.city || s.city === f.city) && (!f.types.length || f.types.includes(s.type)) && (f.max >= 150 || s.price <= f.max) && f.am.every((a) => s.am.includes(a))
-    );
+    let r = spaces.filter((s) => {
+      const matchCity = !f.city || s.city === f.city;
+      const matchType = !f.types.length || f.types.includes(s.type);
+      const matchBudget = f.max >= 150 || s.price <= f.max;
+      const matchAm = f.am.every((a) => s.am.includes(a));
+      if (!matchCity || !matchType || !matchBudget || !matchAm) return false;
+      if (f.onlyAvailable && f.date) {
+        const avail = getSpaceAvailability(s, f.date, bookings);
+        if (avail.isSoldOut) return false;
+      }
+      return true;
+    });
     if (sort === "asc") r = [...r].sort((a, b) => a.price - b.price);
     if (sort === "desc") r = [...r].sort((a, b) => b.price - a.price);
     if (sort === "note") r = [...r].sort((a, b) => b.rating - a.rating);
     return r;
-  }, [f, sort, spaces]);
-  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-end justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Kicker, null, "Catalogue"), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight" }, "Explorer les espaces"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, results.length), " espace", results.length > 1 ? "s" : "", " disponible", results.length > 1 ? "s" : "", f.city && /* @__PURE__ */ React.createElement("span", null, " \xE0 ", /* @__PURE__ */ React.createElement("b", { className: "text-brand-600" }, f.city)))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setOpen(!open), className: "flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold lg:hidden" }, /* @__PURE__ */ React.createElement(Icon, { n: "sliders-horizontal", size: 15 }), "Filtres"), /* @__PURE__ */ React.createElement("select", { value: sort, onChange: (e) => setSort(e.target.value), className: "rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold outline-none focus:border-brand-500" }, /* @__PURE__ */ React.createElement("option", { value: "reco" }, "Recommand\xE9s"), /* @__PURE__ */ React.createElement("option", { value: "note" }, "Mieux not\xE9s"), /* @__PURE__ */ React.createElement("option", { value: "asc" }, "Prix croissant"), /* @__PURE__ */ React.createElement("option", { value: "desc" }, "Prix d\xE9croissant")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8 grid gap-8 lg:grid-cols-[260px_1fr]" }, /* @__PURE__ */ React.createElement("aside", { className: `${open ? "block" : "hidden"} lg:block` }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card lg:sticky lg:top-24" }, /* @__PURE__ */ React.createElement(FilterPanel, { f, setF }))), /* @__PURE__ */ React.createElement("div", null, results.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "grid place-items-center rounded-2xl border-2 border-dashed border-slate-200 py-24 text-center" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-14 w-14 place-items-center rounded-full bg-mist text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "search-x", size: 24 })), /* @__PURE__ */ React.createElement("p", { className: "mt-4 font-display font-bold" }, "Aucun espace ne correspond"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-500" }, "Essayez d'\xE9largir vos crit\xE8res."), /* @__PURE__ */ React.createElement("button", { onClick: () => setF({ city: "", types: [], max: 150, am: [] }), className: "mt-4 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white" }, "Effacer les filtres"))) : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, results.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i % 3 * 60}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav })))))));
+  }, [f, sort, spaces, bookings]);
+  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-end justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Kicker, null, "Catalogue & Disponibilit\xE9s en temps r\xE9el"), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight" }, "Explorer les espaces"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, results.length), " espace", results.length > 1 ? "s" : "", " ", f.onlyAvailable ? "avec places libres" : "r\xE9f\xE9renc\xE9" + (results.length > 1 ? "s" : ""), f.city && /* @__PURE__ */ React.createElement("span", null, " \xE0 ", /* @__PURE__ */ React.createElement("b", { className: "text-brand-600" }, f.city)), f.date && /* @__PURE__ */ React.createElement("span", null, " pour le ", /* @__PURE__ */ React.createElement("b", null, fmtDate(f.date))))), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold shadow-2xs" }, /* @__PURE__ */ React.createElement(Icon, { n: "calendar", size: 13, className: "text-brand-600" }), /* @__PURE__ */ React.createElement("span", { className: "text-slate-400" }, "Date :"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "date",
+      value: f.date,
+      onChange: (e) => setF((prev) => ({ ...prev, date: e.target.value })),
+      className: "border-none bg-transparent outline-none text-xs font-bold text-ink cursor-pointer"
+    }
+  )), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setF((prev) => ({ ...prev, onlyAvailable: !prev.onlyAvailable })),
+      className: `flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition border ${f.onlyAvailable ? "bg-emerald-600 text-white border-emerald-600 shadow-sm" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: f.onlyAvailable ? "check-circle-2" : "filter", size: 13 }),
+    /* @__PURE__ */ React.createElement("span", null, "Places libres uniquement")
+  ), /* @__PURE__ */ React.createElement("button", { onClick: () => setOpen(!open), className: "flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold lg:hidden" }, /* @__PURE__ */ React.createElement(Icon, { n: "sliders-horizontal", size: 13 }), "Filtres"), /* @__PURE__ */ React.createElement("select", { value: sort, onChange: (e) => setSort(e.target.value), className: "rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold outline-none focus:border-brand-500" }, /* @__PURE__ */ React.createElement("option", { value: "reco" }, "Recommand\xE9s"), /* @__PURE__ */ React.createElement("option", { value: "note" }, "Mieux not\xE9s"), /* @__PURE__ */ React.createElement("option", { value: "asc" }, "Prix croissant"), /* @__PURE__ */ React.createElement("option", { value: "desc" }, "Prix d\xE9croissant")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8 grid gap-8 lg:grid-cols-[260px_1fr]" }, /* @__PURE__ */ React.createElement("aside", { className: `${open ? "block" : "hidden"} lg:block` }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card lg:sticky lg:top-24" }, /* @__PURE__ */ React.createElement(FilterPanel, { f, setF }))), /* @__PURE__ */ React.createElement("div", null, results.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "grid place-items-center rounded-2xl border-2 border-dashed border-slate-200 py-24 text-center" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-14 w-14 place-items-center rounded-full bg-mist text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "search-x", size: 24 })), /* @__PURE__ */ React.createElement("p", { className: "mt-4 font-display font-bold" }, "Aucun espace ne correspond"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-500" }, f.onlyAvailable ? "Tous les espaces sont complets pour cette date ou vos filtres sont trop stricts." : "Essayez d'\xE9largir vos crit\xE8res."), /* @__PURE__ */ React.createElement("button", { onClick: () => setF({ city: "", types: [], max: 150, am: [], date: "2026-10-01", onlyAvailable: false }), className: "mt-4 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white" }, "Effacer les filtres"))) : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, results.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i % 3 * 60}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav, date: f.date, bookings })))))));
 };
-const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES }) => {
+const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, bookings = [] }) => {
   const s = spaces.find((x) => x.id === id);
   const [img, setImg] = useState(0);
   const [date, setDate] = useState(() => {
@@ -699,8 +1084,18 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES }) => 
   const isHour = s.unit === "heure";
   const base = isHour ? slots.length * s.price : days * s.price;
   const fees = Math.round(base * 0.08 * 100) / 100;
-  const flipSlot = (h) => setSlots((p) => p.includes(h) ? p.filter((x) => x !== h) : [...p, h].sort());
+  const availability = useMemo(() => getSpaceAvailability(s, date, bookings), [s, date, bookings]);
+  const upcomingDates = useMemo(() => getNextAvailableDates(s, bookings, 7), [s, bookings]);
+  const bookedHoursSet = useMemo(() => new Set(availability.bookedHours || []), [availability]);
+  const flipSlot = (h) => {
+    if (availability.isSoldOut) return;
+    setSlots((p) => p.includes(h) ? p.filter((x) => x !== h) : [...p, h].sort());
+  };
   const book = () => {
+    if (availability.isSoldOut) {
+      setErr(`Cet espace est complet pour le ${fmtDate(date)}. Choisissez une autre date disponible.`);
+      return;
+    }
     if (isHour && slots.length === 0) {
       setErr("S\xE9lectionnez au moins un cr\xE9neau horaire.");
       return;
@@ -713,12 +1108,13 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES }) => 
       img: s.imgs[0],
       city: s.city,
       date,
-      meta: isHour ? `${fmtDate(date)} \xB7 ${slots.length} h` : `${fmtDate(date)} \xB7 ${days} jour${days > 1 ? "s" : ""}`,
+      seats: 1,
+      meta: isHour ? `${fmtDate(date)} \xB7 ${slots.length} h (${slots.join(", ")})` : `${fmtDate(date)} \xB7 ${days} jour${days > 1 ? "s" : ""}`,
       total: base + fees
     });
   };
   const similar = spaces.filter((x) => x.id !== s.id && (x.city === s.city || x.type === s.type)).slice(0, 3);
-  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_380px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type).label)), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type).label)), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.availableSeats, " place", availability.availableSeats > 1 ? "s" : "", " disponible", availability.availableSeats > 1 ? "s" : "", " sur ", availability.totalCapacity, " pour le ", fmtDate(date))), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: i,
@@ -726,11 +1122,42 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES }) => 
       className: `overflow-hidden rounded-xl transition ${img === i ? "ring-2 ring-brand-600 ring-offset-2" : "opacity-80 hover:opacity-100"}`
     },
     /* @__PURE__ */ React.createElement("img", { src: U(im, 300), alt: "", className: "h-20 w-full object-cover md:h-[118px]" })
-  )))), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4" }, [["users", "Capacit\xE9", `${s.cap} pers.`], ["ruler", "Surface", s.surface], ["clock", "R\xE9servation", isHour ? "\xC0 l'heure" : "\xC0 la journ\xE9e"], ["badge-check", "Accueil", "H\xF4te v\xE9rifi\xE9"]].map(([i, l, v]) => /* @__PURE__ */ React.createElement("div", { key: l, className: "rounded-xl border border-slate-200 p-3.5" }, /* @__PURE__ */ React.createElement(Icon, { n: i, size: 17, className: "text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400" }, l), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, v)))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC0 propos de cet espace"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[15px] leading-relaxed text-slate-600" }, s.desc), /* @__PURE__ */ React.createElement("div", { className: "mt-4 flex items-center gap-3 rounded-2xl bg-mist p-4" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-full bg-navy text-sm font-bold text-white" }, s.host.split(" ").map((w) => w[0]).join("")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, "G\xE9r\xE9 par ", s.host), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "R\xE9pond en ~1 h \xB7 Membre depuis 2022")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC9quipements inclus"), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex flex-wrap gap-2.5" }, s.am.map((a) => {
+  )))), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4" }, [["users", "Capacit\xE9 totale", `${s.cap} pers.`], ["user-check", "Places libres", `${availability.availableSeats} pers.`], ["ruler", "Surface", s.surface], ["clock", "R\xE9servation", isHour ? "\xC0 l'heure" : "\xC0 la journ\xE9e"]].map(([i, l, v]) => /* @__PURE__ */ React.createElement("div", { key: l, className: "rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement(Icon, { n: i, size: 17, className: "text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400" }, l), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold text-ink" }, v)))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC0 propos de cet espace"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[15px] leading-relaxed text-slate-600" }, s.desc), /* @__PURE__ */ React.createElement("div", { className: "mt-4 flex items-center gap-3 rounded-2xl bg-mist p-4" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-full bg-navy text-sm font-bold text-white" }, s.host.split(" ").map((w) => w[0]).join("")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, "G\xE9r\xE9 par ", s.host), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "R\xE9pond en ~1 h \xB7 Membre certifi\xE9 PropTech Maroc")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC9quipements inclus"), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex flex-wrap gap-2.5" }, s.am.map((a) => {
     const am = AMENITIES.find((x) => x.id === a);
-    return /* @__PURE__ */ React.createElement("span", { key: a, className: "flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700" }, /* @__PURE__ */ React.createElement(Icon, { n: am.icon, size: 14, className: "text-brand-600" }), am.label);
-  }))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "Avis des membres"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-6 md:grid-cols-[220px_1fr]" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 p-5 text-center h-fit" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-4xl font-bold" }, s.rating.toLocaleString("fr-FR")), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex justify-center" }, /* @__PURE__ */ React.createElement(Stars, { v: s.rating })), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, s.rev, " avis"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-1.5" }, [70, 20, 6, 3, 1].map((w, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center gap-2 text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "w-3" }, 5 - i), /* @__PURE__ */ React.createElement("div", { className: "h-1.5 flex-1 rounded-full bg-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full bg-amber-400", style: { width: w + "%" } })))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, REVIEWS.map((r) => /* @__PURE__ */ React.createElement("article", { key: r.n, className: "rounded-2xl border border-slate-200 p-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" }, r.n[0]), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, r.n), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400" }, r.role, " \xB7 ", r.d)), /* @__PURE__ */ React.createElement("div", { className: "ml-auto" }, /* @__PURE__ */ React.createElement(Stars, { v: r.stars, size: 11 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm leading-relaxed text-slate-600" }, r.t))))))), /* @__PURE__ */ React.createElement("aside", { className: "lg:sticky lg:top-24 h-fit" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, EUR.format(s.price), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, " /", s.unit)), /* @__PURE__ */ React.createElement("button", { onClick: () => toggleFav(s.id), className: `grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 17, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" }))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-3.5" }, /* @__PURE__ */ React.createElement(Field, { label: "Date" }, /* @__PURE__ */ React.createElement("input", { type: "date", min: todayISO(), value: date, onChange: (e) => setDate(e.target.value), className: inp })), isHour ? /* @__PURE__ */ React.createElement(Field, { label: `Cr\xE9neaux (${slots.length} s\xE9lectionn\xE9${slots.length > 1 ? "s" : ""})`, err }, /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" }, HOURS.map((h, i) => {
-    const busy = s.busy.includes(i);
+    return /* @__PURE__ */ React.createElement("span", { key: a, className: "flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white" }, /* @__PURE__ */ React.createElement(Icon, { n: am.icon, size: 14, className: "text-brand-600" }), am.label);
+  }))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "Avis des membres"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-6 md:grid-cols-[220px_1fr]" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 p-5 text-center h-fit bg-white" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-4xl font-bold" }, s.rating.toLocaleString("fr-FR")), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex justify-center" }, /* @__PURE__ */ React.createElement(Stars, { v: s.rating })), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, s.rev, " avis"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-1.5" }, [70, 20, 6, 3, 1].map((w, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center gap-2 text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "w-3" }, 5 - i), /* @__PURE__ */ React.createElement("div", { className: "h-1.5 flex-1 rounded-full bg-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full bg-amber-400", style: { width: w + "%" } })))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, REVIEWS.map((r) => /* @__PURE__ */ React.createElement("article", { key: r.n, className: "rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" }, r.n[0]), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, r.n), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400" }, r.role, " \xB7 ", r.d)), /* @__PURE__ */ React.createElement("div", { className: "ml-auto" }, /* @__PURE__ */ React.createElement(Stars, { v: r.stars, size: 11 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm leading-relaxed text-slate-600" }, r.t))))))), /* @__PURE__ */ React.createElement("aside", { className: "lg:sticky lg:top-24 h-fit" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, EUR.format(s.price), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, " /", s.unit)), /* @__PURE__ */ React.createElement("button", { onClick: () => toggleFav(s.id), className: `grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 17, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" }))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-3.5" }, /* @__PURE__ */ React.createElement(Field, { label: "Date souhait\xE9e" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "date",
+      value: date,
+      onChange: (e) => {
+        setDate(e.target.value);
+        setSlots([]);
+        setErr("");
+      },
+      className: inp
+    }
+  )), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-600 mb-1.5 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("span", null, "Disponibilit\xE9s des 7 prochains jours :")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-1.5 sm:grid-cols-3" }, upcomingDates.map((item) => {
+    const isSelected = item.date === date;
+    return /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        key: item.date,
+        type: "button",
+        onClick: () => {
+          setDate(item.date);
+          setSlots([]);
+          setErr("");
+        },
+        className: `p-2 rounded-xl border text-left text-xs transition ${isSelected ? "border-brand-600 bg-brand-50/70 ring-2 ring-brand-600/30" : item.isSoldOut ? "border-rose-200 bg-rose-50/50 hover:bg-rose-50" : "border-slate-200 hover:border-brand-300 bg-white"}`
+      },
+      /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink truncate capitalize" }, item.label),
+      /* @__PURE__ */ React.createElement("span", { className: `inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.2 rounded ${item.isSoldOut ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-800"}` }, item.isSoldOut ? "Complet (0)" : `${item.availableSeats} libre${item.availableSeats > 1 ? "s" : ""}`)
+    );
+  }))), isHour ? /* @__PURE__ */ React.createElement(Field, { label: `Cr\xE9neaux horaires (${slots.length} s\xE9lectionn\xE9${slots.length > 1 ? "s" : ""})`, err }, availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-xs text-rose-700 font-semibold" }, "Tous les cr\xE9neaux sont r\xE9serv\xE9s pour cette journ\xE9e") : /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" }, HOURS.map((h, i) => {
+    const busyByDefault = s.busy.includes(i);
+    const busyByBooking = bookedHoursSet.has(h);
+    const busy = busyByDefault || busyByBooking || availability.isFullDay;
     const on = slots.includes(h);
     return /* @__PURE__ */ React.createElement(
       "button",
@@ -738,11 +1165,21 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES }) => 
         key: h,
         disabled: busy,
         onClick: () => flipSlot(h),
-        className: `rounded-lg border px-1 py-2 text-[11px] font-bold transition ${busy ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300 line-through" : on ? "border-brand-600 bg-brand-600 text-white" : "border-slate-200 text-slate-600 hover:border-brand-400"}`
+        title: busy ? "Cr\xE9neau d\xE9j\xE0 r\xE9serv\xE9" : "Disponible",
+        className: `rounded-lg border px-1 py-2 text-[11px] font-bold transition ${busy ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300 line-through" : on ? "border-brand-600 bg-brand-600 text-white shadow-sm" : "border-slate-200 text-slate-600 hover:border-brand-400 bg-white"}`
       },
       h
     );
-  }))) : /* @__PURE__ */ React.createElement(Field, { label: "Dur\xE9e" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.max(1, days - 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "minus", size: 14 })), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-bold" }, days, " jour", days > 1 ? "s" : ""), /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.min(10, days + 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 14 }))))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 space-y-2 border-t border-dashed border-slate-200 pt-4 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, isHour ? `${slots.length} \xD7 ${EUR.format(s.price)}` : `${days} \xD7 ${EUR.format(s.price)}`), /* @__PURE__ */ React.createElement("span", null, EUR.format(base))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service (8 %)"), /* @__PURE__ */ React.createElement("span", null, EUR.format(fees))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between pt-1 font-display text-base font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total"), /* @__PURE__ */ React.createElement("span", null, EUR.format(base + fees)))), /* @__PURE__ */ React.createElement("button", { onClick: book, className: "mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700 active:scale-[.98]" }, /* @__PURE__ */ React.createElement(Icon, { n: "zap", size: 16 }), "R\xE9server cet espace"), /* @__PURE__ */ React.createElement("p", { className: "mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-emerald-500" }), "Confirmation imm\xE9diate \xB7 Annulation gratuite 24 h")))), /* @__PURE__ */ React.createElement("div", { className: "mt-14" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Continuez l'exploration", title: "Espaces similaires" }), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, similar.map((x) => /* @__PURE__ */ React.createElement(SpaceCard, { key: x.id, s: x, nav, favs, toggleFav })))));
+  }))) : /* @__PURE__ */ React.createElement(Field, { label: "Dur\xE9e de location" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.max(1, days - 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "minus", size: 14 })), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-bold" }, days, " jour", days > 1 ? "s" : ""), /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.min(10, days + 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 14 }))))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 space-y-2 border-t border-dashed border-slate-200 pt-4 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, isHour ? `${slots.length} \xD7 ${EUR.format(s.price)}` : `${days} \xD7 ${EUR.format(s.price)}`), /* @__PURE__ */ React.createElement("span", null, EUR.format(base))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service (8 %)"), /* @__PURE__ */ React.createElement("span", null, EUR.format(fees))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between pt-1 font-display text-base font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total TTC"), /* @__PURE__ */ React.createElement("span", null, EUR.format(base + fees)))), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: book,
+      disabled: availability.isSoldOut,
+      className: `mt-5 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold shadow-lg transition ${availability.isSoldOut ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none" : "bg-brand-600 text-white shadow-brand-600/30 hover:bg-brand-700 active:scale-[.98]"}`
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: availability.isSoldOut ? "slash" : "zap", size: 16 }),
+    availability.isSoldOut ? "Complet pour cette date" : "R\xE9server cet espace"
+  ), availability.isSoldOut ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-rose-600 font-semibold" }, "S\xE9lectionnez une autre date ci-dessus pour r\xE9server.") : /* @__PURE__ */ React.createElement("p", { className: "mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-emerald-500" }), "Confirmation imm\xE9diate \xB7 Paiement CMI s\xE9curis\xE9")))), /* @__PURE__ */ React.createElement("div", { className: "mt-14" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Continuez l'exploration", title: "Espaces similaires" }), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, similar.map((x) => /* @__PURE__ */ React.createElement(SpaceCard, { key: x.id, s: x, nav, favs, toggleFav, date, bookings })))));
 };
 const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
   const [promo, setPromo] = useState("");
@@ -813,6 +1250,7 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
   }
   const user = currentUser;
   const [tab, setTab] = useState(initTab || "resas");
+  const [userInvoice, setUserInvoice] = useState(null);
   const [prefs, setPrefs] = useState({ mail: true, push: false, news: true, city: user.city || "Casablanca", type: "open" });
   const tabs = [["resas", "Mes r\xE9servations", "calendar-days"], ["ia", "Recommandations", "sparkles"], ["favoris", "Favoris", "heart"], ["prefs", "Pr\xE9f\xE9rences", "settings"]];
   const recommendations = useMemo(() => {
@@ -836,15 +1274,60 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
   ))), /* @__PURE__ */ React.createElement("div", null, tab === "resas" && /* @__PURE__ */ React.createElement("div", { className: "space-y-8" }, /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display text-lg font-bold" }, "\xC0 venir"), bookings.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center text-sm text-slate-400" }, "Aucune r\xE9servation \xE0 venir."), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 md:grid-cols-2" }, bookings.map((b) => {
     const s = spaces.find((x) => x.id === b.spaceId);
     if (!s) return null;
-    return /* @__PURE__ */ React.createElement("article", { key: b.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 600), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: `absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}` }, b.status)), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1 flex items-center gap-3 text-xs text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "calendar-days", size: 12 }), fmtDate(b.date)), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 12 }), b.meta)), /* @__PURE__ */ React.createElement("div", { className: "mt-3.5 flex gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "flex-1 rounded-full bg-brand-50 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100" }, "Voir l'espace"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+    return /* @__PURE__ */ React.createElement("article", { key: b.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 600), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: `absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}` }, b.status)), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1 flex items-center gap-3 text-xs text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "calendar-days", size: 12 }), fmtDate(b.date)), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 12 }), b.meta)), /* @__PURE__ */ React.createElement("div", { className: "mt-3.5 flex flex-wrap gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "flex-1 rounded-full bg-brand-50 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100" }, "Voir l'espace"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+      setUserInvoice({
+        invoiceNumber: b.invoiceRef || `FACT-2026-004${b.id.toString().slice(-1) || "1"}`,
+        clientName: user.name,
+        clientEmail: user.email,
+        clientPhone: user.phone || "+212 6 61 23 45 67",
+        clientCity: user.city || "Casablanca",
+        spaceName: s.name,
+        date: b.date,
+        timeSlot: b.meta,
+        grossAmount: b.totalPrice || s.price * (b.hours || 3),
+        paymentMethod: b.paymentMethod || "Carte Bancaire Maroc CMI (3D Secure)",
+        paidAt: "01/10/2026 10:15",
+        status: b.status === "Confirm\xE9e" ? "paid" : "pending"
+      });
+    }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 13 }), "Re\xE7u / Facture"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
       setBookings(bookings.filter((x) => x.id !== b.id));
       toast("R\xE9servation annul\xE9e (d\xE9mo)", "x");
-    }, className: "rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500" }, "Annuler"))));
+    }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500" }, "Annuler"))));
   }))), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display text-lg font-bold" }, "Historique"), /* @__PURE__ */ React.createElement("div", { className: "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card" }, PAST_BOOKINGS.map((b, i) => {
     const s = spaces.find((x) => x.id === b.spaceId);
     if (!s) return null;
-    return /* @__PURE__ */ React.createElement("div", { key: b.id, className: `flex items-center gap-4 px-5 py-4 text-sm ${i > 0 ? "border-t border-slate-100" : ""}` }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 120), alt: "", className: "h-11 w-14 rounded-lg object-cover" }), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "truncate font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, fmtDate(b.date), " \xB7 ", b.meta)), /* @__PURE__ */ React.createElement("span", { className: "hidden sm:block text-xs font-semibold text-slate-400" }, EUR.format(s.price)), /* @__PURE__ */ React.createElement("span", { className: `rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}` }, b.status), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "text-slate-300 transition hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "chevron-right", size: 17 })));
-  })))), tab === "ia" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mb-5 flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 18, className: "mt-0.5 shrink-0 text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-brand-900" }, "Suggestions g\xE9n\xE9r\xE9es \xE0 partir de vos favoris, de vos r\xE9servations pass\xE9es et de vos pr\xE9f\xE9rences. Elles s'affinent \xE0 chaque interaction.")), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 md:grid-cols-3" }, recommendations.map(({ s, score, reason }, i) => /* @__PURE__ */ React.createElement("article", { key: s.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lift", "data-reveal": true, style: { transitionDelay: `${i * 80}ms` } }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 500), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: "absolute left-3 top-3 rounded-full bg-ink/80 px-2 py-1 text-[10px] font-bold text-white backdrop-blur" }, "Match ", score, "%")), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-display text-sm font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, s.city, " \xB7 ", EUR.format(s.price), "/", s.unit)), /* @__PURE__ */ React.createElement(Ring, { v: score })), /* @__PURE__ */ React.createElement("p", { className: "mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 11, className: "mt-0.5 shrink-0 text-brand-500" }), reason), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "mt-3 w-full rounded-full bg-navy py-2 text-xs font-bold text-white transition hover:bg-brand-700" }, "D\xE9couvrir")))))), tab === "favoris" && (favs.size === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center text-sm text-slate-400" }, "Aucun favori pour le moment \u2014 cliquez sur le \u2665 d'un espace.") : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, spaces.filter((s) => favs.has(s.id)).map((s) => /* @__PURE__ */ React.createElement(SpaceCard, { key: s.id, s, nav, favs, toggleFav })))), tab === "prefs" && /* @__PURE__ */ React.createElement("div", { className: "max-w-xl space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Notifications"), [["mail", "R\xE9capitulatifs par e-mail"], ["push", "Alertes de disponibilit\xE9 en temps r\xE9el"], ["news", "Newsletter mensuelle & bons plans"]].map(([k, l]) => /* @__PURE__ */ React.createElement("div", { key: k, className: "mt-4 flex items-center justify-between border-b border-slate-100 pb-4 last:border-0 last:pb-0" }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-600" }, l), /* @__PURE__ */ React.createElement(Toggle, { on: prefs[k], onClick: () => setPrefs({ ...prefs, [k]: !prefs[k] }) })))), /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Pr\xE9f\xE9rences de recherche"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Ville par d\xE9faut" }, /* @__PURE__ */ React.createElement("select", { value: prefs.city, onChange: (e) => setPrefs({ ...prefs, city: e.target.value }), className: inp }, CITIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c }, c)))), /* @__PURE__ */ React.createElement(Field, { label: "Type favori" }, /* @__PURE__ */ React.createElement("select", { value: prefs.type, onChange: (e) => setPrefs({ ...prefs, type: e.target.value }), className: inp }, TYPES.map((t) => /* @__PURE__ */ React.createElement("option", { key: t.id, value: t.id }, t.label))))), /* @__PURE__ */ React.createElement("button", { onClick: () => toast("Pr\xE9f\xE9rences enregistr\xE9es", "check"), className: "mt-5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white" }, "Enregistrer"))))));
+    return /* @__PURE__ */ React.createElement("div", { key: b.id, className: `flex items-center gap-4 px-5 py-4 text-sm ${i > 0 ? "border-t border-slate-100" : ""}` }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 120), alt: "", className: "h-11 w-14 rounded-lg object-cover" }), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "truncate font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, fmtDate(b.date), " \xB7 ", b.meta)), /* @__PURE__ */ React.createElement("span", { className: "hidden sm:block text-xs font-semibold text-slate-400" }, EUR.format(s.price)), /* @__PURE__ */ React.createElement("span", { className: `rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}` }, b.status), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => {
+          setUserInvoice({
+            invoiceNumber: `FACT-2026-003${b.id.toString().slice(-1) || "0"}`,
+            clientName: user.name,
+            clientEmail: user.email,
+            clientPhone: user.phone || "+212 6 61 23 45 67",
+            clientCity: user.city || "Casablanca",
+            spaceName: s.name,
+            date: b.date,
+            timeSlot: b.meta,
+            grossAmount: s.price * 4,
+            paymentMethod: "Carte Bancaire Maroc CMI (3D Secure)",
+            paidAt: "20/09/2026 14:00",
+            status: "paid"
+          });
+        },
+        className: "hidden sm:inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-brand-600 hover:bg-slate-50 transition"
+      },
+      /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 11 }),
+      "Facture"
+    ), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "text-slate-300 transition hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "chevron-right", size: 17 })));
+  })))), tab === "ia" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mb-5 flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 18, className: "mt-0.5 shrink-0 text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-brand-900" }, "Suggestions g\xE9n\xE9r\xE9es \xE0 partir de vos favoris, de vos r\xE9servations pass\xE9es et de vos pr\xE9f\xE9rences. Elles s'affinent \xE0 chaque interaction.")), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 md:grid-cols-3" }, recommendations.map(({ s, score, reason }, i) => /* @__PURE__ */ React.createElement("article", { key: s.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lift", "data-reveal": true, style: { transitionDelay: `${i * 80}ms` } }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 500), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: "absolute left-3 top-3 rounded-full bg-ink/80 px-2 py-1 text-[10px] font-bold text-white backdrop-blur" }, "Match ", score, "%")), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-display text-sm font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, s.city, " \xB7 ", EUR.format(s.price), "/", s.unit)), /* @__PURE__ */ React.createElement(Ring, { v: score })), /* @__PURE__ */ React.createElement("p", { className: "mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 11, className: "mt-0.5 shrink-0 text-brand-500" }), reason), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "mt-3 w-full rounded-full bg-navy py-2 text-xs font-bold text-white transition hover:bg-brand-700" }, "D\xE9couvrir")))))), tab === "favoris" && (favs.size === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center text-sm text-slate-400" }, "Aucun favori pour le moment \u2014 cliquez sur le \u2665 d'un espace.") : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, spaces.filter((s) => favs.has(s.id)).map((s) => /* @__PURE__ */ React.createElement(SpaceCard, { key: s.id, s, nav, favs, toggleFav })))), tab === "prefs" && /* @__PURE__ */ React.createElement("div", { className: "max-w-xl space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Notifications"), [["mail", "R\xE9capitulatifs par e-mail"], ["push", "Alertes de disponibilit\xE9 en temps r\xE9el"], ["news", "Newsletter mensuelle & bons plans"]].map(([k, l]) => /* @__PURE__ */ React.createElement("div", { key: k, className: "mt-4 flex items-center justify-between border-b border-slate-100 pb-4 last:border-0 last:pb-0" }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-600" }, l), /* @__PURE__ */ React.createElement(Toggle, { on: prefs[k], onClick: () => setPrefs({ ...prefs, [k]: !prefs[k] }) })))), /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Pr\xE9f\xE9rences de recherche"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Ville par d\xE9faut" }, /* @__PURE__ */ React.createElement("select", { value: prefs.city, onChange: (e) => setPrefs({ ...prefs, city: e.target.value }), className: inp }, CITIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c }, c)))), /* @__PURE__ */ React.createElement(Field, { label: "Type favori" }, /* @__PURE__ */ React.createElement("select", { value: prefs.type, onChange: (e) => setPrefs({ ...prefs, type: e.target.value }), className: inp }, TYPES.map((t) => /* @__PURE__ */ React.createElement("option", { key: t.id, value: t.id }, t.label))))), /* @__PURE__ */ React.createElement("button", { onClick: () => toast("Pr\xE9f\xE9rences enregistr\xE9es", "check"), className: "mt-5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white" }, "Enregistrer"))))), /* @__PURE__ */ React.createElement(
+    InvoiceModal,
+    {
+      invoice: userInvoice,
+      isOpen: Boolean(userInvoice),
+      onClose: () => setUserInvoice(null)
+    }
+  ));
 };
 const CreateSpaceModal = ({ isOpen, onClose, onCreateSpace }) => {
   const [name, setName] = useState("");
@@ -1047,39 +1530,20 @@ const AdminDash = ({
   const [range, setRange] = useState("30j");
   const [cityFilter, setCityFilter] = useState("");
   const [bookingFilter, setBookingFilter] = useState("all");
+  const [paymentsStatus, setPaymentsStatus] = useState("all");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [txns, setTxns] = useState(INITIAL_TRANSACTIONS);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSpace, setEditingSpace] = useState(null);
-  if (!currentUser) {
-    return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-4xl px-4 py-16" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-8 md:p-12 text-center shadow-card" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-600 mb-4" }, /* @__PURE__ */ React.createElement(Icon, { n: "lock", size: 30 })), /* @__PURE__ */ React.createElement("h1", { className: "font-display text-2xl md:text-3xl font-bold text-ink" }, "Espace Gestionnaire & Administration"), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm text-slate-500 max-w-lg mx-auto" }, "Vous devez \xEAtre connect\xE9 avec un compte Gestionnaire ou Administrateur pour g\xE9rer les espaces au Maroc, ajuster les tarifs en Dirhams et valider les demandes de r\xE9servation."), /* @__PURE__ */ React.createElement("div", { className: "mt-8 grid gap-4 sm:grid-cols-2 max-w-lg mx-auto" }, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: () => {
-          onSelectUser(PRESET_ACCOUNTS[1]);
-          if (toast) toast("Connect\xE9 en tant que Gestionnaire (Mehdi El Fassi)", "check");
-        },
-        className: "flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/25 hover:bg-indigo-700 transition"
-      },
-      /* @__PURE__ */ React.createElement(Icon, { n: "bar-chart-2", size: 16 }),
-      "Connexion Gestionnaire (Mehdi)"
-    ), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: () => {
-          onSelectUser(PRESET_ACCOUNTS[2]);
-          if (toast) toast("Connect\xE9e en tant qu'Administratrice (Fatima Zahra Alaoui)", "check");
-        },
-        className: "flex items-center justify-center gap-2 rounded-2xl bg-navy px-5 py-3.5 text-xs font-bold text-white shadow-lg shadow-navy/25 hover:bg-slate-800 transition"
-      },
-      /* @__PURE__ */ React.createElement(Icon, { n: "shield", size: 16 }),
-      "Connexion Admin (Fatima Zahra)"
-    )), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: () => nav({ name: "login" }),
-        className: "mt-6 text-xs font-semibold text-slate-400 hover:text-slate-600 transition"
-      },
-      "Ouvrir la page de connexion compl\xE8te \u2192"
-    )));
+  useEffect(() => {
+    SpotworkAPI.getPayments().then((res) => {
+      if (res && res.transactions && res.transactions.length > 0) {
+        setTxns(res.transactions);
+      }
+    });
+  }, []);
+  if (!currentUser || currentUser.role !== "manager" && currentUser.role !== "admin") {
+    return /* @__PURE__ */ React.createElement(AccessDenied, { nav, currentUser, onSelectUser });
   }
   const user = currentUser;
   const pendingBookings = bookings.filter((b) => b.status === "pending");
@@ -1103,7 +1567,7 @@ const AdminDash = ({
     { label: "Salles de r\xE9union", v: 21, c: "#5B90F7" },
     { label: "Studios & cabines", v: 14, c: "#BCD2FF" }
   ];
-  return /* @__PURE__ */ React.createElement("main", { className: "bg-mist min-h-screen pb-16" }, user.role === "client" && /* @__PURE__ */ React.createElement("div", { className: "bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1.5 font-medium" }, /* @__PURE__ */ React.createElement(Icon, { n: "info", size: 14, className: "text-amber-600" }), "Aper\xE7u Gestionnaire : vous \xEAtes actuellement connect\xE9 en tant que ", /* @__PURE__ */ React.createElement("b", null, user.name), " (Client)."), /* @__PURE__ */ React.createElement("button", { onClick: () => onSelectUser(PRESET_ACCOUNTS[1]), className: "font-bold underline text-brand-700 hover:text-brand-900" }, "Basculer sur le compte Gestionnaire (Mehdi El Fassi) \u2192")), /* @__PURE__ */ React.createElement("div", { className: "bg-navy" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Kicker, null, /* @__PURE__ */ React.createElement("span", { className: "text-brand-300" }, "Tableau de bord ", user.role === "admin" ? "Administrateur" : "Gestionnaire")), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight text-white" }, "Bonjour ", user.firstName || user.name, " \u{1F44B}"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-400" }, "G\xE9rez vos ", spaces.length, " espaces au Maroc, ajustez les prix en Dirhams et traitez les demandes de r\xE9servation.")), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2.5" }, /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("main", { className: "bg-mist min-h-screen pb-16" }, /* @__PURE__ */ React.createElement("div", { className: "bg-navy" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Kicker, null, /* @__PURE__ */ React.createElement("span", { className: "text-brand-300" }, "Tableau de bord ", user.role === "admin" ? "Administrateur" : "Gestionnaire")), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight text-white" }, "Bonjour ", user.firstName || user.name, " \u{1F44B}"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-400" }, "G\xE9rez vos ", spaces.length, " espaces au Maroc, ajustez les prix en Dirhams et traitez les demandes de r\xE9servation.")), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2.5" }, /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: () => setIsCreateOpen(true),
@@ -1115,6 +1579,7 @@ const AdminDash = ({
     { id: "overview", label: "Vue d'ensemble", icon: "bar-chart-3" },
     { id: "spaces", label: `Espaces & Tarifs (${spaces.length})`, icon: "building" },
     { id: "bookings", label: `Demandes de r\xE9servation`, icon: "calendar-days", badge: pendingBookings.length },
+    { id: "payments", label: `Paiements & Revenus`, icon: "credit-card" },
     { id: "users", label: `Membres & R\xF4les (${PRESET_ACCOUNTS.length})`, icon: "users" }
   ].map((t) => /* @__PURE__ */ React.createElement(
     "button",
@@ -1295,7 +1760,35 @@ const AdminDash = ({
         "R\xE9tablir"
       )))
     );
-  }))), tab === "users" && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold text-ink" }, "Comptes utilisateurs & Acc\xE8s PropTech Maroc"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1" }, "Profils configur\xE9s pour la gestion, la r\xE9servation et le contr\xF4le de la plateforme."), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid gap-4 md:grid-cols-3" }, PRESET_ACCOUNTS.map((acc) => {
+  }))), tab === "payments" && /* @__PURE__ */ React.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400" }, "Chiffre d'Affaires Brut"), /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "trending-up", size: 15 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-2 font-display text-2xl font-bold text-ink" }, txns.filter((t) => t.status === "paid").reduce((acc, t) => acc + (t.grossAmount || 0), 0).toLocaleString("fr-FR"), " DH"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-emerald-600 font-semibold flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "check-circle-2", size: 12 }), "Encaissements valid\xE9s CMI Maroc")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400" }, "Commissions Spotwork (8%)"), /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "percent", size: 15 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-2 font-display text-2xl font-bold text-brand-600" }, txns.filter((t) => t.status === "paid").reduce((acc, t) => acc + (t.feeAmount || 0), 0).toFixed(2), " DH"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, "Frais de service & passerelle bancaire")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400" }, "Revenu Net Revers\xE9"), /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-purple-50 text-purple-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "wallet", size: 15 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-2 font-display text-2xl font-bold text-purple-700" }, txns.filter((t) => t.status === "paid").reduce((acc, t) => acc + (t.netAmount || 0), 0).toFixed(2), " DH"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-purple-600 font-semibold flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-up-right", size: 12 }), "Virements bancaires aux gestionnaires")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400" }, "Succ\xE8s R\xE8glements CMI"), /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 15 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-2 font-display text-2xl font-bold text-ink" }, "100 %"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Protocole 3D-Secure certifi\xE9 Maroc"))), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-card flex flex-wrap items-center justify-between gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1" }, "Statut :"), [
+    { id: "all", label: `Tous (${txns.length})` },
+    { id: "paid", label: `Pay\xE9s (${txns.filter((t) => t.status === "paid").length})` },
+    { id: "pending", label: `En attente (${txns.filter((t) => t.status === "pending").length})` }
+  ].map((s) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: s.id,
+      onClick: () => setPaymentsStatus(s.id),
+      className: `rounded-full px-3 py-1.5 text-xs font-bold transition ${paymentsStatus === s.id ? "bg-navy text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`
+    },
+    s.label
+  ))), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => toast("Export comptable des transactions au format Excel / CSV", "download"),
+      className: "flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "file-spreadsheet", size: 13 }),
+    "Exporter Journal Comptable"
+  )), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden" }, /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { className: "bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]" }, /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold" }, "Transaction / Facture"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold" }, "Date & Heure"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold" }, "Espace & Ville"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold" }, "Client"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold" }, "R\xE8glement"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold text-right" }, "Brut (DH)"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold text-right" }, "Frais (8%)"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold text-right" }, "Net Revers\xE9 (DH)"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold text-center" }, "Statut"), /* @__PURE__ */ React.createElement("th", { className: "py-3 px-4 font-bold text-center" }, "Action"))), /* @__PURE__ */ React.createElement("tbody", { className: "divide-y divide-slate-100" }, txns.filter((t) => paymentsStatus === "all" || t.status === paymentsStatus).map((txn) => /* @__PURE__ */ React.createElement("tr", { key: txn.id, className: "hover:bg-slate-50/60 transition" }, /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink" }, txn.id), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-brand-600 font-mono font-semibold" }, txn.invoiceNumber)), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4 text-slate-500" }, /* @__PURE__ */ React.createElement("p", { className: "font-semibold text-slate-700" }, txn.date), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400" }, txn.paidAt)), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink" }, txn.spaceName), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-500" }, txn.city, " \xB7 ", txn.timeSlot)), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink" }, txn.clientName), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 truncate max-w-[140px]" }, txn.clientEmail)), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4 text-slate-600" }, /* @__PURE__ */ React.createElement("p", { className: "font-semibold text-xs flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "credit-card", size: 12, className: "text-brand-600" }), "CMI \xB7\xB7\xB7\xB7 ", txn.cardLast4 || "4242"), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400" }, txn.paymentMethod)), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4 text-right font-mono font-bold text-ink" }, txn.grossAmount.toFixed(2), " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4 text-right font-mono text-slate-500" }, txn.feeAmount.toFixed(2), " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4 text-right font-mono font-bold text-emerald-700" }, txn.netAmount.toFixed(2), " DH"), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4 text-center" }, /* @__PURE__ */ React.createElement("span", { className: `inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${txn.status === "paid" ? "bg-emerald-100 text-emerald-800" : txn.status === "pending" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}` }, txn.status === "paid" ? "\u2713 Pay\xE9" : txn.status === "pending" ? "En attente" : "Annul\xE9")), /* @__PURE__ */ React.createElement("td", { className: "py-3.5 px-4 text-center" }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setSelectedInvoice(txn),
+      className: "inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-bold text-brand-700 hover:bg-brand-100 transition shadow-2xs"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 12 }),
+    "Facture"
+  ))))))))), tab === "users" && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold text-ink" }, "Comptes utilisateurs & Acc\xE8s PropTech Maroc"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1" }, "Profils configur\xE9s pour la gestion, la r\xE9servation et le contr\xF4le de la plateforme."), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid gap-4 md:grid-cols-3" }, PRESET_ACCOUNTS.map((acc) => {
     const isCurrent = currentUser?.id === acc.id;
     return /* @__PURE__ */ React.createElement("div", { key: acc.id, className: `rounded-2xl border p-5 transition ${isCurrent ? "border-brand-500 bg-brand-50/20 ring-2 ring-brand-500/20" : "border-slate-200 bg-white"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 mb-3" }, /* @__PURE__ */ React.createElement("span", { className: `grid h-10 w-10 place-items-center rounded-xl font-bold text-white text-xs ${acc.avatarBg}` }, acc.initials), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink" }, acc.name), /* @__PURE__ */ React.createElement("span", { className: `inline-block mt-0.5 rounded-full border px-2 py-0.5 text-[10px] font-bold ${acc.badgeCls}` }, acc.roleLabel))), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-mono text-slate-500 mb-2" }, acc.email), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-600 leading-relaxed min-h-[44px]" }, acc.desc), /* @__PURE__ */ React.createElement(
       "button",
@@ -1322,6 +1815,13 @@ const AdminDash = ({
       isOpen: Boolean(editingSpace),
       onClose: () => setEditingSpace(null),
       onUpdateSpace
+    }
+  ), /* @__PURE__ */ React.createElement(
+    InvoiceModal,
+    {
+      invoice: selectedInvoice,
+      isOpen: Boolean(selectedInvoice),
+      onClose: () => setSelectedInvoice(null)
     }
   ));
 };
@@ -1663,6 +2163,21 @@ const App = () => {
     nav({ name: "checkout" });
   };
   if (!ready) return /* @__PURE__ */ React.createElement("div", { className: "grid min-h-screen place-items-center bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 22 })), /* @__PURE__ */ React.createElement("p", { className: "mt-3 font-display font-bold" }, "Spotwork PropTech Maroc")));
-  return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && /* @__PURE__ */ React.createElement(AdminDash, { nav, toast, currentUser, onSelectUser: onLogin, spaces: spacesList, onUpdateSpace: handleUpdateSpace, onCreateSpace: handleCreateSpace, onDeleteSpace: handleDeleteSpace, bookings: allBookings, onUpdateBookingStatus: handleUpdateBookingStatus }), view.name === "login" && /* @__PURE__ */ React.createElement(LoginPage, { currentUser, onLogin, nav, toast }), /* @__PURE__ */ React.createElement(Footer, { nav, toast }), /* @__PURE__ */ React.createElement("div", { className: "pointer-events-none fixed bottom-5 right-5 z-[60] flex flex-col gap-2" }, toasts.map((t) => /* @__PURE__ */ React.createElement("div", { key: t.id, className: "toast pointer-events-auto flex items-center gap-2.5 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-lift" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: t.icon, size: 13 })), t.msg))));
+  const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
+  return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList, bookings: allBookings }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && (isManagerOrAdmin ? /* @__PURE__ */ React.createElement(
+    AdminDash,
+    {
+      nav,
+      toast,
+      currentUser,
+      onSelectUser: onLogin,
+      spaces: spacesList,
+      onUpdateSpace: handleUpdateSpace,
+      onCreateSpace: handleCreateSpace,
+      onDeleteSpace: handleDeleteSpace,
+      bookings: allBookings,
+      onUpdateBookingStatus: handleUpdateBookingStatus
+    }
+  ) : /* @__PURE__ */ React.createElement(AccessDenied, { nav, currentUser, onSelectUser: onLogin })), view.name === "login" && /* @__PURE__ */ React.createElement(LoginPage, { currentUser, onLogin, nav, toast }), /* @__PURE__ */ React.createElement(Footer, { nav, toast }), /* @__PURE__ */ React.createElement("div", { className: "pointer-events-none fixed bottom-5 right-5 z-[60] flex flex-col gap-2" }, toasts.map((t) => /* @__PURE__ */ React.createElement("div", { key: t.id, className: "toast pointer-events-auto flex items-center gap-2.5 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-lift" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: t.icon, size: 13 })), t.msg))));
 };
 ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
