@@ -15,7 +15,9 @@ import {
   updatePreferencesSchema,
   spaceFilterSchema,
   createSpaceSchema,
+  updateSpaceSchema,
   createBookingSchema,
+  updateBookingStatusSchema,
   createReviewSchema,
 } from '../validators/schemas.js';
 import { isLiveSupabase } from '../config/supabase.js';
@@ -49,6 +51,8 @@ router.patch('/auth/preferences', authenticate, validateBody(updatePreferencesSc
 router.get('/spaces', validateQuery(spaceFilterSchema), SpacesController.getSpaces);
 router.get('/spaces/:id', SpacesController.getSpaceById);
 router.post('/spaces', authenticate, requireRole('manager', 'admin'), validateBody(createSpaceSchema), SpacesController.createSpace);
+router.patch('/spaces/:id', authenticate, requireRole('manager', 'admin'), validateBody(updateSpaceSchema), SpacesController.updateSpace);
+router.delete('/spaces/:id', authenticate, requireRole('manager', 'admin'), SpacesController.deleteSpace);
 
 // ==============================================================================
 // RÉSERVATIONS (BOOKINGS)
@@ -56,6 +60,7 @@ router.post('/spaces', authenticate, requireRole('manager', 'admin'), validateBo
 router.post('/bookings', authenticate, validateBody(createBookingSchema), BookingsController.createBooking);
 router.get('/bookings/user', authenticate, BookingsController.getUserBookings);
 router.patch('/bookings/:id/cancel', authenticate, BookingsController.cancelBooking);
+router.patch('/bookings/:id/status', authenticate, requireRole('manager', 'admin'), validateBody(updateBookingStatusSchema), BookingsController.updateBookingStatus);
 
 // ==============================================================================
 // RECOMMANDATIONS IA (CLAUDE API)
@@ -69,8 +74,9 @@ router.post('/recommendations/:id/click', authenticate, RecommendationsControlle
 router.post('/reviews', authenticate, validateBody(createReviewSchema), ReviewsController.createReview);
 
 // ==============================================================================
-// ANALYTICS GESTIONNAIRE (MANAGER DASHBOARD)
+// GESTIONNAIRE & ANALYTICS (MANAGER DASHBOARD)
 // ==============================================================================
 router.get('/manager/dashboard', authenticate, requireRole('manager', 'admin'), ManagerController.getDashboard);
+router.get('/manager/bookings', authenticate, requireRole('manager', 'admin'), ManagerController.getManagerBookings);
 
 export default router;

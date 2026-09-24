@@ -42,12 +42,30 @@ export const createSpaceSchema = z.object({
   name: z.string().min(2, 'Le nom de l’espace est obligatoire'),
   description: z.string().min(10, 'La description doit comporter au moins 10 caractères'),
   location: z.string().min(3, 'La localisation est obligatoire'),
-  latitude: z.number().optional().default(48.8566),
-  longitude: z.number().optional().default(2.3522),
+  latitude: z.number().optional().default(33.5883),
+  longitude: z.number().optional().default(-7.6335),
   price_per_hour: z.number().min(1, 'Le tarif horaire doit être positif'),
   capacity: z.number().int().min(1, 'La capacité minimale est de 1 personne'),
   amenities: z.array(z.string()).default([]),
   photos: z.array(z.string().url()).default([]),
+});
+
+export const updateSpaceSchema = z.object({
+  name: z.string().min(2, 'Le nom de l’espace est obligatoire').optional(),
+  description: z.string().min(10, 'La description doit comporter au moins 10 caractères').optional(),
+  location: z.string().min(3, 'La localisation est obligatoire').optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  price_per_hour: z.number().min(1, 'Le tarif horaire doit être positif').optional(),
+  capacity: z.number().int().min(1, 'La capacité minimale est de 1 personne').optional(),
+  amenities: z.array(z.string()).optional(),
+  photos: z.array(z.string().url()).optional(),
+});
+
+export const updateBookingStatusSchema = z.object({
+  status: z.enum(['confirmed', 'cancelled', 'completed', 'pending'], {
+    errorMap: () => ({ message: 'Statut de réservation invalide' }),
+  }),
 });
 
 export const createBookingSchema = z

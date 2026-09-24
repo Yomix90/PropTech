@@ -122,13 +122,72 @@ const SpotworkAPI = {
   async getManagerMetrics() {
     try {
       const res = await fetch(`${API_BASE}/manager/dashboard`, {
-        headers: { "Authorization": `Bearer ${SpotworkAPI.managerToken}` }
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` }
       });
       if (!res.ok) return null;
       const json = await res.json();
       return json.data;
     } catch {
       return null;
+    }
+  },
+  async createSpace(spaceData) {
+    try {
+      const res = await fetch(`${API_BASE}/spaces`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` },
+        body: JSON.stringify(spaceData)
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: "error", message: e.message };
+    }
+  },
+  async updateSpace(id, updates) {
+    try {
+      const res = await fetch(`${API_BASE}/spaces/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` },
+        body: JSON.stringify(updates)
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: "error", message: e.message };
+    }
+  },
+  async deleteSpace(id) {
+    try {
+      const res = await fetch(`${API_BASE}/spaces/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` }
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: "error", message: e.message };
+    }
+  },
+  async getManagerBookings() {
+    try {
+      const res = await fetch(`${API_BASE}/manager/bookings`, {
+        headers: { "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` }
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data.bookings;
+    } catch {
+      return null;
+    }
+  },
+  async updateBookingStatus(id, status) {
+    try {
+      const res = await fetch(`${API_BASE}/bookings/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` },
+        body: JSON.stringify({ status })
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: "error", message: e.message };
     }
   }
 };
@@ -239,6 +298,105 @@ const RECENT = [
   {c:"Mehdi E.",s:"Oasis Work Gauthier",d:"Hier 11:36",a:340,st:"Confirmée"}
 ];
 
+const INITIAL_MANAGER_BOOKINGS = [
+  {
+    id: "req-1",
+    clientName: "Youssef Amrani",
+    clientEmail: "youssef@proptech.ma",
+    clientPhone: "+212 6 61 23 45 67",
+    clientInitials: "YA",
+    spaceId: 1,
+    spaceName: "L'Atelier Maarif",
+    city: "Casablanca",
+    date: "2026-10-01",
+    timeSlot: "09:00 – 18:00 (Journée)",
+    hours: 8,
+    totalPrice: 360,
+    status: "confirmed",
+    createdAt: "Il y a 2h"
+  },
+  {
+    id: "req-2",
+    clientName: "Salma Tazi",
+    clientEmail: "salma.tazi@techmaroc.ma",
+    clientPhone: "+212 6 62 89 01 23",
+    clientInitials: "ST",
+    spaceId: 4,
+    spaceName: "Le Hub Agdal",
+    city: "Rabat",
+    date: "2026-10-05",
+    timeSlot: "14:00 – 17:00 (3h)",
+    hours: 3,
+    totalPrice: 150,
+    status: "pending",
+    createdAt: "Il y a 35 min"
+  },
+  {
+    id: "req-3",
+    clientName: "Omar Berrada",
+    clientEmail: "omar.berrada@startup.ma",
+    clientPhone: "+212 6 63 45 67 89",
+    clientInitials: "OB",
+    spaceId: 2,
+    spaceName: "Studio Guéliz",
+    city: "Marrakech",
+    date: "2026-10-06",
+    timeSlot: "10:00 – 13:00 (3h)",
+    hours: 3,
+    totalPrice: 195,
+    status: "pending",
+    createdAt: "Il y a 1h"
+  },
+  {
+    id: "req-4",
+    clientName: "Nadia Idrissi",
+    clientEmail: "nadia.idrissi@digital.ma",
+    clientPhone: "+212 6 64 12 34 56",
+    clientInitials: "NI",
+    spaceId: 5,
+    spaceName: "Marina Bay Focus",
+    city: "Tanger",
+    date: "2026-10-08",
+    timeSlot: "14:00 – 17:00 (3h)",
+    hours: 3,
+    totalPrice: 75,
+    status: "confirmed",
+    createdAt: "Hier"
+  },
+  {
+    id: "req-5",
+    clientName: "Amine Naciri",
+    clientEmail: "amine.naciri@freelance.ma",
+    clientPhone: "+212 6 65 78 90 12",
+    clientInitials: "AN",
+    spaceId: 3,
+    spaceName: "Oasis Work Gauthier",
+    city: "Casablanca",
+    date: "2026-10-10",
+    timeSlot: "09:00 – 12:00 (3h)",
+    hours: 3,
+    totalPrice: 360,
+    status: "pending",
+    createdAt: "Il y a 10 min"
+  },
+  {
+    id: "req-6",
+    clientName: "Karim Benjelloun",
+    clientEmail: "karim.benj@innov.ma",
+    clientPhone: "+212 6 66 33 22 11",
+    clientInitials: "KB",
+    spaceId: 6,
+    spaceName: "L'Espace Anfa",
+    city: "Casablanca",
+    date: "2026-09-28",
+    timeSlot: "09:00 – 17:00 (8h)",
+    hours: 8,
+    totalPrice: 320,
+    status: "cancelled",
+    createdAt: "Il y a 3j"
+  }
+];
+
 /* ================= UI ATOMS ================= */
 const Stars=({v,size=13})=>(
   <span className="inline-flex gap-0.5 text-amber-400">
@@ -324,8 +482,6 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
   const [userMenu,setUserMenu]=useState(false);
   const [apiOnline,setApiOnline]=useState(null);
 
-  const user = currentUser || PRESET_ACCOUNTS[0];
-
   useEffect(()=>{
     const f=()=>setScrolled(window.scrollY>8);f();
     window.addEventListener("scroll",f);
@@ -333,7 +489,7 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
     return()=>window.removeEventListener("scroll",f);
   },[]);
   const link=(label,target,icon)=>(
-    <button key={label} onClick={()=>{nav(target);setUserMenu(false);}}
+    <button key={label} onClick={()=>{nav(target);setUserMenu(false);setMenuOpen(false);}}
       className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${view.name===target.name?"bg-brand-50 text-brand-700":"text-slate-600 hover:text-ink hover:bg-slate-50"}`}>
       {icon&&<Icon n={icon} size={15}/>}{label}
     </button>);
@@ -352,7 +508,7 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
           {link("Explorer",{name:"explore"},"search")}
           {link("Mes réservations",{name:"user"},"calendar-days")}
           {link("Gestionnaire",{name:"admin"},"bar-chart-3")}
-          {link("Connexion",{name:"login"},"user")}
+          {!currentUser && link("Connexion",{name:"login"},"user")}
         </nav>
         <div className="flex items-center gap-2">
           <button onClick={()=>{
@@ -367,79 +523,87 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
             <Icon n="shopping-cart" size={17}/>
             {cartCount>0&&<span key={cartCount} className="pop absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">{cartCount}</span>}
           </button>
-          <div className="relative">
-            <button onClick={()=>setUserMenu(!userMenu)} className="flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-3 transition hover:border-brand-300 bg-white">
-              <span className={`grid h-8 w-8 place-items-center rounded-full font-bold text-white text-[11px] shadow-sm ${user.avatarBg}`}>
-                {user.initials}
-              </span>
-              <div className="hidden sm:flex items-center gap-1.5 text-left">
-                <span className="text-sm font-semibold text-slate-800">{user.firstName}</span>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${user.badgeCls}`}>
-                  {user.roleLabel}
+
+          {currentUser ? (
+            <div className="relative">
+              <button onClick={()=>setUserMenu(!userMenu)} className="flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-3 transition hover:border-brand-300 bg-white">
+                <span className={`grid h-8 w-8 place-items-center rounded-full font-bold text-white text-[11px] shadow-sm ${currentUser.avatarBg || "bg-brand-600"}`}>
+                  {currentUser.initials || "U"}
                 </span>
-              </div>
-              <Icon n="chevron-down" size={14} className="text-slate-400"/>
-            </button>
-            {userMenu&&(
-              <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-lift z-50">
-                {/* User Header */}
-                <div className="p-3 bg-mist rounded-xl mb-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`grid h-9 w-9 place-items-center rounded-xl font-bold text-white text-xs ${user.avatarBg}`}>
-                      {user.initials}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-sm text-ink truncate">{user.name}</p>
-                      <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
+                <div className="hidden sm:flex items-center gap-1.5 text-left">
+                  <span className="text-sm font-semibold text-slate-800">{currentUser.firstName || currentUser.name}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${currentUser.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}`}>
+                    {currentUser.roleLabel || currentUser.role}
+                  </span>
+                </div>
+                <Icon n="chevron-down" size={14} className="text-slate-400"/>
+              </button>
+              {userMenu&&(
+                <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-lift z-50">
+                  {/* User Header */}
+                  <div className="p-3 bg-mist rounded-xl mb-1.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`grid h-9 w-9 place-items-center rounded-xl font-bold text-white text-xs ${currentUser.avatarBg || "bg-brand-600"}`}>
+                        {currentUser.initials || "U"}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-sm text-ink truncate">{currentUser.name}</p>
+                        <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500 flex items-center gap-1"><Icon n="map-pin" size={11}/>{currentUser.city || "Maroc"}</span>
+                      <span className={`px-2 py-0.5 rounded-full font-bold border ${currentUser.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}`}>{currentUser.roleLabel || currentUser.role}</span>
                     </div>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-500 flex items-center gap-1"><Icon n="map-pin" size={11}/>{user.city}</span>
-                    <span className={`px-2 py-0.5 rounded-full font-bold border ${user.badgeCls}`}>{user.roleLabel}</span>
-                  </div>
-                </div>
 
-                {/* Primary Nav Links */}
-                {[
-                  ["Mon espace client","layout-grid",()=>nav({name:"user"})],
-                  ["Mes favoris","heart",()=>nav({name:"user",params:{tab:"favoris"}})],
-                  ["Espace gestionnaire / Admin","bar-chart-3",()=>nav({name:"admin"})]
-                ].map(([l,i,f])=>(
-                  <button key={l} onClick={()=>{f();setUserMenu(false);}} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-mist hover:text-ink">
-                    <Icon n={i} size={15} className="text-slate-400"/>{l}
-                  </button>
-                ))}
-
-                {/* Quick Account Switcher */}
-                <div className="border-t border-slate-100 my-1.5 pt-1.5">
-                  <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Changer de compte (1 clic)</p>
-                  {PRESET_ACCOUNTS.map(acc => (
-                    <button
-                      key={acc.id}
-                      onClick={() => {
-                        onSelectUser(acc);
-                        setUserMenu(false);
-                        if (toast) toast(`Connecté : ${acc.name} (${acc.roleLabel})`, "user-check");
-                      }}
-                      className={`flex w-full items-center justify-between px-3 py-1.5 text-xs rounded-lg transition ${user.id === acc.id ? "bg-brand-50 text-brand-700 font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
-                      <span className="truncate">{acc.name}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${acc.badgeCls}`}>{acc.roleLabel}</span>
+                  {/* Primary Nav Links */}
+                  {[
+                    ["Mon espace client","layout-grid",()=>nav({name:"user"})],
+                    ["Mes favoris","heart",()=>nav({name:"user",params:{tab:"favoris"}})],
+                    ["Espace gestionnaire / Admin","bar-chart-3",()=>nav({name:"admin"})]
+                  ].map(([l,i,f])=>(
+                    <button key={l} onClick={()=>{f();setUserMenu(false);}} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-mist hover:text-ink">
+                      <Icon n={i} size={15} className="text-slate-400"/>{l}
                     </button>
                   ))}
-                </div>
 
-                {/* Login Page / Logout */}
-                <div className="border-t border-slate-100 mt-1.5 pt-1.5 flex gap-1">
-                  <button onClick={()=>{nav({name:"login"});setUserMenu(false);}} className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100">
-                    <Icon n="log-in" size={13}/>Connexion
-                  </button>
-                  <button onClick={()=>{onLogout();setUserMenu(false);}} className="flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50">
-                    <Icon n="log-out" size={13}/>
-                  </button>
+                  {/* Quick Account Switcher */}
+                  <div className="border-t border-slate-100 my-1.5 pt-1.5">
+                    <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Changer de compte (1 clic)</p>
+                    {PRESET_ACCOUNTS.map(acc => (
+                      <button
+                        key={acc.id}
+                        onClick={() => {
+                          onSelectUser(acc);
+                          setUserMenu(false);
+                          if (toast) toast(`Connecté : ${acc.name} (${acc.roleLabel})`, "user-check");
+                        }}
+                        className={`flex w-full items-center justify-between px-3 py-1.5 text-xs rounded-lg transition ${currentUser.id === acc.id ? "bg-brand-50 text-brand-700 font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
+                        <span className="truncate">{acc.name}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${acc.badgeCls}`}>{acc.roleLabel}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Login Page / Logout */}
+                  <div className="border-t border-slate-100 mt-1.5 pt-1.5 flex gap-1.5">
+                    <button onClick={()=>{nav({name:"login"});setUserMenu(false);}} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition">
+                      <Icon n="user" size={13}/>Gérer
+                    </button>
+                    <button onClick={()=>{onLogout();setUserMenu(false);}} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition">
+                      <Icon n="log-out" size={13}/>Déconnexion
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <button onClick={()=>nav({name:"login"})} className="flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-brand-700 transition">
+              <Icon n="log-in" size={15}/><span>Se connecter</span>
+            </button>
+          )}
+
           <button onClick={()=>setMenuOpen(!menuOpen)} className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 lg:hidden">
             <Icon n={menuOpen?"x":"menu"} size={18}/>
           </button>
@@ -452,7 +616,13 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,
             {link("Explorer les espaces",{name:"explore"},"search")}
             {link("Mes réservations",{name:"user"},"calendar-days")}
             {link("Tableau de bord gestionnaire",{name:"admin"},"bar-chart-3")}
-            {link("Page de connexion",{name:"login"},"user")}
+            {currentUser ? (
+              <button onClick={()=>{onLogout();setMenuOpen(false);}} className="flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">
+                <Icon n="log-out" size={16}/>Déconnexion ({currentUser.firstName || currentUser.name})
+              </button>
+            ) : (
+              link("Se connecter",{name:"login"},"log-in")
+            )}
             {link("Panier",{name:"checkout"},"shopping-cart")}
           </div>
         </div>
@@ -669,8 +839,8 @@ const Ring=({v})=>(
 );
 
 /* ================= HOME ================= */
-const Home=({nav,favs,toggleFav})=>{
-  const featured=SPACES.filter(s=>s.featured);
+const Home=({nav,favs,toggleFav,spaces=SPACES})=>{
+  const featured=spaces.filter(s=>s.featured);
   return (
     <main>
       <Hero nav={nav}/>
@@ -696,7 +866,7 @@ const Home=({nav,favs,toggleFav})=>{
         <SecHead kicker="Parcourir" title="Explorer par type d'espace"/>
         <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0" data-reveal>
           {TYPES.map((t,i)=>{
-            const count=SPACES.filter(s=>s.type===t.id).length;
+            const count=spaces.filter(s=>s.type===t.id).length;
             return (
               <button key={t.id} onClick={()=>nav({name:"explore",params:{type:t.id}})}
                 className="group flex shrink-0 items-center gap-3 rounded-full border border-slate-200 bg-white py-2.5 pl-3.5 pr-5 transition-all hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-card"
@@ -877,7 +1047,7 @@ const FilterPanel=({f,setF})=>{
   );
 };
 
-const Explore=({params,nav,favs,toggleFav})=>{
+const Explore=({params,nav,favs,toggleFav,spaces=SPACES})=>{
   const [f,setF]=useState(()=>({
     city:params?.city||"",types:params?.type?[params.type]:[],
     max:params?.budget?+params.budget:150,am:[]
@@ -885,7 +1055,7 @@ const Explore=({params,nav,favs,toggleFav})=>{
   const [sort,setSort]=useState("reco");
   const [open,setOpen]=useState(false);
   const results=useMemo(()=>{
-    let r=SPACES.filter(s=>
+    let r=spaces.filter(s=>
       (!f.city||s.city===f.city)&&
       (!f.types.length||f.types.includes(s.type))&&
       (f.max>=150||s.price<=f.max)&&
@@ -895,7 +1065,7 @@ const Explore=({params,nav,favs,toggleFav})=>{
     if(sort==="desc")r=[...r].sort((a,b)=>b.price-a.price);
     if(sort==="note")r=[...r].sort((a,b)=>b.rating-a.rating);
     return r;
-  },[f,sort]);
+  },[f,sort,spaces]);
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -947,8 +1117,8 @@ const Explore=({params,nav,favs,toggleFav})=>{
 };
 
 /* ================= DÉTAIL ESPACE ================= */
-const SpaceDetail=({id,nav,favs,toggleFav,reserve})=>{
-  const s=SPACES.find(x=>x.id===id);
+const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES})=>{
+  const s=spaces.find(x=>x.id===id);
   const [img,setImg]=useState(0);
   const [date,setDate]=useState(()=>{const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);});
   const [days,setDays]=useState(1);
@@ -967,7 +1137,7 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve})=>{
       meta:isHour?`${fmtDate(date)} · ${slots.length} h`:`${fmtDate(date)} · ${days} jour${days>1?"s":""}`,
       total:base+fees});
   };
-  const similar=SPACES.filter(x=>x.id!==s.id&&(x.city===s.city||x.type===s.type)).slice(0,3);
+  const similar=spaces.filter(x=>x.id!==s.id&&(x.city===s.city||x.type===s.type)).slice(0,3);
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">
       <button onClick={()=>nav({name:"explore"})} className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink">
@@ -1120,11 +1290,15 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve})=>{
 };
 
 /* ================= CHECKOUT ================= */
-const Checkout=({cart,setCart,nav,onDone,toast})=>{
+const Checkout=({cart,setCart,nav,onDone,toast,currentUser})=>{
   const [promo,setPromo]=useState("");const [promoOn,setPromoOn]=useState(false);const [promoErr,setPromoErr]=useState("");
-  const [form,setForm]=useState({name:"",email:"",card:"",exp:"",cvc:""});
+  const [form,setForm]=useState(()=>({
+    name: currentUser?.name || "",
+    email: currentUser?.email || "",
+    card:"",exp:"",cvc:""
+  }));
   const [errs,setErrs]=useState({});const [paid,setPaid]=useState(false);
-  const ref=useMemo(()=>`SW-2025-${Math.floor(1000+Math.random()*9000)}`);
+  const ref=useMemo(()=>`SW-2026-${Math.floor(1000+Math.random()*9000)}`);
   const subtotal=cart.reduce((s,i)=>s+i.total,0);
   const discount=promoOn?subtotal*0.10:0;
   const total=subtotal-discount;
@@ -1147,7 +1321,18 @@ const Checkout=({cart,setCart,nav,onDone,toast})=>{
   const submit=e=>{
     e.preventDefault();
     if(cart.length===0)return;
-    if(validate()){onDone({date:cart[0].date,meta:cart.length>1?`${cart.length} réservations`:cart[0].meta,spaceId:cart[0].id});setPaid(true);window.scrollTo({top:0});}
+    if(validate()){
+      onDone({
+        date:cart[0].date,
+        meta:cart.length>1?`${cart.length} réservations`:cart[0].meta,
+        spaceId:cart[0].id,
+        name:form.name,
+        email:form.email,
+        total:total
+      });
+      setPaid(true);
+      window.scrollTo({top:0});
+    }
   };
   if(paid)return (
     <main className="mx-auto max-w-lg px-4 py-20 text-center">
@@ -1184,10 +1369,10 @@ const Checkout=({cart,setCart,nav,onDone,toast})=>{
             <h2 className="flex items-center gap-2 font-display font-bold"><Icon n="user" size={17} className="text-brand-600"/>Vos coordonnées</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field label="Nom complet" err={errs.name}>
-                <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Léa Martin" className={`${inp} ${errs.name?inpErr:""}`}/>
+                <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Youssef Amrani" className={`${inp} ${errs.name?inpErr:""}`}/>
               </Field>
               <Field label="E-mail" err={errs.email}>
-                <input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="lea@studio.fr" className={`${inp} ${errs.email?inpErr:""}`}/>
+                <input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="youssef@proptech.ma" className={`${inp} ${errs.email?inpErr:""}`}/>
               </Field>
             </div>
           </section>
@@ -1252,27 +1437,50 @@ const Checkout=({cart,setCart,nav,onDone,toast})=>{
 };
 
 /* ================= DASHBOARD CLIENT ================= */
-const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUser})=>{
-  const user = currentUser || PRESET_ACCOUNTS[0];
+const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUser,spaces=SPACES})=>{
+  if (!currentUser) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 md:p-12 shadow-card">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-600 mb-4">
+            <Icon n="user" size={26}/>
+          </span>
+          <h1 className="font-display text-2xl font-bold text-ink">Espace Membre Spotwork</h1>
+          <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
+            Connectez-vous pour retrouver vos réservations en cours, vos espaces favoris et les recommandations personnalisées de l'IA.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <button onClick={()=>nav({name:"login"})} className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition">
+              <Icon n="log-in" size={15}/>Se connecter
+            </button>
+            <button onClick={()=>nav({name:"explore"})} className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-6 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
+              <Icon n="search" size={15}/>Explorer les espaces
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+  const user = currentUser;
   const [tab,setTab]=useState(initTab||"resas");
   const [prefs,setPrefs]=useState({mail:true,push:false,news:true,city:user.city||"Casablanca",type:"open"});
   const tabs=[["resas","Mes réservations","calendar-days"],["ia","Recommandations","sparkles"],["favoris","Favoris","heart"],["prefs","Préférences","settings"]];
   const recommendations=useMemo(()=>{
-    const favTypes=new Set([...favs].map(id=>SPACES.find(s=>s.id===id)?.type));
-    return SPACES.filter(s=>!favs.has(s.id))
+    const favTypes=new Set([...favs].map(id=>spaces.find(s=>s.id===id)?.type));
+    return spaces.filter(s=>!favs.has(s.id))
       .map(s=>({s,score:favTypes.has(s.type)?88+Math.round(s.rating*2):55+Math.round(s.rating*6),
-        reason:favTypes.has(s.type)?`Correspond à votre préférence « ${TYPES.find(t=>t.id===s.type).label.toLowerCase()} »`:`Très bien noté à ${s.city}`}))
+        reason:favTypes.has(s.type)?`Correspond à votre préférence « ${TYPES.find(t=>t.id===s.type)?.label.toLowerCase()} »`:`Très bien noté à ${s.city}`}))
       .sort((a,b)=>b.score-a.score).slice(0,3);
-  },[favs]);
+  },[favs, spaces]);
   const stColor=st=>st==="Confirmée"?"bg-emerald-50 text-emerald-600":st==="En attente"?"bg-amber-50 text-amber-600":"bg-slate-100 text-slate-500";
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Kicker>Espace membre · PropTech Maroc</Kicker>
-          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">Bonjour {user.firstName} 👋</h1>
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">Bonjour {user.firstName || user.name} 👋</h1>
           <p className="mt-1 text-xs text-slate-500">
-            {user.email} · {user.city}, Maroc · <span className={`inline-flex px-2 py-0.5 rounded-full font-semibold border ${user.badgeCls}`}>{user.roleLabel}</span>
+            {user.email} · {user.city || "Maroc"} · <span className={`inline-flex px-2 py-0.5 rounded-full font-semibold border ${user.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}`}>{user.roleLabel || user.role}</span>
           </p>
         </div>
         <button onClick={()=>nav({name:"explore"})} className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25">
@@ -1296,7 +1504,7 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
                 {bookings.length===0&&<p className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">Aucune réservation à venir.</p>}
                 <div className="grid gap-4 md:grid-cols-2">
                   {bookings.map(b=>{
-                    const s=SPACES.find(x=>x.id===b.spaceId);if(!s)return null;
+                    const s=spaces.find(x=>x.id===b.spaceId);if(!s)return null;
                     return (
                       <article key={b.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-lift">
                         <div className="relative h-32 overflow-hidden">
@@ -1323,7 +1531,7 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
                 <h2 className="mb-4 font-display text-lg font-bold">Historique</h2>
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
                   {PAST_BOOKINGS.map((b,i)=>{
-                    const s=SPACES.find(x=>x.id===b.spaceId);if(!s)return null;
+                    const s=spaces.find(x=>x.id===b.spaceId);if(!s)return null;
                     return (
                       <div key={b.id} className={`flex items-center gap-4 px-5 py-4 text-sm ${i>0?"border-t border-slate-100":""}`}>
                         <img src={U(s.imgs[0],120)} alt="" className="h-11 w-14 rounded-lg object-cover"/>
@@ -1370,7 +1578,7 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
           {tab==="favoris"&&(
             favs.size===0?<p className="rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center text-sm text-slate-400">Aucun favori pour le moment — cliquez sur le ♥ d'un espace.</p>:
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {SPACES.filter(s=>favs.has(s.id)).map(s=><SpaceCard key={s.id} s={s} nav={nav} favs={favs} toggleFav={toggleFav}/>)}
+              {spaces.filter(s=>favs.has(s.id)).map(s=><SpaceCard key={s.id} s={s} nav={nav} favs={favs} toggleFav={toggleFav}/>)}
             </div>
           )}
           {tab==="prefs"&&(
@@ -1404,170 +1612,888 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUs
   );
 };
 
-/* ================= DASHBOARD GESTIONNAIRE ================= */
-const AdminDash=({nav,toast,currentUser,onSelectUser})=>{
-  const user = currentUser || PRESET_ACCOUNTS[1];
-  const [range,setRange]=useState("30j");
+/* ================= MODAL CRÉATION D'ESPACE ================= */
+const CreateSpaceModal = ({ isOpen, onClose, onCreateSpace }) => {
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("Casablanca");
+  const [district, setDistrict] = useState("Maarif");
+  const [type, setType] = useState("open");
+  const [price, setPrice] = useState("45");
+  const [cap, setCap] = useState("12");
+  const [surface, setSurface] = useState("65 m²");
+  const [selectedAm, setSelectedAm] = useState(["wifi", "coffee", "screen"]);
+  const [imgKey, setImgKey] = useState("a");
+  const [customImg, setCustomImg] = useState("");
+  const [desc, setDesc] = useState("");
+  const [err, setErr] = useState("");
+
+  if (!isOpen) return null;
+
+  const toggleAmenity = (id) => {
+    setSelectedAm(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setErr("Le nom de l'espace est requis");
+      return;
+    }
+    const numPrice = Number(price);
+    if (!numPrice || numPrice <= 0) {
+      setErr("Veuillez saisir un tarif horaire valide en DH");
+      return;
+    }
+    const photo = customImg.trim() ? customImg.trim() : (IMG[imgKey] || IMG.a);
+
+    onCreateSpace({
+      name: name.trim(),
+      city,
+      district: district.trim() || `${city} Centre`,
+      type,
+      price: numPrice,
+      unit: "heure",
+      capacity: Number(cap) || 10,
+      surface: surface.trim() || "50 m²",
+      imgs: [photo, IMG.b, IMG.c],
+      am: selectedAm,
+      desc: desc.trim() || `Espace de coworking moderne et tout équipé situé à ${city}, ${district}. Connexion fibre optique et commodités complètes.`
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/60 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600">
+              <Icon n="plus-circle" size={20}/>
+            </span>
+            <div>
+              <h2 className="font-display text-xl font-bold text-ink">Créer un nouvel espace</h2>
+              <p className="text-xs text-slate-500">Ajoutez un espace de coworking au catalogue Spotwork Maroc</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+            <Icon n="x" size={18}/>
+          </button>
+        </div>
+
+        {err && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700 border border-rose-200">
+            <Icon n="alert-circle" size={15}/>{err}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Nom de l'espace *">
+              <input value={name} onChange={e=>{setName(e.target.value);setErr("");}} placeholder="Ex: Loft Tech Guéliz" className={inp} required/>
+            </Field>
+            <Field label="Ville au Maroc *">
+              <select value={city} onChange={e=>setCity(e.target.value)} className={inp}>
+                {CITIES.map(c=><option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Quartier / Adresse">
+              <input value={district} onChange={e=>setDistrict(e.target.value)} placeholder="Ex: Maarif · Bd Zerktouni" className={inp}/>
+            </Field>
+            <Field label="Type d'espace">
+              <select value={type} onChange={e=>setType(e.target.value)} className={inp}>
+                {TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Tarif par heure (DH) *">
+              <div className="relative">
+                <input type="number" min="10" step="5" value={price} onChange={e=>setPrice(e.target.value)} className={`${inp} pr-12 font-bold`} required/>
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">DH/h</span>
+              </div>
+            </Field>
+            <Field label="Capacité (personnes)">
+              <input type="number" min="1" value={cap} onChange={e=>setCap(e.target.value)} className={inp}/>
+            </Field>
+            <Field label="Surface estimée">
+              <input value={surface} onChange={e=>setSurface(e.target.value)} placeholder="Ex: 85 m²" className={inp}/>
+            </Field>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Photo de l'espace</label>
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {["a", "b", "c", "d"].map(k => (
+                <button
+                  type="button"
+                  key={k}
+                  onClick={() => { setImgKey(k); setCustomImg(""); }}
+                  className={`relative h-16 rounded-xl overflow-hidden border-2 transition ${imgKey === k && !customImg ? "border-brand-600 ring-2 ring-brand-600/30" : "border-slate-200 opacity-70 hover:opacity-100"}`}>
+                  <img src={U(IMG[k], 200)} alt="" className="h-full w-full object-cover"/>
+                  {imgKey === k && !customImg && (
+                    <span className="absolute top-1 right-1 grid h-4 w-4 place-items-center rounded-full bg-brand-600 text-white text-[9px] font-bold">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <input
+              value={customImg}
+              onChange={e => setCustomImg(e.target.value)}
+              placeholder="Ou collez une URL d'image personnalisée (https://...)"
+              className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"/>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-2">Équipements & Services</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {AMENITIES.map(am => {
+                const checked = selectedAm.includes(am.id);
+                return (
+                  <button
+                    type="button"
+                    key={am.id}
+                    onClick={() => toggleAmenity(am.id)}
+                    className={`flex items-center gap-2 rounded-xl border p-2 text-xs font-medium transition text-left ${checked ? "border-brand-500 bg-brand-50/50 text-brand-700 font-semibold" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                    <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-md ${checked ? "bg-brand-600 text-white" : "border border-slate-300"}`}>
+                      {checked && <Icon n="check" size={11}/>}
+                    </span>
+                    <span className="truncate">{am.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <Field label="Description détaillée">
+            <textarea
+              rows={3}
+              value={desc}
+              onChange={e=>setDesc(e.target.value)}
+              placeholder="Décrivez l'espace, l'ambiance, la connexion fibre, les horaires et les services offerts..."
+              className={inp}/>
+          </Field>
+
+          <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition">
+              <Icon n="check" size={14}/>Publier l'espace
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+/* ================= MODAL MODIFICATION DU TARIF & ESPACE ================= */
+const EditSpacePriceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [cap, setCap] = useState("");
+  const [desc, setDesc] = useState("");
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (space) {
+      setName(space.name || "");
+      setPrice(String(space.price || 45));
+      setCap(String(space.cap || 10));
+      setDesc(space.desc || "");
+      setErr("");
+    }
+  }, [space]);
+
+  if (!isOpen || !space) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const numPrice = Number(price);
+    if (!numPrice || numPrice <= 0) {
+      setErr("Veuillez saisir un tarif valide en DH");
+      return;
+    }
+    onUpdateSpace(space.id, {
+      name: name.trim() || space.name,
+      price: numPrice,
+      capacity: Number(cap) || space.cap,
+      desc: desc.trim() || space.desc
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/60 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-600">
+              <Icon n="pencil" size={18}/>
+            </span>
+            <div>
+              <h2 className="font-display text-lg font-bold text-ink">Modifier le tarif & l'espace</h2>
+              <p className="text-xs text-slate-500">{space.city} · {space.district}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+            <Icon n="x" size={18}/>
+          </button>
+        </div>
+
+        {err && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-rose-50 p-2.5 text-xs font-semibold text-rose-700 border border-rose-200">
+            <Icon n="alert-circle" size={14}/>{err}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-mist p-3">
+            <img src={U(space.imgs[0], 120)} alt="" className="h-12 w-16 rounded-lg object-cover"/>
+            <div>
+              <p className="font-bold text-sm text-ink">{space.name}</p>
+              <p className="text-xs text-slate-400">Tarif actuel : <b className="text-brand-600">{EUR.format(space.price)}</b>/{space.unit}</p>
+            </div>
+          </div>
+
+          <Field label="Nom de l'espace">
+            <input value={name} onChange={e=>setName(e.target.value)} className={inp}/>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Nouveau tarif horaire (DH) *">
+              <div className="relative">
+                <input
+                  type="number"
+                  min="10"
+                  step="5"
+                  value={price}
+                  onChange={e=>setPrice(e.target.value)}
+                  className={`${inp} pr-12 font-bold text-brand-700 text-base`}
+                  required
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">DH/h</span>
+              </div>
+            </Field>
+            <Field label="Capacité d'accueil">
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  value={cap}
+                  onChange={e=>setCap(e.target.value)}
+                  className={inp}
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">pers.</span>
+              </div>
+            </Field>
+          </div>
+
+          <Field label="Description">
+            <textarea
+              rows={3}
+              value={desc}
+              onChange={e=>setDesc(e.target.value)}
+              className={inp}
+            />
+          </Field>
+
+          <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition">
+              <Icon n="check" size={14}/>Enregistrer le nouveau tarif
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+/* ================= DASHBOARD GESTIONNAIRE & ADMIN ================= */
+const AdminDash=({
+  nav,
+  toast,
+  currentUser,
+  onSelectUser,
+  spaces = SPACES,
+  onUpdateSpace,
+  onCreateSpace,
+  onDeleteSpace,
+  bookings = INITIAL_MANAGER_BOOKINGS,
+  onUpdateBookingStatus
+})=>{
+  const [tab, setTab] = useState("overview");
+  const [range, setRange] = useState("30j");
+  const [cityFilter, setCityFilter] = useState("");
+  const [bookingFilter, setBookingFilter] = useState("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingSpace, setEditingSpace] = useState(null);
+
+  if (!currentUser) {
+    return (
+      <main className="mx-auto max-w-4xl px-4 py-16">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 md:p-12 text-center shadow-card">
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-600 mb-4">
+            <Icon n="lock" size={30}/>
+          </span>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-ink">Espace Gestionnaire & Administration</h1>
+          <p className="mt-3 text-sm text-slate-500 max-w-lg mx-auto">
+            Vous devez être connecté avec un compte Gestionnaire ou Administrateur pour gérer les espaces au Maroc, ajuster les tarifs en Dirhams et valider les demandes de réservation.
+          </p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 max-w-lg mx-auto">
+            <button
+              onClick={() => {
+                onSelectUser(PRESET_ACCOUNTS[1]);
+                if (toast) toast("Connecté en tant que Gestionnaire (Mehdi El Fassi)", "check");
+              }}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/25 hover:bg-indigo-700 transition">
+              <Icon n="bar-chart-2" size={16}/>Connexion Gestionnaire (Mehdi)
+            </button>
+            <button
+              onClick={() => {
+                onSelectUser(PRESET_ACCOUNTS[2]);
+                if (toast) toast("Connectée en tant qu'Administratrice (Fatima Zahra Alaoui)", "check");
+              }}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-navy px-5 py-3.5 text-xs font-bold text-white shadow-lg shadow-navy/25 hover:bg-slate-800 transition">
+              <Icon n="shield" size={16}/>Connexion Admin (Fatima Zahra)
+            </button>
+          </div>
+          <button
+            onClick={() => nav({ name: "login" })}
+            className="mt-6 text-xs font-semibold text-slate-400 hover:text-slate-600 transition">
+            Ouvrir la page de connexion complète →
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const user = currentUser;
+  const pendingBookings = bookings.filter(b => b.status === "pending");
+  const confirmedBookings = bookings.filter(b => b.status === "confirmed");
+  const filteredBookings = bookings.filter(b => {
+    if (bookingFilter === "pending") return b.status === "pending";
+    if (bookingFilter === "confirmed") return b.status === "confirmed";
+    if (bookingFilter === "cancelled") return b.status === "cancelled";
+    return true;
+  });
+
+  const filteredSpaces = spaces.filter(s => !cityFilter || s.city === cityFilter);
+
   const kpis=[
     {l:"Revenus du mois",v:"231 000 DH",d:"+12,4 %",up:true,i:"trending-up",spark:[8,10,9,13,12,15,17,16,19]},
     {l:"Taux d'occupation",v:"78 %",d:"+3,1 pts",up:true,i:"activity",spark:[60,64,61,70,72,74,78]},
-    {l:"Réservations",v:"342",d:"+8,9 %",up:true,i:"calendar-days",spark:[20,26,24,31,29,35,38]},
-    {l:"Panier moyen",v:"470 DH",d:"−2,1 %",up:false,i:"receipt",spark:[52,50,51,48,49,47,47]}
+    {l:"Demandes en attente",v:String(pendingBookings.length),d:pendingBookings.length > 0 ? "À traiter" : "À jour",up:pendingBookings.length === 0,i:"clock",spark:[2,4,3,5,6,4,pendingBookings.length]},
+    {l:"Total espaces actifs",v:String(spaces.length),d:"6 villes au Maroc",up:true,i:"layout-grid",spark:[6,7,8,9,9,10,spaces.length]}
   ];
+
   const donutItems=[
     {label:"Open space",v:38,c:"#1F56D6"},{label:"Bureaux privés",v:27,c:"#0D2C5A"},
     {label:"Salles de réunion",v:21,c:"#5B90F7"},{label:"Studios & cabines",v:14,c:"#BCD2FF"}
   ];
+
   return (
-    <main className="bg-mist">
+    <main className="bg-mist min-h-screen pb-16">
       {user.role === "client" && (
         <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 font-medium"><Icon n="info" size={14} className="text-amber-600"/>Aperçu Gestionnaire : vous êtes actuellement connecté en tant que <b>{user.name}</b> (Client).</span>
+          <span className="flex items-center gap-1.5 font-medium">
+            <Icon n="info" size={14} className="text-amber-600"/>
+            Aperçu Gestionnaire : vous êtes actuellement connecté en tant que <b>{user.name}</b> (Client).
+          </span>
           <button onClick={() => onSelectUser(PRESET_ACCOUNTS[1])} className="font-bold underline text-brand-700 hover:text-brand-900">
             Basculer sur le compte Gestionnaire (Mehdi El Fassi) →
           </button>
         </div>
       )}
+
       <div className="bg-navy">
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <Kicker><span className="text-brand-300">Tableau de bord {user.role === "admin" ? "Administrateur" : "Gestionnaire"}</span></Kicker>
-              <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-white">Bonjour {user.firstName} 👋</h1>
-              <p className="mt-1 text-sm text-slate-400">Voici la santé de vos 10 espaces au Maroc aujourd'hui (Casablanca, Rabat, Marrakech, Tanger...).</p>
+              <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-white">Bonjour {user.firstName || user.name} 👋</h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Gérez vos {spaces.length} espaces au Maroc, ajustez les prix en Dirhams et traitez les demandes de réservation.
+              </p>
             </div>
-            <div className="flex items-center gap-2.5">
-              <div className="flex rounded-full bg-white/10 p-1">
-                {["7j","30j","12 mois"].map(r=>(
-                  <button key={r} onClick={()=>setRange(r)} className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${range===r?"bg-white text-navy":"text-slate-300 hover:text-white"}`}>{r}</button>
-                ))}
-              </div>
-              <button onClick={()=>toast("Rapport financier exporté en format CSV","download")} className="flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-500">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-500">
+                <Icon n="plus" size={15}/>Créer un espace
+              </button>
+              <button onClick={()=>toast("Rapport financier exporté en format CSV","download")} className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/20">
                 <Icon n="download" size={14}/>Exporter
               </button>
             </div>
           </div>
+
+          <div className="mt-6 flex flex-wrap gap-2 border-t border-white/10 pt-4">
+            {[
+              { id: "overview", label: "Vue d'ensemble", icon: "bar-chart-3" },
+              { id: "spaces", label: `Espaces & Tarifs (${spaces.length})`, icon: "building" },
+              { id: "bookings", label: `Demandes de réservation`, icon: "calendar-days", badge: pendingBookings.length },
+              { id: "users", label: `Membres & Rôles (${PRESET_ACCOUNTS.length})`, icon: "users" }
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                  tab === t.id
+                    ? "bg-white text-navy shadow-sm"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white"
+                }`}>
+                <Icon n={t.icon} size={15}/>
+                <span>{t.label}</span>
+                {t.badge > 0 && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${tab === t.id ? "bg-amber-500 text-white" : "bg-amber-400 text-navy"}`}>
+                    {t.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-        {/* KPI */}
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {kpis.map((k,i)=>(
-            <div key={k.l} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift" data-reveal style={{transitionDelay:`${i*60}ms`}}>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{k.l}</p>
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600"><Icon n={k.i} size={15}/></span>
+        {tab === "overview" && (
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {kpis.map((k,i)=>(
+                <div key={k.l} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{k.l}</p>
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600"><Icon n={k.i} size={15}/></span>
+                  </div>
+                  <div className="mt-2 flex items-end justify-between">
+                    <div>
+                      <p className="font-display text-2xl font-bold">{k.v}</p>
+                      <p className={`mt-1 flex items-center gap-1 text-xs font-bold ${k.up?"text-emerald-600":"text-rose-500"}`}>
+                        <Icon n={k.up?"trending-up":"trending-down"} size={13}/>{k.d}
+                      </p>
+                    </div>
+                    <Spark data={k.spark} color={k.up?"#1F56D6":"#F43F5E"}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="font-display font-bold">Revenus 2026 <span className="text-sm font-medium text-slate-400">(k DH)</span></h2>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600">+24 % YoY</span>
+                </div>
+                <AreaChart data={REVENUE} labels={MONTHS}/>
               </div>
-              <div className="mt-2 flex items-end justify-between">
-                <div>
-                  <p className="font-display text-2xl font-bold">{k.v}</p>
-                  <p className={`mt-1 flex items-center gap-1 text-xs font-bold ${k.up?"text-emerald-600":"text-rose-500"}`}>
-                    <Icon n={k.up?"trending-up":"trending-down"} size={13}/>{k.d} vs mois dernier
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+                <h2 className="mb-4 font-display font-bold">Répartition par type</h2>
+                <Donut items={donutItems} center={["342","réservations"]}/>
+                <div className="mt-5 rounded-xl bg-mist p-3.5 text-xs text-slate-500">
+                  <b className="text-ink">Recommandation IA :</b> La demande à Casablanca (Maarif) et Rabat (Agdal) est en hausse de 18% le jeudi. Envisagez une majoration dynamique.
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-display font-bold">Demandes en attente ({pendingBookings.length})</h2>
+                  <button onClick={() => setTab("bookings")} className="text-xs font-bold text-brand-600 hover:text-brand-700">
+                    Voir tout ({bookings.length}) →
+                  </button>
+                </div>
+                {pendingBookings.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">
+                    Toutes les demandes ont été traitées ! Aucune réservation en attente.
                   </p>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingBookings.slice(0, 3).map(b => (
+                      <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/40 p-3.5">
+                        <div className="flex items-center gap-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 font-bold text-amber-800 text-xs">
+                            {b.clientInitials || "CL"}
+                          </span>
+                          <div>
+                            <p className="font-bold text-sm text-ink">{b.clientName} · <span className="font-normal text-slate-500">{b.spaceName} ({b.city})</span></p>
+                            <p className="text-xs text-slate-400">{b.date} · {b.timeSlot} · <b className="text-ink">{b.totalPrice} DH</b></p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onUpdateBookingStatus(b.id, "confirmed")}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition">
+                            <Icon n="check" size={13}/>Accepter
+                          </button>
+                          <button
+                            onClick={() => onUpdateBookingStatus(b.id, "cancelled")}
+                            className="inline-flex items-center gap-1 rounded-full border border-rose-300 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition">
+                            <Icon n="x" size={13}/>Refuser
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+                <h2 className="mb-4 font-display font-bold">Raccourcis Gestionnaire</h2>
+                <div className="space-y-2.5">
+                  <button
+                    onClick={() => setIsCreateOpen(true)}
+                    className="flex w-full items-center justify-between rounded-xl border border-slate-200 p-3 text-xs font-bold text-slate-700 hover:border-brand-500 hover:bg-brand-50/30 transition">
+                    <span className="flex items-center gap-2"><Icon n="plus-circle" size={16} className="text-emerald-600"/>Créer un nouvel espace</span>
+                    <Icon n="chevron-right" size={14} className="text-slate-400"/>
+                  </button>
+                  <button
+                    onClick={() => setTab("spaces")}
+                    className="flex w-full items-center justify-between rounded-xl border border-slate-200 p-3 text-xs font-bold text-slate-700 hover:border-brand-500 hover:bg-brand-50/30 transition">
+                    <span className="flex items-center gap-2"><Icon n="dollar-sign" size={16} className="text-brand-600"/>Modifier les prix & capacités</span>
+                    <Icon n="chevron-right" size={14} className="text-slate-400"/>
+                  </button>
+                  <button
+                    onClick={() => setTab("bookings")}
+                    className="flex w-full items-center justify-between rounded-xl border border-slate-200 p-3 text-xs font-bold text-slate-700 hover:border-brand-500 hover:bg-brand-50/30 transition">
+                    <span className="flex items-center gap-2"><Icon n="inbox" size={16} className="text-amber-600"/>Consulter toutes les demandes ({bookings.length})</span>
+                    <Icon n="chevron-right" size={14} className="text-slate-400"/>
+                  </button>
                 </div>
-                <Spark data={k.spark} color={k.up?"#1F56D6":"#F43F5E"}/>
               </div>
             </div>
-          ))}
-        </div>
-        {/* Charts */}
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2" data-reveal>
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-display font-bold">Revenus 2026 <span className="text-sm font-medium text-slate-400">(k DH)</span></h2>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600">+24 % YoY</span>
-            </div>
-            <AreaChart data={REVENUE} labels={MONTHS}/>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card" data-reveal>
-            <h2 className="mb-4 font-display font-bold">Répartition par type</h2>
-            <Donut items={donutItems} center={["342","réservations"]}/>
-            <div className="mt-5 rounded-xl bg-mist p-3.5 text-xs text-slate-500">
-              <b className="text-ink">Insight IA :</b> les salles de réunion progressent de 18 % le jeudi. Envisagez un tarif dynamique.
+        )}
+
+        {tab === "spaces" && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">Filtrer par ville :</span>
+                <button
+                  onClick={() => setCityFilter("")}
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${!cityFilter ? "bg-navy text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                  Toutes ({spaces.length})
+                </button>
+                {CITIES.map(c => {
+                  const count = spaces.filter(s => s.city === c).length;
+                  if (count === 0) return null;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setCityFilter(c)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${cityFilter === c ? "bg-navy text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      {c} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-600/25 hover:bg-brand-700 transition">
+                <Icon n="plus" size={15}/>Créer un espace
+              </button>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-mist/60 text-left text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                      <th className="px-6 py-3.5">Espace & Localisation</th>
+                      <th className="px-3 py-3.5">Type & Capacité</th>
+                      <th className="px-3 py-3.5">Tarif horaire</th>
+                      <th className="px-3 py-3.5">Taux d'occupation</th>
+                      <th className="px-3 py-3.5">Statut</th>
+                      <th className="px-4 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSpaces.map(s => {
+                      const occVal = OCC[s.id] || 65;
+                      const st = occVal > 90 ? ["Complet", "bg-rose-50 text-rose-500 border-rose-200"] : occVal < 50 ? ["À promouvoir", "bg-amber-50 text-amber-600 border-amber-200"] : ["Actif", "bg-emerald-50 text-emerald-600 border-emerald-200"];
+                      return (
+                        <tr key={s.id} className="border-t border-slate-100 transition hover:bg-mist/40">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <img src={U(s.imgs[0], 100)} alt="" className="h-10 w-14 rounded-xl object-cover shadow-sm"/>
+                              <div>
+                                <p className="font-bold text-ink">{s.name}</p>
+                                <p className="text-xs text-slate-400 flex items-center gap-1">
+                                  <Icon n="map-pin" size={11}/>{s.city} · {s.district}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-4">
+                            <span className="block text-xs font-semibold text-slate-700 capitalize">
+                              {TYPES.find(t => t.id === s.type)?.label || s.type}
+                            </span>
+                            <span className="text-[11px] text-slate-400">{s.cap} pers. · {s.surface}</span>
+                          </td>
+                          <td className="px-3 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700 border border-brand-200">
+                              {EUR.format(s.price)}<span className="text-[10px] text-slate-400">/{s.unit || "h"}</span>
+                            </span>
+                          </td>
+                          <td className="px-3 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 w-16 rounded-full bg-slate-100 overflow-hidden">
+                                <div className={`h-full rounded-full ${occVal > 85 ? "bg-brand-600" : "bg-brand-400"}`} style={{ width: `${occVal}%` }}/>
+                              </div>
+                              <span className="text-xs font-bold">{occVal}%</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-4">
+                            <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${st[1]}`}>
+                              {st[0]}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => setEditingSpace(s)}
+                                title="Modifier le prix et les caractéristiques"
+                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700 transition">
+                                <Icon n="pencil" size={13}/><span>Modifier prix</span>
+                              </button>
+                              <button
+                                onClick={() => nav({ name: "space", params: { id: s.id } })}
+                                title="Voir la fiche publique"
+                                className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-brand-600 transition">
+                                <Icon n="eye" size={14}/>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Confirmez-vous la suppression de l'espace « ${s.name} » ?`)) {
+                                    onDeleteSpace(s.id);
+                                  }
+                                }}
+                                title="Supprimer cet espace"
+                                className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 transition">
+                                <Icon n="trash-2" size={14}/>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card" data-reveal>
-            <h2 className="mb-4 font-display font-bold">Occupation de la semaine</h2>
-            <WeekBars data={WEEK_OCC} labels={DAYS}/>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2" data-reveal>
-            <h2 className="mb-4 font-display font-bold">Occupation par espace</h2>
-            <div className="space-y-3.5">
-              {SPACES.slice(0,6).map(s=>(
-                <div key={s.id} className="flex items-center gap-3 text-sm">
-                  <span className="w-40 truncate font-semibold text-slate-600">{s.name}</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-                    <div className={`h-full rounded-full transition-all duration-1000 ${OCC[s.id]>85?"bg-brand-600":OCC[s.id]<50?"bg-amber-400":"bg-brand-400"}`} style={{width:OCC[s.id]+"%"}}/>
-                  </div>
-                  <b className="w-10 text-right text-xs">{OCC[s.id]}%</b>
-                </div>
-              ))}
+        )}
+
+        {tab === "bookings" && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: "all", label: "Toutes les demandes", count: bookings.length },
+                  { id: "pending", label: "En attente", count: pendingBookings.length, cls: "text-amber-700" },
+                  { id: "confirmed", label: "Confirmées", count: confirmedBookings.length, cls: "text-emerald-700" },
+                  { id: "cancelled", label: "Annulées / Refusées", count: bookings.filter(b=>b.status==='cancelled').length, cls: "text-rose-700" }
+                ].map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setBookingFilter(f.id)}
+                    className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                      bookingFilter === f.id
+                        ? "bg-navy text-white shadow-sm"
+                        : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}>
+                    <span>{f.label}</span>
+                    <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${bookingFilter === f.id ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+                      {f.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-slate-400">
+                {filteredBookings.length} demande{filteredBookings.length > 1 ? "s" : ""} affichée{filteredBookings.length > 1 ? "s" : ""}
+              </span>
             </div>
-          </div>
-        </div>
-        {/* Table + flux */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-3">
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card lg:col-span-2" data-reveal>
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="font-display font-bold">Gestion des espaces</h2>
-              <button onClick={()=>toast("Formulaire de création (démo)","plus")} className="flex items-center gap-1.5 rounded-full bg-brand-600 px-3.5 py-2 text-xs font-bold text-white"><Icon n="plus" size={13}/>Ajouter</button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
-                <thead><tr className="text-left text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                  <th className="px-6 py-3">Espace</th><th className="px-3 py-3">Prix</th><th className="px-3 py-3">Occupation</th><th className="px-3 py-3">Statut</th><th className="px-3 py-3"></th>
-                </tr></thead>
-                <tbody>
-                  {SPACES.slice(0,6).map(s=>{
-                    const st=OCC[s.id]>90?["Complet","bg-rose-50 text-rose-500"]:OCC[s.id]<50?["À promouvoir","bg-amber-50 text-amber-600"]:["Actif","bg-emerald-50 text-emerald-600"];
-                    return (
-                      <tr key={s.id} className="border-t border-slate-100 transition hover:bg-mist/60">
-                        <td className="px-6 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <img src={U(s.imgs[0],100)} alt="" className="h-9 w-12 rounded-lg object-cover"/>
-                            <div><p className="font-bold">{s.name}</p><p className="text-[11px] text-slate-400">{s.city}</p></div>
+
+            {filteredBookings.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center">
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-50 text-slate-400 mb-3">
+                  <Icon n="inbox" size={24}/>
+                </span>
+                <p className="font-display font-bold text-ink">Aucune demande trouvée</p>
+                <p className="text-xs text-slate-400 mt-1">Aucune réservation ne correspond au filtre sélectionné.</p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {filteredBookings.map(b => {
+                  const isPending = b.status === "pending";
+                  const isConfirmed = b.status === "confirmed";
+                  const isCancelled = b.status === "cancelled";
+
+                  return (
+                    <div
+                      key={b.id}
+                      className={`relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border bg-white p-5 shadow-card transition-all hover:shadow-lift ${
+                        isPending ? "border-amber-300 ring-1 ring-amber-300/40 bg-gradient-to-r from-amber-50/30 to-white" : "border-slate-200"
+                      }`}>
+                      <div className="flex items-start gap-3.5 min-w-[240px]">
+                        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl font-bold text-white text-xs shadow-sm ${
+                          isPending ? "bg-amber-500" : isConfirmed ? "bg-emerald-600" : "bg-slate-400"
+                        }`}>
+                          {b.clientInitials || "CL"}
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-ink text-sm">{b.clientName}</h3>
+                            <span className="text-[11px] text-slate-400">{b.createdAt}</span>
                           </div>
-                        </td>
-                        <td className="px-3 py-3.5 font-semibold">{EUR.format(s.price)}<span className="text-[11px] text-slate-400">/{s.unit}</span></td>
-                        <td className="px-3 py-3.5">
-                          <div className="flex items-center gap-2"><div className="h-1.5 w-16 rounded-full bg-slate-100"><div className="h-full rounded-full bg-brand-500" style={{width:OCC[s.id]+"%"}}/></div><span className="text-xs font-bold">{OCC[s.id]}%</span></div>
-                        </td>
-                        <td className="px-3 py-3.5"><span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${st[1]}`}>{st[0]}</span></td>
-                        <td className="px-3 py-3.5">
-                          <div className="flex gap-1">
-                            <button onClick={()=>toast(`Édition de « ${s.name} » (démo)`,"pencil")} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600"><Icon n="pencil" size={14}/></button>
-                            <button onClick={()=>nav({name:"space",params:{id:s.id}})} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600"><Icon n="eye" size={14}/></button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          <p className="text-xs text-slate-500 font-mono mt-0.5">{b.clientEmail}</p>
+                          {b.clientPhone && (
+                            <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                              <Icon n="phone" size={11}/>{b.clientPhone}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4 min-w-[220px]">
+                        <p className="font-bold text-sm text-ink">{b.spaceName}</p>
+                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                          <Icon n="map-pin" size={11}/>{b.city}
+                        </p>
+                        <p className="text-xs text-slate-600 mt-1 flex items-center gap-1.5 font-medium">
+                          <Icon n="calendar" size={12} className="text-brand-600"/>
+                          {b.date} · {b.timeSlot}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between md:justify-end gap-4 border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
+                        <div className="text-left md:text-right">
+                          <p className="font-display text-base font-bold text-ink">{EUR.format(b.totalPrice)}</p>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                            isPending ? "bg-amber-100 text-amber-800" : isConfirmed ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                          }`}>
+                            <Icon n={isPending ? "clock" : isConfirmed ? "check" : "x"} size={11}/>
+                            {isPending ? "En attente" : isConfirmed ? "Confirmée" : "Annulée"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {isPending && (
+                            <>
+                              <button
+                                onClick={() => onUpdateBookingStatus(b.id, "confirmed")}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 transition">
+                                <Icon n="check" size={14}/>Accepter
+                              </button>
+                              <button
+                                onClick={() => onUpdateBookingStatus(b.id, "cancelled")}
+                                className="inline-flex items-center gap-1 rounded-full border border-rose-300 px-3.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition">
+                                <Icon n="x" size={14}/>Refuser
+                              </button>
+                            </>
+                          )}
+                          {isConfirmed && (
+                            <button
+                              onClick={() => {
+                                if (confirm("Voulez-vous vraiment annuler cette réservation confirmée ?")) {
+                                  onUpdateBookingStatus(b.id, "cancelled");
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:border-rose-300 hover:text-rose-600 transition">
+                              <Icon n="x-circle" size={13}/>Annuler
+                            </button>
+                          )}
+                          {isCancelled && (
+                            <button
+                              onClick={() => onUpdateBookingStatus(b.id, "confirmed")}
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:border-emerald-300 hover:text-emerald-700 transition">
+                              <Icon n="refresh-cw" size={13}/>Rétablir
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "users" && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+              <h2 className="font-display text-lg font-bold text-ink">Comptes utilisateurs & Accès PropTech Maroc</h2>
+              <p className="text-xs text-slate-500 mt-1">Profils configurés pour la gestion, la réservation et le contrôle de la plateforme.</p>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {PRESET_ACCOUNTS.map(acc => {
+                  const isCurrent = currentUser?.id === acc.id;
+                  return (
+                    <div key={acc.id} className={`rounded-2xl border p-5 transition ${isCurrent ? "border-brand-500 bg-brand-50/20 ring-2 ring-brand-500/20" : "border-slate-200 bg-white"}`}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`grid h-10 w-10 place-items-center rounded-xl font-bold text-white text-xs ${acc.avatarBg}`}>
+                          {acc.initials}
+                        </span>
+                        <div>
+                          <p className="font-bold text-sm text-ink">{acc.name}</p>
+                          <span className={`inline-block mt-0.5 rounded-full border px-2 py-0.5 text-[10px] font-bold ${acc.badgeCls}`}>
+                            {acc.roleLabel}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs font-mono text-slate-500 mb-2">{acc.email}</p>
+                      <p className="text-xs text-slate-600 leading-relaxed min-h-[44px]">{acc.desc}</p>
+                      <button
+                        onClick={() => {
+                          onSelectUser(acc);
+                          if (toast) toast(`Basculé sur le compte : ${acc.name}`, "user-check");
+                        }}
+                        className={`mt-4 w-full rounded-xl py-2 text-xs font-bold transition ${
+                          isCurrent
+                            ? "bg-slate-100 text-slate-400 cursor-default"
+                            : "bg-navy text-white hover:bg-slate-800"
+                        }`}>
+                        {isCurrent ? "Compte actuel" : "Basculer sur ce compte"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card" data-reveal>
-            <h2 className="mb-4 font-display font-bold">Réservations récentes</h2>
-            <div className="space-y-4">
-              {RECENT.map(r=>(
-                <div key={r.c} className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">{r.c.split(" ").map(w=>w[0]).join("")}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm"><b>{r.c}</b> · {r.s}</p>
-                    <p className="text-[11px] text-slate-400">{r.d}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold">{EUR.format(r.a)}</p>
-                    <p className={`text-[10px] font-bold ${r.st==="Confirmée"?"text-emerald-600":"text-amber-600"}`}>{r.st}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
+
+      <CreateSpaceModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreateSpace={onCreateSpace}
+      />
+      <EditSpacePriceModal
+        space={editingSpace}
+        isOpen={Boolean(editingSpace)}
+        onClose={() => setEditingSpace(null)}
+        onUpdateSpace={onUpdateSpace}
+      />
     </main>
   );
 };
@@ -1831,13 +2757,16 @@ const App=()=>{
   const [view,setView]=useState({name:"home"});
   const [cart,setCart]=useState([]);
   const [favs,setFavs]=useState(new Set([2,7]));
-  const [bookings,setBookings]=useState(INIT_BOOKINGS);
+  const [spacesList,setSpacesList]=useState(SPACES);
+  const [allBookings,setAllBookings]=useState(INITIAL_MANAGER_BOOKINGS);
+  const [userBookings,setUserBookings]=useState(INIT_BOOKINGS);
   const [toasts,setToasts]=useState([]);
   const [menuOpen,setMenuOpen]=useState(false);
 
-  // Authenticated user state initialized with Youssef Amrani (Client) or saved user
+  // Authenticated user state: defaults to Youssef Amrani on first visit, or null if logged out
   const [currentUser, setCurrentUser] = useState(() => {
     try {
+      if (localStorage.getItem("spotwork_logged_out") === "true") return null;
       const saved = localStorage.getItem("spotwork_user");
       if (saved) return JSON.parse(saved);
     } catch {}
@@ -1847,6 +2776,7 @@ const App=()=>{
   const onLogin = (user) => {
     setCurrentUser(user);
     try {
+      localStorage.removeItem("spotwork_logged_out");
       localStorage.setItem("spotwork_user", JSON.stringify(user));
     } catch {}
     if (user.role === 'admin') {
@@ -1861,10 +2791,119 @@ const App=()=>{
   const onLogout = () => {
     try {
       localStorage.removeItem("spotwork_user");
+      localStorage.setItem("spotwork_logged_out", "true");
     } catch {}
-    setCurrentUser(PRESET_ACCOUNTS[0]);
-    toast("Session réinitialisée sur le compte démo", "log-out");
-    nav({ name: "login" });
+    SpotworkAPI.token = null;
+    setCurrentUser(null);
+    toast("Vous avez été déconnecté avec succès", "log-out");
+    nav({ name: "home" });
+  };
+
+  const handleCreateSpace = (newSpace) => {
+    const newId = Math.max(...spacesList.map(s => typeof s.id === 'number' ? s.id : 0), 10) + 1;
+    const created = {
+      id: newId,
+      name: newSpace.name,
+      city: newSpace.city,
+      district: newSpace.district,
+      type: newSpace.type,
+      price: Number(newSpace.price),
+      unit: newSpace.unit || "heure",
+      rating: 5.0,
+      rev: 1,
+      cap: Number(newSpace.capacity) || 10,
+      surface: newSpace.surface || "50 m²",
+      imgs: newSpace.imgs && newSpace.imgs.length ? newSpace.imgs : [IMG.a, IMG.b, IMG.c],
+      am: newSpace.am || ["wifi", "coffee", "screen"],
+      badge: "Nouveau",
+      featured: false,
+      host: currentUser?.name || "Mehdi El Fassi",
+      desc: newSpace.desc,
+      busy: []
+    };
+    setSpacesList(prev => [created, ...prev]);
+    SpotworkAPI.createSpace({
+      name: created.name,
+      city: created.city,
+      district: created.district,
+      type: created.type,
+      price: created.price,
+      capacity: created.cap,
+      surface: created.surface,
+      amenities: created.am,
+      description: created.desc,
+      photos: created.imgs
+    });
+    toast(`Espace « ${created.name} » créé avec succès à ${created.city} (${created.price} DH/h) !`, "check-circle");
+  };
+
+  const handleUpdateSpace = (spaceId, updatedFields) => {
+    setSpacesList(prev => prev.map(s => {
+      if (s.id === spaceId) {
+        return {
+          ...s,
+          ...updatedFields,
+          price: updatedFields.price !== undefined ? Number(updatedFields.price) : s.price,
+          cap: updatedFields.capacity !== undefined ? Number(updatedFields.capacity) : s.cap
+        };
+      }
+      return s;
+    }));
+    SpotworkAPI.updateSpace(spaceId, updatedFields);
+    toast(`Tarif et espace mis à jour (${updatedFields.price || ""} DH/h) !`, "check");
+  };
+
+  const handleDeleteSpace = (spaceId) => {
+    const deleted = spacesList.find(s => s.id === spaceId);
+    setSpacesList(prev => prev.filter(s => s.id !== spaceId));
+    SpotworkAPI.deleteSpace(spaceId);
+    toast(`Espace « ${deleted?.name || ""} » supprimé du catalogue.`, "trash");
+  };
+
+  const handleUpdateBookingStatus = (bookingId, newStatus) => {
+    setAllBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
+    const statusFr = newStatus === 'confirmed' ? "Confirmée" : newStatus === 'cancelled' ? "Annulée" : "En attente";
+    setUserBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: statusFr } : b));
+    SpotworkAPI.updateBookingStatus(bookingId, newStatus);
+    if (newStatus === 'confirmed') {
+      toast("Demande de réservation acceptée et confirmée !", "check-circle");
+    } else if (newStatus === 'cancelled') {
+      toast("Demande de réservation refusée.", "x-circle");
+    }
+  };
+
+  const onDone = (b) => {
+    const newBookingId = "bk-" + Date.now();
+    const bookedSpace = spacesList.find(s => s.id === b.spaceId || s.id === b.id);
+    const spaceName = bookedSpace ? bookedSpace.name : (b.name || "Espace Coworking");
+    const city = bookedSpace ? bookedSpace.city : (b.city || "Casablanca");
+
+    setUserBookings(p => [{
+      id: newBookingId,
+      spaceId: b.spaceId || b.id,
+      date: b.date,
+      meta: b.meta,
+      status: "En attente"
+    }, ...p]);
+
+    setAllBookings(p => [{
+      id: newBookingId,
+      clientName: currentUser?.name || b.name || "Client PropTech",
+      clientEmail: currentUser?.email || b.email || "client@proptech.ma",
+      clientPhone: "+212 6 " + Math.floor(10000000 + Math.random() * 90000000),
+      clientInitials: currentUser?.initials || "CP",
+      spaceId: b.spaceId || b.id,
+      spaceName: spaceName,
+      city: city,
+      date: b.date,
+      timeSlot: b.meta,
+      hours: 4,
+      totalPrice: b.total || (bookedSpace ? bookedSpace.price * 4 : 180),
+      status: "pending",
+      createdAt: "À l'instant"
+    }, ...p]);
+
+    setCart([]);
   };
 
   useEffect(()=>{
@@ -1902,10 +2941,6 @@ const App=()=>{
     });
   };
   const reserve=item=>{setCart(c=>[...c,item]);nav({name:"checkout"});};
-  const onDone=b=>{
-    setBookings(p=>[{id:Date.now(),spaceId:b.spaceId,date:b.date,meta:b.meta,status:"Confirmée"},...p]);
-    setCart([]);
-  };
 
   if(!ready)return (
     <div className="grid min-h-screen place-items-center bg-mist">
@@ -1919,12 +2954,12 @@ const App=()=>{
   return (
     <div className="font-body">
       <Navbar view={view} nav={nav} cartCount={cart.length} menuOpen={menuOpen} setMenuOpen={setMenuOpen} currentUser={currentUser} onSelectUser={onLogin} onLogout={onLogout} toast={toast}/>
-      {view.name==="home"&&<Home nav={nav} favs={favs} toggleFav={toggleFav}/>}
-      {view.name==="explore"&&<Explore params={view.params} nav={nav} favs={favs} toggleFav={toggleFav}/>}
-      {view.name==="space"&&<SpaceDetail id={view.params.id} nav={nav} favs={favs} toggleFav={toggleFav} reserve={reserve}/>}
-      {view.name==="checkout"&&<Checkout cart={cart} setCart={setCart} nav={nav} onDone={onDone} toast={toast}/>}
-      {view.name==="user"&&<UserDash initTab={view.params?.tab} bookings={bookings} setBookings={setBookings} favs={favs} toggleFav={toggleFav} nav={nav} toast={toast} currentUser={currentUser}/>}
-      {view.name==="admin"&&<AdminDash nav={nav} toast={toast} currentUser={currentUser} onSelectUser={onLogin}/>}
+      {view.name==="home"&&<Home nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList}/>}
+      {view.name==="explore"&&<Explore params={view.params} nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList}/>}
+      {view.name==="space"&&<SpaceDetail id={view.params.id} nav={nav} favs={favs} toggleFav={toggleFav} reserve={reserve} spaces={spacesList}/>}
+      {view.name==="checkout"&&<Checkout cart={cart} setCart={setCart} nav={nav} onDone={onDone} toast={toast} currentUser={currentUser}/>}
+      {view.name==="user"&&<UserDash initTab={view.params?.tab} bookings={userBookings} setBookings={setUserBookings} favs={favs} toggleFav={toggleFav} nav={nav} toast={toast} currentUser={currentUser} spaces={spacesList}/>}
+      {view.name==="admin"&&<AdminDash nav={nav} toast={toast} currentUser={currentUser} onSelectUser={onLogin} spaces={spacesList} onUpdateSpace={handleUpdateSpace} onCreateSpace={handleCreateSpace} onDeleteSpace={handleDeleteSpace} bookings={allBookings} onUpdateBookingStatus={handleUpdateBookingStatus}/>}
       {view.name==="login"&&<LoginPage currentUser={currentUser} onLogin={onLogin} nav={nav} toast={toast}/>}
       <Footer nav={nav} toast={toast}/>
       {/* Toasts */}

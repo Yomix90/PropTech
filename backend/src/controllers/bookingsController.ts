@@ -208,4 +208,75 @@ export class BookingsController {
       next(error);
     }
   }
+
+  static async updateBookingStatus(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+      if (!req.user) {
+        res.status(401).json({ status: 'error', message: 'Non authentifié' });
+        return;
+      }
+
+      if (isLiveSupabase) {
+        const { data: booking, error: fetchErr } = await supabase
+          .from('bookings')
+          .select('*, spaces(owner_id)')
+          .eq('id', id)
+          .single();
+
+        if (fetchErr || !booking) {
+          res.status(404).json({ status: 'error', message: 'Demande de réservation introuvable' });
+          return;
+        }
+
+        // Seul le gestionnaire propriétaire de l'espace ou un admin peut valider/refuser
+        const spaceOwnerId = (booking.spaces as any)?.owner_id;
+        if (req.user.role !== 'admin' && spaceOwnerId !== req.user.id) {
+          res.status(403).json({ status: 'error', message: 'Action non autorisée sur cette réservation' });
+          return;
+        }
+
+        const { data: updated, error: updateErr } = await supabase
+          .from('bookings')
+          .update({ status })
+          .eq('id', id)
+          .select('*, spaces(*), users(id, full_name, email)')
+          .single();
+
+        if (updateErr) throw updateErr;
+
+        res.status(200).json({
+          status: 'success',
+          message: `Statut de la réservation mis à jour : ${status}`,
+          data: { booking: updated },
+        });
+        return;
+      }
+
+      // Local store
+      const booking = localStore.bookings.find((b) => b.id === id);
+      if (!booking) {
+        res.status(404).json({ status: 'error', message: 'Demande de réservation introuvable' });
+        return;
+      }
+
+      const space = localStore.spaces.find((s) => s.id === booking.space_id);
+      if (req.user.role !== 'admin' && space?.owner_id !== req.user.id) {
+        res.status(403).json({ status: 'error', message: 'Action non autorisée sur cette réservation' });
+        return;
+      }
+
+      booking.status = status;
+
+      res.status(200).json({
+        status: 'success',
+        message: `Statut de la réservation mis à jour : ${status}`,
+        data: { booking },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
