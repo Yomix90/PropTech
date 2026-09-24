@@ -2,15 +2,26 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { env } from './config/env.js';
 import apiRoutes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '../../');
+
 export const createApp = (): Express => {
   const app = express();
 
-  // 1. Security Headers via Helmet
-  app.use(helmet());
+  // 1. Security Headers via Helmet (configured to allow CDNs & fonts)
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    })
+  );
 
   // 2. Cross-Origin Resource Sharing (CORS)
   app.use(
@@ -22,7 +33,7 @@ export const createApp = (): Express => {
     })
   );
 
-  // 3. Rate Limiting
+  // 3. Rate Limiting on API endpoints
   const limiter = rateLimit({
     windowMs: env.RATE_LIMIT_WINDOW_MS,
     max: env.RATE_LIMIT_MAX,
@@ -43,14 +54,12 @@ export const createApp = (): Express => {
   // 5. Mount API Routes
   app.use('/api', apiRoutes);
 
-  // 6. Root status endpoint
+  // 6. Serve static frontend files (Index.html, styles.css, app.js)
+  app.use(express.static(rootDir));
+
+  // Serve Index.html on root path
   app.get('/', (req: Request, res: Response) => {
-    res.json({
-      name: 'Spotwork Coworking API',
-      version: '1.0.0',
-      description: 'API REST pour plateforme de gestion d’espaces de coworking avec IA',
-      documentation: '/api/health',
-    });
+    res.sendFile(path.join(rootDir, 'Index.html'));
   });
 
   // 7. 404 Handler for Unknown Routes
