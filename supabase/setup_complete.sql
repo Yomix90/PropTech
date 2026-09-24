@@ -1,4 +1,4 @@
-﻿-- ==============================================================================
+-- ==============================================================================
 -- SPOTWORK - Coworking Space Management Platform
 -- Migration 01: Initial Schema (PostgreSQL / Supabase)
 -- ==============================================================================
@@ -304,25 +304,25 @@ INSERT INTO public.users (id, email, full_name, phone, role, preferences)
 VALUES 
   (
     '00000000-0000-0000-0000-000000000001',
-    'lea@studio.fr',
-    'LÃ©a Martin',
-    '+33 6 12 34 56 78',
+    'youssef@proptech.ma',
+    'Youssef Amrani',
+    '+212 6 61 23 45 67',
     'client',
-    '{"budget_min": 20, "budget_max": 90, "location_preference": "Paris", "equipment_needed": ["wifi", "coffee", "screen"]}'::jsonb
+    '{"budget_min": 30, "budget_max": 120, "location_preference": "Casablanca", "equipment_needed": ["wifi", "coffee", "screen"]}'::jsonb
   ),
   (
     '00000000-0000-0000-0000-000000000002',
-    'claire@spotwork.fr',
-    'Claire Moreau',
-    '+33 6 98 76 54 32',
+    'mehdi@spotwork.ma',
+    'Mehdi El Fassi',
+    '+212 6 62 34 56 78',
     'manager',
-    '{"location_preference": "Paris"}'::jsonb
+    '{"location_preference": "Casablanca"}'::jsonb
   ),
   (
     '00000000-0000-0000-0000-000000000003',
-    'admin@spotwork.fr',
-    'Admin Spotwork',
-    '+33 1 40 00 00 00',
+    'admin@spotwork.ma',
+    'Fatima Zahra Alaoui',
+    '+212 5 22 40 50 60',
     'admin',
     '{}'::jsonb
   )
@@ -333,12 +333,12 @@ INSERT INTO public.spaces (id, name, description, location, latitude, longitude,
 VALUES
   (
     '10000000-0000-0000-0000-000000000001',
-    'La VerriÃ¨re',
-    'Ancien atelier baignÃ© de lumiÃ¨re sous verriÃ¨re d''Ã©poque. Postes ergonomiques, phone boxes, rooftop et communautÃ© de rÃ©sidents.',
-    'Paris Â· 11e Oberkampf',
-    48.864716, 2.378942,
+    'L''Atelier Maarif',
+    'Ancien atelier baigné de lumière au cœur de Maarif. Postes ergonomiques, phone boxes, rooftop et communauté dynamique de résidents.',
+    'Casablanca · Maarif',
+    33.588300, -7.633500,
     '00000000-0000-0000-0000-000000000002',
-    29.00,
+    45.00,
     45,
     '["wifi", "coffee", "screen", "print", "access", "terrace"]'::jsonb,
     '["https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=70", "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=900&q=70"]'::jsonb,
@@ -346,12 +346,12 @@ VALUES
   ),
   (
     '10000000-0000-0000-0000-000000000002',
-    'Studio CanopÃ©e',
-    'Studio crÃ©atif insonorisÃ© avec lumiÃ¨re ajustable, fond vert, matÃ©riel de captation et mur inscriptible.',
-    'Lyon Â· 2e Confluence',
-    45.748460, 4.819380,
+    'Studio Guéliz',
+    'Studio créatif insonorisé avec lumière réglable, fond vert, matériel podcast et mur inscriptible.',
+    'Marrakech · Guéliz',
+    31.634600, -8.012500,
     '00000000-0000-0000-0000-000000000002',
-    38.00,
+    65.00,
     12,
     '["wifi", "screen", "board", "coffee"]'::jsonb,
     '["https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?auto=format&fit=crop&w=900&q=70"]'::jsonb,
@@ -359,12 +359,12 @@ VALUES
   ),
   (
     '10000000-0000-0000-0000-000000000003',
-    'Le Hub Bastille',
-    'Bureau privÃ© fermÃ©, climatisÃ©, mobilier Herman Miller. Salle de visio dÃ©diÃ©e et service de rÃ©ception de colis.',
-    'Paris Â· 11e Bastille',
-    48.853183, 2.369144,
+    'Oasis Work Gauthier',
+    'Bureau privé fermé et climatisé, mobilier haut de gamme, salle de visio dédiée et thé à la menthe offert.',
+    'Casablanca · Gauthier',
+    33.591200, -7.625800,
     '00000000-0000-0000-0000-000000000002',
-    89.00,
+    85.00,
     6,
     '["wifi", "screen", "print", "access", "bike"]'::jsonb,
     '["https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=900&q=70"]'::jsonb,
@@ -372,12 +372,12 @@ VALUES
   ),
   (
     '10000000-0000-0000-0000-000000000004',
-    'Salle Horizon',
-    'Salle de rÃ©union premium : Ã©cran 4K interactif, visio native Teams/Zoom, paperboard digital. CafÃ© et thÃ©s offerts.',
-    'Bordeaux Â· Chartrons',
-    44.856870, -0.569420,
+    'Le Hub Agdal',
+    'Salle de réunion premium au cœur de Rabat : écran 4K interactif, visio native Zoom/Teams, paperboard digital.',
+    'Rabat · Agdal',
+    33.998100, -6.852500,
     '00000000-0000-0000-0000-000000000002',
-    24.00,
+    50.00,
     10,
     '["wifi", "screen", "board", "coffee"]'::jsonb,
     '["https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=70"]'::jsonb,
@@ -385,12 +385,12 @@ VALUES
   ),
   (
     '10000000-0000-0000-0000-000000000005',
-    'Cabine Mute',
-    'Cabine acoustique ultra-silencieuse pour calls et sessions focus en toute confidentialitÃ©.',
-    'Lille Â· Euralille',
-    50.638520, 3.076320,
+    'Marina Bay Focus',
+    'Cabine acoustique ultra-silencieuse avec vue panoramique sur la baie de Tanger. Prise USB-C 100W.',
+    'Tanger · Malabata',
+    35.776700, -5.795000,
     '00000000-0000-0000-0000-000000000002',
-    9.00,
+    25.00,
     1,
     '["wifi", "access"]'::jsonb,
     '["https://images.unsplash.com/photo-1593115057322-e94b77572f20?auto=format&fit=crop&w=900&q=70"]'::jsonb,
@@ -408,7 +408,7 @@ VALUES
     CURRENT_DATE + INTERVAL '2 day',
     '09:00:00',
     '18:00:00',
-    232.00,
+    405.00,
     'confirmed'
   ),
   (
@@ -418,7 +418,7 @@ VALUES
     CURRENT_DATE + INTERVAL '5 day',
     '14:00:00',
     '17:00:00',
-    72.00,
+    150.00,
     'pending'
   ),
   (
@@ -428,7 +428,7 @@ VALUES
     CURRENT_DATE - INTERVAL '3 day',
     '10:00:00',
     '13:00:00',
-    114.00,
+    195.00,
     'completed'
   )
 ON CONFLICT (id) DO NOTHING;
@@ -442,7 +442,7 @@ VALUES
     '00000000-0000-0000-0000-000000000001',
     '10000000-0000-0000-0000-000000000002',
     5,
-    'Superbe studio crÃ©atif, acoustique parfaite pour nos tournages vidÃ©o !'
+    'Superbe studio à Guéliz, parfait pour nos sessions de captation et réunions clients !'
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -453,7 +453,7 @@ VALUES
     '40000000-0000-0000-0000-000000000001',
     '00000000-0000-0000-0000-000000000001',
     '10000000-0000-0000-0000-000000000003',
-    'IdÃ©al pour vos sÃ©ances de concentration Ã  Paris avec connexion fibre et visio dÃ©diÃ©e.',
+    'Recommandé pour votre profil à Casablanca : Oasis Work Gauthier offre une connexion fibre optimale et un calme propice aux projets PropTech.',
     false
   )
 ON CONFLICT (id) DO NOTHING;

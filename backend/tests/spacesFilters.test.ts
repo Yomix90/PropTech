@@ -14,13 +14,13 @@ describe('API Spaces - Tests de consultation et de filtrage', () => {
     expect(Array.isArray(res.body.data.spaces)).toBe(true);
   });
 
-  it('filtre efficacement par ville (Paris)', async () => {
-    const res = await request(app).get('/api/spaces?city=Paris');
+  it('filtre efficacement par ville (Casablanca)', async () => {
+    const res = await request(app).get('/api/spaces?city=Casablanca');
 
     expect(res.status).toBe(200);
     expect(res.body.data.spaces.length).toBeGreaterThan(0);
     for (const space of res.body.data.spaces) {
-      expect(space.location.toLowerCase()).toContain('paris');
+      expect(space.location.toLowerCase()).toContain('casablanca');
     }
   });
 
@@ -35,13 +35,13 @@ describe('API Spaces - Tests de consultation et de filtrage', () => {
   });
 
   it('renvoie les détails complets d’un espace avec ses avis', async () => {
-    const spaceId = '10000000-0000-0000-0000-000000000002'; // Studio Canopée
+    const spaceId = '10000000-0000-0000-0000-000000000002'; // Studio Guéliz
     const res = await request(app).get(`/api/spaces/${spaceId}`);
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('success');
     expect(res.body.data.space.id).toBe(spaceId);
-    expect(res.body.data.space.name).toBe('Studio Canopée');
+    expect(res.body.data.space.name).toBe('Studio Guéliz');
     expect(Array.isArray(res.body.data.reviews)).toBe(true);
   });
 

@@ -94,7 +94,7 @@ describe('API Bookings - Tests d’intégration REST', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.status).toBe('success');
-    expect(res.body.data.booking.total_price).toBe(18); // 2h * 9€
+    expect(res.body.data.booking.total_price).toBe(50); // 2h * 25 DH
     expect(res.body.data.booking.status).toBe('confirmed');
   });
 

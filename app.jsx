@@ -1,7 +1,8 @@
 const {useState,useEffect,useMemo,useRef}=React;
 
 /* ================= HELPERS ================= */
-const EUR=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+const MAD = { format: (v) => `${Math.round(Number(v) || 0).toLocaleString('fr-FR')} DH` };
+const EUR = MAD;
 const fmtDate=v=>v?new Date(v+"T12:00").toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):"—";
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const U=(id,w=900)=>!id?"":id.startsWith("http")?id:`https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
@@ -132,22 +133,65 @@ const SpotworkAPI = {
   }
 };
 
-/* ================= DONNÉES MOCK ================= */
-const CITIES=["Paris","Lyon","Bordeaux","Lille","Nantes","Marseille"];
-const TYPES=[
+/* ================= COMPTES & UTILISATEURS DU PROTOTYPE ================= */
+const PRESET_ACCOUNTS = [
+  {
+    id: "00000000-0000-0000-0000-000000000001",
+    email: "youssef@proptech.ma",
+    name: "Youssef Amrani",
+    firstName: "Youssef",
+    initials: "YA",
+    role: "client",
+    roleLabel: "Client",
+    city: "Casablanca",
+    avatarBg: "bg-brand-600",
+    badgeCls: "bg-blue-50 text-brand-700 border-brand-200",
+    desc: "Compte Client : recherche, réservation d'espaces au Maroc, recommandations IA personnalisées."
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000002",
+    email: "mehdi@spotwork.ma",
+    name: "Mehdi El Fassi",
+    firstName: "Mehdi",
+    initials: "ME",
+    role: "manager",
+    roleLabel: "Gestionnaire",
+    city: "Casablanca",
+    avatarBg: "bg-indigo-600",
+    badgeCls: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    desc: "Compte Gestionnaire : pilotage des espaces, occupation, revenus et gestion des réservations."
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000003",
+    email: "admin@spotwork.ma",
+    name: "Fatima Zahra Alaoui",
+    firstName: "Fatima Zahra",
+    initials: "FA",
+    role: "admin",
+    roleLabel: "Administratrice",
+    city: "Rabat",
+    avatarBg: "bg-navy",
+    badgeCls: "bg-purple-50 text-purple-700 border-purple-200",
+    desc: "Compte Administrateur : vue globale sur la plateforme PropTech Maroc et ses utilisateurs."
+  }
+];
+
+/* ================= DONNÉES MOCK MAROC ================= */
+const CITIES = ["Casablanca", "Rabat", "Marrakech", "Tanger", "Agadir", "Fès"];
+const TYPES = [
   {id:"open",label:"Open space",icon:"layout-grid"},
   {id:"office",label:"Bureau privé",icon:"door-closed"},
   {id:"meeting",label:"Salle de réunion",icon:"users"},
   {id:"studio",label:"Studio créatif",icon:"palette"},
   {id:"booth",label:"Cabine focus",icon:"headphones"}
 ];
-const AMENITIES=[
-  {id:"wifi",label:"Wifi fibre",icon:"wifi"},{id:"coffee",label:"Café illimité",icon:"coffee"},
-  {id:"screen",label:"Écran & visio",icon:"monitor"},{id:"board",label:"Tableau blanc",icon:"pen-tool"},
+const AMENITIES = [
+  {id:"wifi",label:"Wifi fibre",icon:"wifi"},{id:"coffee",label:"Thé & Café illimités",icon:"coffee"},
+  {id:"screen",label:"Écran & visio 4K",icon:"monitor"},{id:"board",label:"Tableau blanc",icon:"pen-tool"},
   {id:"print",label:"Impression",icon:"printer"},{id:"access",label:"Accès 24/7",icon:"key-round"},
-  {id:"terrace",label:"Terrasse",icon:"sun"},{id:"bike",label:"Parking vélo",icon:"bike"}
+  {id:"terrace",label:"Rooftop / Terrasse",icon:"sun"},{id:"bike",label:"Parking sécurisé",icon:"bike"}
 ];
-const IMG={
+const IMG = {
   a:"photo-1497366216548-37526070297c",b:"photo-1497366811353-6870744d04b2",c:"photo-1524758631624-e2822e304c36",
   d:"photo-1556761175-b413da4baf72",e:"photo-1497215728101-856f4ea42174",f:"photo-1527192491265-7e15c50b385d",
   g:"photo-1522202176988-66273c2fd55f",h:"photo-1519389950473-47ba0277781c",i:"photo-1504384308090-c894fdcc538d",
@@ -155,44 +199,44 @@ const IMG={
   m:"photo-1593115057322-e94b77572f20",n:"photo-1541746972996-4e0b0f43e02a",q:"photo-1431540015161-0bf868a2d407",
   s:"photo-1521737604893-d14cc237f11d"
 };
-const SPACES=[
-  {id:1,name:"La Verrière",city:"Paris",district:"11e · Oberkampf",type:"open",price:29,unit:"jour",rating:4.9,rev:187,cap:45,surface:"320 m²",imgs:[IMG.a,IMG.b,IMG.c],am:["wifi","coffee","screen","print","access","terrace"],badge:"Coup de cœur",featured:true,host:"Claire Moreau",desc:"Ancien atelier baigné de lumière sous verrière d'époque. Postes ergonomiques, phone boxes, rooftop et une communauté de 40 résidents (studios, freelances, startups).",busy:[]},
-  {id:2,name:"Studio Canopée",city:"Lyon",district:"2e · Confluence",type:"studio",price:38,unit:"heure",rating:4.8,rev:96,cap:12,surface:"85 m²",imgs:[IMG.n,IMG.h,IMG.i],am:["wifi","screen","board","coffee"],badge:"Nouveau",featured:true,host:"Karim Benali",desc:"Studio créatif insonorisé avec lumière ajustable, fond vert, matériel de captation et mur inscriptible. Idéal pour tournages, workshops et brainstorms.",busy:[2,5]},
-  {id:3,name:"Le Hub Bastille",city:"Paris",district:"11e · Bastille",type:"office",price:89,unit:"jour",rating:4.7,rev:143,cap:6,surface:"28 m²",imgs:[IMG.e,IMG.k,IMG.c],am:["wifi","screen","print","access","bike"],badge:"",featured:true,host:"Claire Moreau",desc:"Bureau privé fermé, climatisé, mobilier Herman Miller. Salle de visio dédiée et service de réception de colis inclus.",busy:[]},
-  {id:4,name:"Salle Horizon",city:"Bordeaux",district:"Chartrons",type:"meeting",price:24,unit:"heure",rating:4.9,rev:212,cap:10,surface:"35 m²",imgs:[IMG.d,IMG.j,IMG.l],am:["wifi","screen","board","coffee"],badge:"Populaire",featured:true,host:"Léa Fontaine",desc:"Salle de réunion premium : écran 4K interactif, visio native Teams/Zoom, paperboard digital. Café et eaux infusées offerts.",busy:[1,4,6]},
-  {id:5,name:"Cabine Mute",city:"Lille",district:"Euralille",type:"booth",price:9,unit:"heure",rating:4.6,rev:58,cap:1,surface:"2 m²",imgs:[IMG.m,IMG.i,IMG.g],am:["wifi","access"],badge:"",featured:false,host:"Hugo Deschamps",desc:"Cabine acoustique ultra-silencieuse pour calls et focus. Ventilation douce, lumière naturelle, prise USB-C 100W.",busy:[0,3,7]},
-  {id:6,name:"Atelier des Chartrons",city:"Bordeaux",district:"Chartrons",type:"studio",price:42,unit:"heure",rating:4.8,rev:77,cap:16,surface:"120 m²",imgs:[IMG.h,IMG.n,IMG.s],am:["wifi","board","coffee","terrace"],badge:"Éco-responsable",featured:false,host:"Léa Fontaine",desc:"Atelier modulable en cœur d'îlot : grande table commune, mobilier de réemploi, terrasse plein sud pour les pauses.",busy:[3]},
-  {id:7,name:"Open Loft Confluence",city:"Lyon",district:"2e · Confluence",type:"open",price:25,unit:"jour",rating:4.7,rev:164,cap:60,surface:"480 m²",imgs:[IMG.k,IMG.a,IMG.g],am:["wifi","coffee","print","access","bike","terrace"],badge:"Populaire",featured:true,host:"Karim Benali",desc:"Le vaisseau-amiral de Confluence : open space XXL, 3 cuisines, douches, parking vélo sécurisé et événements hebdo.",busy:[]},
-  {id:8,name:"Bureau Verdier",city:"Nantes",district:"Île de Nantes",type:"office",price:65,unit:"jour",rating:4.6,rev:49,cap:4,surface:"18 m²",imgs:[IMG.c,IMG.e,IMG.m],am:["wifi","screen","access"],badge:"",featured:false,host:"Nadia Rousseau",desc:"Bureau cosy vue sur Loire, parfait pour une petite équipe en sprint. Kitchenette partagée à l'étage.",busy:[]},
-  {id:9,name:"Salle Zénith",city:"Marseille",district:"Joliette",type:"meeting",price:19,unit:"heure",rating:4.8,rev:134,cap:14,surface:"42 m²",imgs:[IMG.q,IMG.d,IMG.j],am:["wifi","screen","board","coffee","terrace"],badge:"",featured:true,host:"Marc Antonetti",desc:"Salle panoramique au 8e étage, vue mer. Configuration U, théâtre ou workshop en 5 minutes grâce au mobilier roulant.",busy:[2,6]},
-  {id:10,name:"Loft Turbigo",city:"Paris",district:"2e · Sentier",type:"open",price:32,unit:"jour",rating:4.8,rev:201,cap:38,surface:"260 m²",imgs:[IMG.b,IMG.f,IMG.k],am:["wifi","coffee","screen","access","bike"],badge:"",featured:false,host:"Claire Moreau",desc:"Loft haussmannien revisité : hauteur sous plafond, silence studieux le matin, apéros communautaires le jeudi.",busy:[]}
+const SPACES = [
+  {id:1,name:"L'Atelier Maarif",city:"Casablanca",district:"Maarif · Zerktouni",type:"open",price:45,unit:"heure",rating:4.9,rev:187,cap:45,surface:"320 m²",imgs:[IMG.a,IMG.b,IMG.c],am:["wifi","coffee","screen","print","access","terrace"],badge:"Coup de cœur",featured:true,host:"Mehdi El Fassi",desc:"Ancien atelier baigné de lumière naturelle au cœur de Maarif. Postes ergonomiques, phone boxes insonorisées, rooftop et communauté dynamique de résidents tech et startups.",busy:[]},
+  {id:2,name:"Studio Guéliz",city:"Marrakech",district:"Guéliz · Av. Mohammed V",type:"studio",price:65,unit:"heure",rating:4.8,rev:96,cap:12,surface:"85 m²",imgs:[IMG.n,IMG.h,IMG.i],am:["wifi","screen","board","coffee"],badge:"Nouveau",featured:true,host:"Karim Benjelloun",desc:"Studio créatif et podcast insonorisé avec lumière réglable, fond vert, micros pros et mur inscriptible. Idéal pour ateliers, workshops et sessions brainstorm.",busy:[2,5]},
+  {id:3,name:"Oasis Work Gauthier",city:"Casablanca",district:"Gauthier · Taha Hussein",type:"office",price:120,unit:"heure",rating:4.7,rev:143,cap:6,surface:"28 m²",imgs:[IMG.e,IMG.k,IMG.c],am:["wifi","screen","print","access","bike"],badge:"Exécutif",featured:true,host:"Mehdi El Fassi",desc:"Bureau privé fermé et climatisé, mobilier haut de gamme, salle de visio dédiée 4K et service de thé à la menthe offert.",busy:[]},
+  {id:4,name:"Le Hub Agdal",city:"Rabat",district:"Agdal · Av. de France",type:"meeting",price:50,unit:"heure",rating:4.9,rev:212,cap:10,surface:"35 m²",imgs:[IMG.d,IMG.j,IMG.l],am:["wifi","screen","board","coffee"],badge:"Populaire",featured:true,host:"Fatima Zahra Alaoui",desc:"Salle de réunion premium au cœur de Rabat Agdal : écran interactif 4K tactile, visio native Zoom/Teams, paperboard digital. Eau et café offerts.",busy:[1,4,6]},
+  {id:5,name:"Marina Bay Focus",city:"Tanger",district:"Malabata · Marina Bay",type:"booth",price:25,unit:"heure",rating:4.6,rev:58,cap:1,surface:"3 m²",imgs:[IMG.m,IMG.i,IMG.g],am:["wifi","access"],badge:"Vue Mer",featured:false,host:"Salma Tazi",desc:"Cabine acoustique ultra-silencieuse avec vue panoramique sur la baie de Tanger. Double vitrage acoustique, ventilation douce, prise USB-C 100W.",busy:[0,3,7]},
+  {id:6,name:"L'Espace Anfa",city:"Casablanca",district:"Anfa · Bd d'Anfa",type:"open",price:40,unit:"heure",rating:4.8,rev:115,cap:35,surface:"240 m²",imgs:[IMG.b,IMG.f,IMG.k],am:["wifi","coffee","screen","access","bike"],badge:"Prestige",featured:false,host:"Mehdi El Fassi",desc:"Espace coworking prestigieux sur le Boulevard d'Anfa. Silence studieux, fibre optique dédiée 1 Gbps et barista permanent.",busy:[]},
+  {id:7,name:"Coworking Palm Hivernage",city:"Marrakech",district:"Hivernage · Av. Echouhada",type:"studio",price:55,unit:"heure",rating:4.8,rev:77,cap:16,surface:"120 m²",imgs:[IMG.h,IMG.n,IMG.s],am:["wifi","board","coffee","terrace"],badge:"Éco-responsable",featured:false,host:"Karim Benjelloun",desc:"Atelier modulable entouré de palmiers avec terrasse ensoleillée pour les pauses et sessions de networking. Mobilier artisanal contemporain.",busy:[3]},
+  {id:8,name:"Technopark Agadir Hub",city:"Agadir",district:"Tilila · Cité Technopark",type:"office",price:75,unit:"heure",rating:4.7,rev:62,cap:8,surface:"40 m²",imgs:[IMG.c,IMG.e,IMG.m],am:["wifi","screen","access","print"],badge:"Tech Hub",featured:true,host:"Omar Berrada",desc:"Bureau d'équipe moderne au sein du Technopark d'Agadir. Équipements complets, environnement innovant et parking sécurisé 24/7.",busy:[]},
+  {id:9,name:"Détroit Meeting Tanger",city:"Tanger",district:"Centre · Bd Pasteur",type:"meeting",price:45,unit:"heure",rating:4.8,rev:134,cap:14,surface:"42 m²",imgs:[IMG.q,IMG.d,IMG.j],am:["wifi","screen","board","coffee","terrace"],badge:"Vue Détroit",featured:true,host:"Salma Tazi",desc:"Salle panoramique en plein centre-ville de Tanger avec vue sur le détroit de Gibraltar. Configuration flexible en U ou théâtre.",busy:[2,6]},
+  {id:10,name:"Fès Medina Lab",city:"Fès",district:"Ville Nouvelle · Av. Hassan II",type:"open",price:35,unit:"heure",rating:4.8,rev:88,cap:30,surface:"210 m²",imgs:[IMG.a,IMG.f,IMG.g],am:["wifi","coffee","print","access"],badge:"Créatif",featured:false,host:"Nadia Idrissi",desc:"Hub collaboratif moderne mêlant architecture marocaine et équipements high-tech. Ambiance chaleureuse et communauté cosmopolite.",busy:[]}
 ];
-const HOURS=["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
-const REVIEWS=[
-  {n:"Camille R.",role:"Product designer",d:"Mai 2025",stars:5,t:"Réservé en 2 minutes, accueil impeccable et wifi ultra stable. Je reviendrai les yeux fermés."},
-  {n:"Thomas B.",role:"Consultant",d:"Avr. 2025",stars:5,t:"Espace lumineux, café de qualité et voisins bienveillants. Le checkout en ligne est vraiment fluide."},
-  {n:"Inès M.",role:"Développeuse freelance",d:"Mars 2025",stars:4,t:"Très bon rapport qualité/prix. J'aurais aimé un peu plus de phone boxes aux heures de pointe."}
+const HOURS = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
+const REVIEWS = [
+  {n:"Youssef Amrani",role:"Ingénieur Cloud & Data",d:"Oct. 2026",stars:5,t:"Réservé en 2 minutes à Casablanca Maarif, accueil irréprochable et connexion fibre ultra-stable. Un must pour travailler sereinement."},
+  {n:"Salma Tazi",role:"Consultante Stratégie",d:"Sept. 2026",stars:5,t:"Espace lumineux à Rabat Agdal, excellent thé et organisation sans faille. Le paiement en ligne en Dirhams est très fluide."},
+  {n:"Amine Naciri",role:"Tech Lead Freelance",d:"Sept. 2026",stars:4,t:"Très bon rapport qualité/prix à Marrakech Guéliz. L'ambiance studieuse et les recommandations de l'IA sont bluffantes."}
 ];
-const INIT_BOOKINGS=[
-  {id:1,spaceId:1,date:"2025-07-14",meta:"Journée complète",status:"Confirmée"},
-  {id:2,spaceId:4,date:"2025-07-18",meta:"14:00 – 16:00",status:"En attente"}
+const INIT_BOOKINGS = [
+  {id:1,spaceId:1,date:"2026-10-01",meta:"09:00 – 18:00 (Journée)",status:"Confirmée"},
+  {id:2,spaceId:4,date:"2026-10-05",meta:"14:00 – 17:00 (3h)",status:"En attente"}
 ];
-const PAST_BOOKINGS=[
-  {id:9,spaceId:7,date:"2025-05-02",meta:"Journée complète",status:"Terminée"},
-  {id:8,spaceId:3,date:"2025-04-11",meta:"2 jours",status:"Terminée"},
-  {id:7,spaceId:9,date:"2025-03-28",meta:"09:00 – 11:00",status:"Terminée"}
+const PAST_BOOKINGS = [
+  {id:9,spaceId:2,date:"2026-09-20",meta:"10:00 – 13:00 (3h)",status:"Terminée"},
+  {id:8,spaceId:3,date:"2026-09-12",meta:"Journée complète",status:"Terminée"},
+  {id:7,spaceId:5,date:"2026-09-04",meta:"14:00 – 16:00",status:"Terminée"}
 ];
-const REVENUE=[12.4,14.1,13.2,16.8,18.5,17.2,21.4,23.1,22.0,25.6,27.3,29.8];
-const MONTHS=["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Aoû","Sep","Oct","Nov","Déc"];
-const WEEK_OCC=[62,71,78,84,80,58,34];
-const DAYS=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
-const OCC={1:86,2:74,3:68,4:91,5:57,6:63,7:82,8:44,9:77,10:71};
-const RECENT=[
-  {c:"Julien P.",s:"La Verrière",d:"Aujourd'hui 09:12",a:29,st:"Confirmée"},
-  {c:"Sarah L.",s:"Salle Horizon",d:"Aujourd'hui 08:47",a:48,st:"Confirmée"},
-  {c:"Mehdi K.",s:"Open Loft Confluence",d:"Hier 18:20",a:50,st:"En attente"},
-  {c:"Anne V.",s:"Studio Canopée",d:"Hier 15:03",a:114,st:"Confirmée"},
-  {c:"Paul G.",s:"Cabine Mute",d:"Hier 11:36",a:18,st:"Confirmée"}
+const REVENUE = [124,141,132,168,185,172,214,231,220,256,273,298];
+const MONTHS = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Aoû","Sep","Oct","Nov","Déc"];
+const WEEK_OCC = [62,71,78,84,80,58,34];
+const DAYS = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+const OCC = {1:86,2:74,3:68,4:91,5:57,6:63,7:82,8:44,9:77,10:71};
+const RECENT = [
+  {c:"Youssef A.",s:"L'Atelier Maarif",d:"Aujourd'hui 09:12",a:405,st:"Confirmée"},
+  {c:"Salma T.",s:"Le Hub Agdal",d:"Aujourd'hui 08:47",a:150,st:"Confirmée"},
+  {c:"Omar B.",s:"Studio Guéliz",d:"Hier 18:20",a:195,st:"En attente"},
+  {c:"Nadia I.",s:"Marina Bay Focus",d:"Hier 15:03",a:75,st:"Confirmée"},
+  {c:"Mehdi E.",s:"Oasis Work Gauthier",d:"Hier 11:36",a:340,st:"Confirmée"}
 ];
 
 /* ================= UI ATOMS ================= */
@@ -275,10 +319,12 @@ const SpaceCard=({s,nav,favs,toggleFav})=>{
 };
 
 /* ================= NAVBAR ================= */
-const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen})=>{
+const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen,currentUser,onSelectUser,onLogout,toast})=>{
   const [scrolled,setScrolled]=useState(false);
   const [userMenu,setUserMenu]=useState(false);
   const [apiOnline,setApiOnline]=useState(null);
+
+  const user = currentUser || PRESET_ACCOUNTS[0];
 
   useEffect(()=>{
     const f=()=>setScrolled(window.scrollY>8);f();
@@ -296,13 +342,17 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen})=>{
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
         <button onClick={()=>nav({name:"home"})} className="flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30"><Icon n="map-pin" size={18}/></span>
-          <span className="font-display text-lg font-bold tracking-tight">Spotwork</span>
+          <div className="text-left">
+            <span className="font-display text-lg font-bold tracking-tight block leading-tight">Spotwork</span>
+            <span className="text-[10px] font-semibold tracking-wider uppercase text-brand-600 hidden sm:block">PropTech Maroc</span>
+          </div>
         </button>
         <nav className="hidden lg:flex items-center gap-1">
           {link("Accueil",{name:"home"})}
           {link("Explorer",{name:"explore"},"search")}
           {link("Mes réservations",{name:"user"},"calendar-days")}
           {link("Gestionnaire",{name:"admin"},"bar-chart-3")}
+          {link("Connexion",{name:"login"},"user")}
         </nav>
         <div className="flex items-center gap-2">
           <button onClick={()=>{
@@ -318,22 +368,75 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen})=>{
             {cartCount>0&&<span key={cartCount} className="pop absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">{cartCount}</span>}
           </button>
           <div className="relative">
-            <button onClick={()=>setUserMenu(!userMenu)} className="flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-3 transition hover:border-brand-300">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-navy text-[11px] font-bold text-white">CL</span>
-              <span className="hidden sm:block text-sm font-semibold">Léa</span>
+            <button onClick={()=>setUserMenu(!userMenu)} className="flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-3 transition hover:border-brand-300 bg-white">
+              <span className={`grid h-8 w-8 place-items-center rounded-full font-bold text-white text-[11px] shadow-sm ${user.avatarBg}`}>
+                {user.initials}
+              </span>
+              <div className="hidden sm:flex items-center gap-1.5 text-left">
+                <span className="text-sm font-semibold text-slate-800">{user.firstName}</span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${user.badgeCls}`}>
+                  {user.roleLabel}
+                </span>
+              </div>
               <Icon n="chevron-down" size={14} className="text-slate-400"/>
             </button>
             {userMenu&&(
-              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-lift">
+              <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-lift z-50">
+                {/* User Header */}
+                <div className="p-3 bg-mist rounded-xl mb-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className={`grid h-9 w-9 place-items-center rounded-xl font-bold text-white text-xs ${user.avatarBg}`}>
+                      {user.initials}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-sm text-ink truncate">{user.name}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500 flex items-center gap-1"><Icon n="map-pin" size={11}/>{user.city}</span>
+                    <span className={`px-2 py-0.5 rounded-full font-bold border ${user.badgeCls}`}>{user.roleLabel}</span>
+                  </div>
+                </div>
+
+                {/* Primary Nav Links */}
                 {[
-                  ["Mon tableau de bord","layout-grid",()=>nav({name:"user"})],
+                  ["Mon espace client","layout-grid",()=>nav({name:"user"})],
                   ["Mes favoris","heart",()=>nav({name:"user",params:{tab:"favoris"}})],
-                  ["Espace gestionnaire","bar-chart-3",()=>nav({name:"admin"})]
+                  ["Espace gestionnaire / Admin","bar-chart-3",()=>nav({name:"admin"})]
                 ].map(([l,i,f])=>(
-                  <button key={l} onClick={f} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-mist hover:text-ink">
+                  <button key={l} onClick={()=>{f();setUserMenu(false);}} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-mist hover:text-ink">
                     <Icon n={i} size={15} className="text-slate-400"/>{l}
                   </button>
                 ))}
+
+                {/* Quick Account Switcher */}
+                <div className="border-t border-slate-100 my-1.5 pt-1.5">
+                  <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Changer de compte (1 clic)</p>
+                  {PRESET_ACCOUNTS.map(acc => (
+                    <button
+                      key={acc.id}
+                      onClick={() => {
+                        onSelectUser(acc);
+                        setUserMenu(false);
+                        if (toast) toast(`Connecté : ${acc.name} (${acc.roleLabel})`, "user-check");
+                      }}
+                      className={`flex w-full items-center justify-between px-3 py-1.5 text-xs rounded-lg transition ${user.id === acc.id ? "bg-brand-50 text-brand-700 font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
+                      <span className="truncate">{acc.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${acc.badgeCls}`}>{acc.roleLabel}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Login Page / Logout */}
+                <div className="border-t border-slate-100 mt-1.5 pt-1.5 flex gap-1">
+                  <button onClick={()=>{nav({name:"login"});setUserMenu(false);}} className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100">
+                    <Icon n="log-in" size={13}/>Connexion
+                  </button>
+                  <button onClick={()=>{onLogout();setUserMenu(false);}} className="flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50">
+                    <Icon n="log-out" size={13}/>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -349,6 +452,7 @@ const Navbar=({view,nav,cartCount,menuOpen,setMenuOpen})=>{
             {link("Explorer les espaces",{name:"explore"},"search")}
             {link("Mes réservations",{name:"user"},"calendar-days")}
             {link("Tableau de bord gestionnaire",{name:"admin"},"bar-chart-3")}
+            {link("Page de connexion",{name:"login"},"user")}
             {link("Panier",{name:"checkout"},"shopping-cart")}
           </div>
         </div>
@@ -395,8 +499,8 @@ const SearchPanel=({nav})=>{
         </Field>
         <Field label="Budget max">
           <select value={budget} onChange={e=>setBudget(e.target.value)} className={sel(true)}>
-            <option value="25">≤ 25 €</option><option value="50">≤ 50 €</option>
-            <option value="100">≤ 100 €</option><option value="150">Tous budgets</option>
+            <option value="35">≤ 35 DH</option><option value="60">≤ 60 DH</option>
+            <option value="100">≤ 100 DH</option><option value="200">Tous budgets</option>
           </select>
         </Field>
       </div>
@@ -421,7 +525,7 @@ const Hero=({nav})=>(
       <div className="grid items-center gap-10 lg:grid-cols-12">
         <div className="lg:col-span-6">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-brand-700 shadow-sm">
-            <span className="dot-live h-2 w-2 rounded-full bg-emerald-500"/>320+ espaces vérifiés · 6 villes
+            <span className="dot-live h-2 w-2 rounded-full bg-emerald-500"/>320+ espaces vérifiés · 6 villes marocaines
           </span>
           <h1 className="mt-5 font-display text-[2.4rem] font-bold leading-[1.04] tracking-tight md:text-6xl">
             <span className="mask-line"><span style={{animationDelay:".05s"}}>Des espaces qui</span></span>
@@ -429,36 +533,36 @@ const Hero=({nav})=>(
             <span className="mask-line"><span style={{animationDelay:".27s"}} className="text-brand-600">travailler.</span></span>
           </h1>
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-slate-600">
-            Bureaux privés, open spaces, salles de réunion : comparez, visitez en photos et réservez en moins de deux minutes, à l'heure ou à la journée.
+            Bureaux privés, open spaces, salles de réunion : comparez, visitez en photos et réservez en moins de deux minutes à Casablanca, Rabat, Marrakech et dans tout le Maroc.
           </p>
           <div className="mt-6 flex items-center gap-3">
             <div className="flex -space-x-2.5">
-              {["JD","SM","KB","AV"].map((x,i)=>(
+              {["YA","ME","FA","ST"].map((x,i)=>(
                 <span key={x} className="grid h-8 w-8 place-items-center rounded-full border-2 border-white text-[10px] font-bold text-white"
                   style={{background:["#1F56D6","#0D2C5A","#5B90F7","#142F7A"][i]}}>{x}</span>
               ))}
             </div>
-            <p className="text-xs text-slate-500"><b className="text-ink">12 400+</b> indépendants nous font confiance</p>
+            <p className="text-xs text-slate-500"><b className="text-ink">12 400+</b> professionnels au Maroc nous font confiance</p>
           </div>
           <div className="mt-8"><SearchPanel nav={nav}/></div>
         </div>
         <div className="relative hidden lg:col-span-6 lg:block">
           <div className="relative ml-auto w-[92%]">
             <div className="overflow-hidden rounded-3xl shadow-lift">
-              <img src={U(IMG.f,900)} alt="Espace de coworking lumineux" className="h-[430px] w-full object-cover"/>
+              <img src={U(IMG.f,900)} alt="Espace de coworking lumineux au Maroc" className="h-[430px] w-full object-cover"/>
             </div>
             <div className="absolute -bottom-8 -left-10 w-52 overflow-hidden rounded-2xl border-4 border-mist shadow-lift">
-              <img src={U(IMG.g,500)} alt="Freelances au travail" className="h-32 w-full object-cover"/>
+              <img src={U(IMG.g,500)} alt="Professionnels au travail" className="h-32 w-full object-cover"/>
             </div>
             <div className="floaty absolute -right-4 top-8 rounded-2xl bg-white p-3.5 shadow-lift">
               <p className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
                 <span className="dot-live h-1.5 w-1.5 rounded-full bg-emerald-500"/>Occupation en direct
               </p>
-              <p className="mt-1 font-display text-sm font-bold">Open Loft · Lyon</p>
+              <p className="mt-1 font-display text-sm font-bold">L'Atelier Maarif · Casablanca</p>
               <div className="mt-2 h-1.5 w-36 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full w-[82%] rounded-full bg-brand-600"/>
+                <div className="h-full w-[86%] rounded-full bg-brand-600"/>
               </div>
-              <p className="mt-1 text-[11px] font-semibold text-brand-700">82 % occupé</p>
+              <p className="mt-1 text-[11px] font-semibold text-brand-700">86 % occupé</p>
             </div>
             <div className="floaty absolute -left-16 top-40 flex items-center gap-2.5 rounded-2xl bg-white px-4 py-3 shadow-lift" style={{animationDelay:"1.4s"}}>
               <span className="grid h-9 w-9 place-items-center rounded-full bg-amber-100 text-amber-500"><Icon n="star" size={16} fill="currentColor"/></span>
@@ -669,11 +773,11 @@ const Home=({nav,favs,toggleFav})=>{
             </div>
             <div className="relative">
               <div className="rotate-2 rounded-2xl bg-white p-4 shadow-lift transition-transform duration-500 hover:rotate-0">
-                <div className="flex items-center justify-between"><p className="text-xs font-bold">Revenus · Juin</p><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">+12,4 %</span></div>
-                <p className="font-display text-2xl font-bold">23 100 €</p>
+                <div className="flex items-center justify-between"><p className="text-xs font-bold">Revenus · Ce mois</p><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">+12,4 %</span></div>
+                <p className="font-display text-2xl font-bold">231 000 DH</p>
                 <Spark data={[8,10,9,13,12,15,17,16,19]} color="#1F56D6"/>
                 <div className="mt-3 space-y-2">
-                  {[["La Verrière",86],["Salle Horizon",91],["Open Loft",82]].map(([n,v])=>(
+                  {[["L'Atelier Maarif",86],["Le Hub Agdal",91],["Studio Guéliz",82]].map(([n,v])=>(
                     <div key={n} className="flex items-center gap-2 text-[11px]">
                       <span className="w-24 truncate font-semibold text-slate-500">{n}</span>
                       <div className="h-1.5 flex-1 rounded-full bg-slate-100"><div className="h-full rounded-full bg-brand-500" style={{width:v+"%"}}/></div>
@@ -689,23 +793,23 @@ const Home=({nav,favs,toggleFav})=>{
       {/* Témoignages */}
       <section className="bg-mist py-16">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
-          <SecHead kicker="Ils en parlent mieux que nous" title="La communauté Spotwork"/>
+          <SecHead kicker="Ils en parlent mieux que nous" title="La communauté Spotwork Maroc"/>
           <div className="grid gap-5 lg:grid-cols-3">
             <figure className="relative rounded-3xl bg-navy p-8 text-white lg:col-span-2" data-reveal>
               <Icon n="quote" size={34} className="text-brand-400"/>
               <blockquote className="mt-4 font-display text-xl font-semibold leading-relaxed md:text-2xl">
-                "J'ai testé quatre espaces en deux semaines sans aucune friction. Le dashboard me suit partout, mes factures sont centralisées. C'est devenu un réflexe."
+                "J'ai testé quatre espaces entre Casablanca et Rabat en deux semaines sans aucune friction. Le dashboard me suit partout, mes factures en Dirhams sont centralisées."
               </blockquote>
               <figcaption className="mt-6 flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-500 font-bold">SD</span>
-                <div><p className="text-sm font-bold">Sophie Durand</p><p className="text-xs text-slate-400">Consultante indépendante · Paris</p></div>
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-500 font-bold">ST</span>
+                <div><p className="text-sm font-bold">Salma Tazi</p><p className="text-xs text-slate-400">Consultante Stratégie · Rabat</p></div>
                 <div className="ml-auto"><Stars v={5}/></div>
               </figcaption>
             </figure>
             <div className="grid gap-5">
               {[
-                {t:"La gestion de nos 3 salles est devenue limpide. L'occupation a pris 28 points en un trimestre.",n:"Marc A.",r:"Gérant · Marseille",d:"MA"},
-                {t:"Réservation un dimanche soir à 23 h pour le lundi matin. Personne d'autre ne fait ça.",n:"Julien P.",r:"Développeur · Lyon",d:"JP"}
+                {t:"La gestion de nos 3 espaces à Casablanca est devenue limpide. L'occupation a augmenté de 28 points en un trimestre.",n:"Karim B.",r:"Gérant Coworking · Casablanca",d:"KB"},
+                {t:"Réservation un dimanche soir à 23 h pour le lundi matin à Marrakech. Expérience digitale remarquable.",n:"Youssef A.",r:"Développeur Cloud · Marrakech",d:"YA"}
               ].map((x,i)=>(
                 <figure key={x.n} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card" data-reveal style={{transitionDelay:`${i*120}ms`}}>
                   <blockquote className="text-sm leading-relaxed text-slate-600">"{x.t}"</blockquote>
@@ -753,7 +857,7 @@ const FilterPanel=({f,setF})=>{
         </label>
         <input type="range" min="10" max="150" step="5" value={f.max}
           onChange={e=>setF({...f,max:+e.target.value})} className="w-full accent-[#1F56D6]"/>
-        <div className="flex justify-between text-[10px] text-slate-400"><span>10 €</span><span>150 €+</span></div>
+        <div className="flex justify-between text-[10px] text-slate-400"><span>10 DH</span><span>150 DH+</span></div>
       </div>
       <div>
         <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Équipements</label>
@@ -1148,9 +1252,10 @@ const Checkout=({cart,setCart,nav,onDone,toast})=>{
 };
 
 /* ================= DASHBOARD CLIENT ================= */
-const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast})=>{
+const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast,currentUser})=>{
+  const user = currentUser || PRESET_ACCOUNTS[0];
   const [tab,setTab]=useState(initTab||"resas");
-  const [prefs,setPrefs]=useState({mail:true,push:false,news:true,city:"Lyon",type:"open"});
+  const [prefs,setPrefs]=useState({mail:true,push:false,news:true,city:user.city||"Casablanca",type:"open"});
   const tabs=[["resas","Mes réservations","calendar-days"],["ia","Recommandations","sparkles"],["favoris","Favoris","heart"],["prefs","Préférences","settings"]];
   const recommendations=useMemo(()=>{
     const favTypes=new Set([...favs].map(id=>SPACES.find(s=>s.id===id)?.type));
@@ -1164,8 +1269,11 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast})=>{
     <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Kicker>Espace membre</Kicker>
-          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">Bonjour Léa 👋</h1>
+          <Kicker>Espace membre · PropTech Maroc</Kicker>
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">Bonjour {user.firstName} 👋</h1>
+          <p className="mt-1 text-xs text-slate-500">
+            {user.email} · {user.city}, Maroc · <span className={`inline-flex px-2 py-0.5 rounded-full font-semibold border ${user.badgeCls}`}>{user.roleLabel}</span>
+          </p>
         </div>
         <button onClick={()=>nav({name:"explore"})} className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25">
           <Icon n="plus" size={15}/>Nouvelle réservation
@@ -1297,13 +1405,14 @@ const UserDash=({initTab,bookings,setBookings,favs,toggleFav,nav,toast})=>{
 };
 
 /* ================= DASHBOARD GESTIONNAIRE ================= */
-const AdminDash=({nav,toast})=>{
+const AdminDash=({nav,toast,currentUser,onSelectUser})=>{
+  const user = currentUser || PRESET_ACCOUNTS[1];
   const [range,setRange]=useState("30j");
   const kpis=[
-    {l:"Revenus du mois",v:"23 100 €",d:"+12,4 %",up:true,i:"euro",spark:[8,10,9,13,12,15,17,16,19]},
-    {l:"Taux d'occupation",v:"78 %",d:"+3,1 pts",up:true,i:"trending-up",spark:[60,64,61,70,72,74,78]},
+    {l:"Revenus du mois",v:"231 000 DH",d:"+12,4 %",up:true,i:"trending-up",spark:[8,10,9,13,12,15,17,16,19]},
+    {l:"Taux d'occupation",v:"78 %",d:"+3,1 pts",up:true,i:"activity",spark:[60,64,61,70,72,74,78]},
     {l:"Réservations",v:"342",d:"+8,9 %",up:true,i:"calendar-days",spark:[20,26,24,31,29,35,38]},
-    {l:"Panier moyen",v:"47 €",d:"−2,1 %",up:false,i:"receipt",spark:[52,50,51,48,49,47,47]}
+    {l:"Panier moyen",v:"470 DH",d:"−2,1 %",up:false,i:"receipt",spark:[52,50,51,48,49,47,47]}
   ];
   const donutItems=[
     {label:"Open space",v:38,c:"#1F56D6"},{label:"Bureaux privés",v:27,c:"#0D2C5A"},
@@ -1311,13 +1420,21 @@ const AdminDash=({nav,toast})=>{
   ];
   return (
     <main className="bg-mist">
+      {user.role === "client" && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 font-medium"><Icon n="info" size={14} className="text-amber-600"/>Aperçu Gestionnaire : vous êtes actuellement connecté en tant que <b>{user.name}</b> (Client).</span>
+          <button onClick={() => onSelectUser(PRESET_ACCOUNTS[1])} className="font-bold underline text-brand-700 hover:text-brand-900">
+            Basculer sur le compte Gestionnaire (Mehdi El Fassi) →
+          </button>
+        </div>
+      )}
       <div className="bg-navy">
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <Kicker><span className="text-brand-300">Tableau de bord</span></Kicker>
-              <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-white">Bonjour Claire 👋</h1>
-              <p className="mt-1 text-sm text-slate-400">Voici la santé de vos 10 espaces aujourd'hui.</p>
+              <Kicker><span className="text-brand-300">Tableau de bord {user.role === "admin" ? "Administrateur" : "Gestionnaire"}</span></Kicker>
+              <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-white">Bonjour {user.firstName} 👋</h1>
+              <p className="mt-1 text-sm text-slate-400">Voici la santé de vos 10 espaces au Maroc aujourd'hui (Casablanca, Rabat, Marrakech, Tanger...).</p>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="flex rounded-full bg-white/10 p-1">
@@ -1325,7 +1442,7 @@ const AdminDash=({nav,toast})=>{
                   <button key={r} onClick={()=>setRange(r)} className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${range===r?"bg-white text-navy":"text-slate-300 hover:text-white"}`}>{r}</button>
                 ))}
               </div>
-              <button onClick={()=>toast("Rapport CSV téléchargé (démo)","download")} className="flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-500">
+              <button onClick={()=>toast("Rapport financier exporté en format CSV","download")} className="flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-500">
                 <Icon n="download" size={14}/>Exporter
               </button>
             </div>
@@ -1357,7 +1474,7 @@ const AdminDash=({nav,toast})=>{
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2" data-reveal>
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-display font-bold">Revenus 2025 <span className="text-sm font-medium text-slate-400">(k€)</span></h2>
+              <h2 className="font-display font-bold">Revenus 2026 <span className="text-sm font-medium text-slate-400">(k DH)</span></h2>
               <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600">+24 % YoY</span>
             </div>
             <AreaChart data={REVENUE} labels={MONTHS}/>
@@ -1455,18 +1572,211 @@ const AdminDash=({nav,toast})=>{
   );
 };
 
+/* ================= PAGE DE CONNEXION ================= */
+const LoginPage = ({ currentUser, onLogin, nav, toast }) => {
+  const [selectedRole, setSelectedRole] = useState("client");
+  const [email, setEmail] = useState("youssef@proptech.ma");
+  const [password, setPassword] = useState("••••••••");
+  const [err, setErr] = useState("");
+
+  const handlePresetLogin = (acc) => {
+    onLogin(acc);
+    if (toast) toast(`Connecté avec succès : ${acc.name} (${acc.roleLabel})`, "check");
+    if (acc.role === "client") {
+      nav({ name: "user" });
+    } else {
+      nav({ name: "admin" });
+    }
+  };
+
+  const handleCustomLogin = (e) => {
+    e.preventDefault();
+    if (!email) {
+      setErr("Veuillez saisir une adresse email");
+      return;
+    }
+    const found = PRESET_ACCOUNTS.find(a => a.email.toLowerCase() === email.toLowerCase());
+    if (found) {
+      handlePresetLogin(found);
+    } else {
+      const cleanName = email.split("@")[0].replace(/[._-]/g, " ");
+      const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+      const customUser = {
+        id: "custom-" + Date.now(),
+        email,
+        name: formattedName,
+        firstName: formattedName.split(" ")[0],
+        initials: formattedName.substring(0, 2).toUpperCase(),
+        role: selectedRole,
+        roleLabel: selectedRole === "admin" ? "Administrateur" : selectedRole === "manager" ? "Gestionnaire" : "Client",
+        city: "Casablanca",
+        avatarBg: selectedRole === "admin" ? "bg-navy" : selectedRole === "manager" ? "bg-indigo-600" : "bg-brand-600",
+        badgeCls: selectedRole === "admin" ? "bg-purple-50 text-purple-700 border-purple-200" : selectedRole === "manager" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-blue-50 text-brand-700 border-brand-200",
+        desc: `Session ${selectedRole} personnalisée sur Spotwork Maroc`
+      };
+      onLogin(customUser);
+      if (toast) toast(`Bienvenue ${customUser.name} !`, "check");
+      nav(selectedRole === "client" ? { name: "user" } : { name: "admin" });
+    }
+  };
+
+  return (
+    <main className="min-h-[85vh] bg-mist py-10 md:py-16">
+      <div className="mx-auto max-w-4xl px-4 md:px-6">
+        <div className="text-center max-w-xl mx-auto mb-10">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1 text-xs font-semibold text-brand-700 shadow-sm">
+            <Icon n="shield-check" size={13} className="text-brand-600"/>Portail d'authentification PropTech Maroc
+          </span>
+          <h1 className="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-ink">
+            Connexion à Spotwork
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Accédez à votre espace Client, Gestionnaire ou Administrateur. Testez en 1 clic grâce aux comptes préconfigurés.
+          </p>
+        </div>
+
+        {/* COMPTES PRESETS 1-CLIC */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg font-bold flex items-center gap-2">
+              <Icon n="zap" size={17} className="text-amber-500"/>
+              Connexion rapide en 1 clic (Profils de Test)
+            </h2>
+            <span className="text-xs text-slate-400">Prêt à l'emploi</span>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {PRESET_ACCOUNTS.map((acc) => {
+              const isActive = currentUser?.id === acc.id;
+              return (
+                <div key={acc.id}
+                  className={`relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lift ${isActive ? "border-brand-500 ring-2 ring-brand-500/20" : "border-slate-200"}`}>
+                  {isActive && (
+                    <span className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"/>Actif
+                    </span>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className={`grid h-11 w-11 place-items-center rounded-xl font-bold text-white text-sm shadow-md ${acc.avatarBg}`}>
+                        {acc.initials}
+                      </span>
+                      <div>
+                        <h3 className="font-display font-bold text-ink leading-tight">{acc.name}</h3>
+                        <span className={`inline-block mt-0.5 rounded-full border px-2 py-0.5 text-[10px] font-bold ${acc.badgeCls}`}>
+                          {acc.roleLabel}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 font-mono mb-2">{acc.email}</p>
+                    <p className="text-xs text-slate-600 leading-relaxed min-h-[44px]">{acc.desc}</p>
+                    <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+                      <Icon n="map-pin" size={11}/>{acc.city}, Maroc
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handlePresetLogin(acc)}
+                    className={`mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-bold transition shadow-sm ${
+                      isActive
+                        ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        : acc.role === "admin"
+                        ? "bg-navy text-white hover:bg-slate-800"
+                        : acc.role === "manager"
+                        ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                        : "bg-brand-600 text-white hover:bg-brand-700"
+                    }`}>
+                    <Icon n={acc.role === "client" ? "user-check" : acc.role === "manager" ? "bar-chart-2" : "shield"} size={14}/>
+                    {isActive ? "Session active" : `Se connecter (${acc.roleLabel})`}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* FORMULAIRE CLASSIQUE */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-card max-w-xl mx-auto">
+          <h2 className="font-display text-lg font-bold mb-1">Formulaire de connexion classique</h2>
+          <p className="text-xs text-slate-500 mb-6">Connexion avec vos identifiants email et mot de passe.</p>
+
+          <form onSubmit={handleCustomLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Rôle du compte</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "client", label: "Client" },
+                  { id: "manager", label: "Gestionnaire" },
+                  { id: "admin", label: "Admin" }
+                ].map(r => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole(r.id);
+                      if (r.id === "client") setEmail("youssef@proptech.ma");
+                      else if (r.id === "manager") setEmail("mehdi@spotwork.ma");
+                      else setEmail("admin@spotwork.ma");
+                    }}
+                    className={`rounded-xl py-2 text-xs font-bold border transition ${
+                      selectedRole === r.id
+                        ? "bg-navy text-white border-navy shadow-sm"
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    }`}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Field label="Adresse email" err={err}>
+              <input
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setErr(""); }}
+                className={inp}
+                placeholder="votre@email.ma"
+              />
+            </Field>
+
+            <Field label="Mot de passe">
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className={inp}
+                placeholder="Mot de passe"
+              />
+            </Field>
+
+            <div className="pt-2 flex items-center justify-between">
+              <span className="text-xs text-slate-400">Supabase Auth & JWT</span>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700">
+                <Icon n="log-in" size={15}/>
+                Se connecter
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  );
+};
+
 /* ================= FOOTER ================= */
 const Footer=({nav,toast})=>{
   const [email,setEmail]=useState("");const [err,setErr]=useState("");
   const subscribe=e=>{
     e.preventDefault();
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setErr("Adresse e-mail invalide");return;}
-    setErr("");setEmail("");toast("Inscription confirmée. Bienvenue !","mail");
+    setErr("");setEmail("");toast("Inscription confirmée. Bienvenue sur Spotwork Maroc !","mail");
   };
   const cols=[
-    ["Plateforme",[["Explorer les espaces",()=>nav({name:"explore"})],["Villes desservies",()=>nav({name:"explore"})],["Tarifs & abonnements",()=>toast("Page tarifs (démo)","info")],["Programme fidélité",()=>toast("Programme fidélité (démo)","info")]]],
-    ["Gestionnaires",[["Dashboard démo",()=>nav({name:"admin"})],["Référencer mon espace",()=>toast("Onboarding gestionnaire (démo)","info")],["API & intégrations",()=>toast("Documentation API (démo)","info")]]],
-    ["Support",[["Centre d'aide",()=>toast("Centre d'aide (démo)","info")],["Annulations & remboursements",()=>toast("Politique (démo)","info")],["Nous contacter",()=>toast("support@spotwork.fr","mail")]]]
+    ["Plateforme",[["Explorer les espaces",()=>nav({name:"explore"})],["Villes marocaines",()=>nav({name:"explore"})],["Comptes de test & Login",()=>nav({name:"login"})],["Tarifs & abonnements (DH)",()=>toast("Tarifs en Dirhams (DH)","info")]]],
+    ["Gestionnaires",[["Dashboard gestionnaire",()=>nav({name:"admin"})],["Espaces à Casablanca",()=>nav({name:"explore",params:{city:"Casablanca"}})],["Espaces à Rabat",()=>nav({name:"explore",params:{city:"Rabat"}})],["Espaces à Marrakech",()=>nav({name:"explore",params:{city:"Marrakech"}})]]],
+    ["Support",[["Centre d'aide",()=>toast("Centre d'aide Spotwork Maroc","info")],["API & Documentation",()=>toast("API Express / Supabase active","info")],["Contact PropTech Maroc",()=>toast("support@spotwork.ma","mail")]]]
   ];
   return (
     <footer className="bg-ink text-slate-300">
@@ -1475,13 +1785,16 @@ const Footer=({nav,toast})=>{
           <div>
             <div className="flex items-center gap-2.5">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white"><Icon n="map-pin" size={18}/></span>
-              <span className="font-display text-lg font-bold text-white">Spotwork</span>
+              <div>
+                <span className="font-display text-lg font-bold text-white block leading-tight">Spotwork</span>
+                <span className="text-[10px] text-brand-400 font-semibold tracking-wider uppercase">PropTech Maroc</span>
+              </div>
             </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">La plateforme de réservation d'espaces de travail nouvelle génération. 6 villes, 320+ espaces vérifiés.</p>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">La plateforme de réservation d'espaces de coworking nouvelle génération au Maroc. Casablanca, Rabat, Marrakech, Tanger, Agadir, Fès.</p>
             <form onSubmit={subscribe} className="mt-6">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Newsletter mensuelle</p>
               <div className="mt-2.5 flex gap-2">
-                <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="votre@email.fr"
+                <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="votre@email.ma"
                   className={`flex-1 rounded-xl border bg-white/5 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition focus:border-brand-400 ${err?"border-rose-400":"border-white/15"}`}/>
                 <button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-500"><Icon n="send" size={15}/></button>
               </div>
@@ -1500,11 +1813,11 @@ const Footer=({nav,toast})=>{
           </div>
         </div>
         <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-slate-500">
-          <p>© 2025 Spotwork SAS — Prototype de démonstration, données fictives.</p>
+          <p>© 2026 Spotwork PropTech Maroc — Développé avec Node.js, Express, Supabase & Claude AI.</p>
           <div className="flex items-center gap-4">
-            <button className="transition hover:text-white"><Icon n="globe" size={15}/></button>
-            <button className="transition hover:text-white"><Icon n="mail" size={15}/></button>
-            <button className="transition hover:text-white"><Icon n="message-circle" size={15}/></button>
+            <button onClick={()=>nav({name:"home"})} className="transition hover:text-white" title="Accueil"><Icon n="globe" size={15}/></button>
+            <button onClick={()=>nav({name:"login"})} className="transition hover:text-white" title="Connexion"><Icon n="user" size={15}/></button>
+            <button onClick={()=>toast("support@spotwork.ma","mail")} className="transition hover:text-white" title="Support"><Icon n="mail" size={15}/></button>
           </div>
         </div>
       </div>
@@ -1521,6 +1834,38 @@ const App=()=>{
   const [bookings,setBookings]=useState(INIT_BOOKINGS);
   const [toasts,setToasts]=useState([]);
   const [menuOpen,setMenuOpen]=useState(false);
+
+  // Authenticated user state initialized with Youssef Amrani (Client) or saved user
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("spotwork_user");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return PRESET_ACCOUNTS[0];
+  });
+
+  const onLogin = (user) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem("spotwork_user", JSON.stringify(user));
+    } catch {}
+    if (user.role === 'admin') {
+      SpotworkAPI.token = 'mock-token-admin';
+    } else if (user.role === 'manager') {
+      SpotworkAPI.token = 'mock-token-manager';
+    } else {
+      SpotworkAPI.token = 'mock-token-client';
+    }
+  };
+
+  const onLogout = () => {
+    try {
+      localStorage.removeItem("spotwork_user");
+    } catch {}
+    setCurrentUser(PRESET_ACCOUNTS[0]);
+    toast("Session réinitialisée sur le compte démo", "log-out");
+    nav({ name: "login" });
+  };
 
   useEffect(()=>{
     let tries=0;
@@ -1566,20 +1911,21 @@ const App=()=>{
     <div className="grid min-h-screen place-items-center bg-mist">
       <div className="text-center">
         <span className="mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white"><Icon n="map-pin" size={22}/></span>
-        <p className="mt-3 font-display font-bold">Spotwork</p>
+        <p className="mt-3 font-display font-bold">Spotwork PropTech Maroc</p>
       </div>
     </div>
   );
 
   return (
     <div className="font-body">
-      <Navbar view={view} nav={nav} cartCount={cart.length} menuOpen={menuOpen} setMenuOpen={setMenuOpen}/>
+      <Navbar view={view} nav={nav} cartCount={cart.length} menuOpen={menuOpen} setMenuOpen={setMenuOpen} currentUser={currentUser} onSelectUser={onLogin} onLogout={onLogout} toast={toast}/>
       {view.name==="home"&&<Home nav={nav} favs={favs} toggleFav={toggleFav}/>}
       {view.name==="explore"&&<Explore params={view.params} nav={nav} favs={favs} toggleFav={toggleFav}/>}
       {view.name==="space"&&<SpaceDetail id={view.params.id} nav={nav} favs={favs} toggleFav={toggleFav} reserve={reserve}/>}
       {view.name==="checkout"&&<Checkout cart={cart} setCart={setCart} nav={nav} onDone={onDone} toast={toast}/>}
-      {view.name==="user"&&<UserDash initTab={view.params?.tab} bookings={bookings} setBookings={setBookings} favs={favs} toggleFav={toggleFav} nav={nav} toast={toast}/>}
-      {view.name==="admin"&&<AdminDash nav={nav} toast={toast}/>}
+      {view.name==="user"&&<UserDash initTab={view.params?.tab} bookings={bookings} setBookings={setBookings} favs={favs} toggleFav={toggleFav} nav={nav} toast={toast} currentUser={currentUser}/>}
+      {view.name==="admin"&&<AdminDash nav={nav} toast={toast} currentUser={currentUser} onSelectUser={onLogin}/>}
+      {view.name==="login"&&<LoginPage currentUser={currentUser} onLogin={onLogin} nav={nav} toast={toast}/>}
       <Footer nav={nav} toast={toast}/>
       {/* Toasts */}
       <div className="pointer-events-none fixed bottom-5 right-5 z-[60] flex flex-col gap-2">
