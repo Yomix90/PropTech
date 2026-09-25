@@ -67,7 +67,10 @@ export class ManagerController {
             const existingIds = new Set(combined.map((b) => b.id));
             for (const sbBooking of bookings) {
               if (!existingIds.has(sbBooking.id)) {
-                combined.push(sbBooking);
+                combined.push({
+                  ...sbBooking,
+                  seats: sbBooking.seats || 1,
+                });
               }
             }
           }

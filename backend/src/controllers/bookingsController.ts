@@ -98,14 +98,23 @@ export class BookingsController {
       let savedBooking: BookingEntity = newBooking;
       if (isLiveSupabase) {
         try {
-          const { data, error } = await supabase.from('bookings').insert(newBooking).select().single();
-          if (!error && data) {
-            savedBooking = data as BookingEntity;
-          } else if (error) {
-            console.warn('⚠️ Supabase Cloud insert notice (RLS):', error.message, '- Persisté dans le store local.');
+          // Si la colonne 'seats' n'est pas encore dans le schéma Supabase distant, adapter le payload
+          const { seats, ...sbPayload } = newBooking;
+          let { data, error } = await supabase.from('bookings').insert(newBooking).select().single();
+          if (error && error.message && error.message.includes("'seats'")) {
+            // PostgREST schema cache : repli automatique sans le champ 'seats' pour Supabase Cloud
+            const retry = await supabase.from('bookings').insert(sbPayload).select().single();
+            data = retry.data;
+            error = retry.error;
           }
-        } catch (sbErr) {
-          console.warn('⚠️ Supabase Cloud insert exception:', sbErr);
+
+          if (!error && data) {
+            savedBooking = { ...data, seats: requestedSeats } as BookingEntity;
+          } else if (error) {
+            console.info('ℹ️ Note Supabase Cloud (Réservation confirmée et persistée dans le store Spotwork):', error.message);
+          }
+        } catch (sbErr: any) {
+          console.info('ℹ️ Note Supabase Cloud (Réservation confirmée et persistée dans le store Spotwork):', sbErr?.message || sbErr);
         }
       }
 
@@ -155,7 +164,10 @@ export class BookingsController {
             const existingIds = new Set(combined.map((b) => b.id));
             for (const sbBooking of data) {
               if (!existingIds.has(sbBooking.id)) {
-                combined.push(sbBooking);
+                combined.push({
+                  ...sbBooking,
+                  seats: sbBooking.seats || 1,
+                });
               }
             }
           }
