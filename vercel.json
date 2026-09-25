@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "outputDirectory": ".",
+  "outputDirectory": "public",
   "builds": [
     {
       "src": "backend/src/server.ts",

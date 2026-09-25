@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Spotwork — Réservez votre espace de travail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+
+<!-- Moteur de styles Tailwind avec configuration complète Spotwork (thème, couleurs et ombres) -->
+<script>
+  // Neutralise l'avertissement de développement cdn.tailwindcss.com en console
+  const _origWarn = console.warn;
+  console.warn = function(...args) {
+    if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+    _origWarn.apply(console, args);
+  };
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: {
+      ink:"#0A1B33", navy:"#0D2C5A", mist:"#F6F8FC",
+      brand:{50:"#F0F5FF",100:"#DBE7FF",200:"#BCD2FF",300:"#9AB9FF",400:"#5B90F7",500:"#2E6BEA",600:"#1F56D6",700:"#183FA8",800:"#142F7A",900:"#102557"}
+    },
+    fontFamily: { display:["Space Grotesk","sans-serif"], body:["Instrument Sans","sans-serif"] },
+    boxShadow: {
+      card:"0 1px 2px rgba(16,24,40,.05),0 10px 28px -14px rgba(13,44,90,.16)",
+      lift:"0 26px 50px -18px rgba(13,44,90,.28)"
+    }
+  }}
+}
+</script>
+
+<!-- React 18, ReactDOM & Lucide Icons (Production UMD) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<!-- Moteur de génération PDF natif haute précision pour factures -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+  *{-webkit-tap-highlight-color:transparent}
+  ::selection{background:#1F56D6;color:#fff}
+  html{scroll-behavior:smooth}
+  body{font-family:"Instrument Sans",sans-serif}
+  .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{scrollbar-width:none}
+  [data-reveal]{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.6,.2,1)}
+  [data-reveal].is-in{opacity:1;transform:none}
+  .mask-line{display:block;overflow:hidden}
+  .mask-line>span{display:block;transform:translateY(112%);animation:rise .9s cubic-bezier(.2,.65,.2,1) forwards}
+  @keyframes rise{to{transform:none}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  .floaty{animation:floaty 6s ease-in-out infinite}
+  @keyframes marquee{to{transform:translateX(-50%)}}
+  .marquee{animation:marquee 28s linear infinite}
+  .marquee:hover{animation-play-state:paused}
+  @keyframes pop{0%{transform:scale(.6)}55%{transform:scale(1.35)}100%{transform:scale(1)}}
+  .pop{animation:pop .35s ease}
+  @keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}70%{box-shadow:0 0 0 9px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+  .dot-live{animation:pulseDot 1.8s infinite}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .chart-line{stroke-dasharray:1500;stroke-dashoffset:1500;animation:draw 1.6s ease-out forwards}
+  @keyframes grow{from{transform:scaleY(0)}}
+  .grow{transform-origin:bottom;animation:grow .8s cubic-bezier(.2,.65,.2,1) both}
+  @keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.96)}}
+  .toast{animation:toastIn .3s ease}
+  .bg-dots{background-image:radial-gradient(circle at 1px 1px,rgba(13,44,90,.12) 1px,transparent 0);background-size:22px 22px}
+  .bg-grid{background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:42px 42px}
+</style>
+</head>
+<body class="bg-white text-ink antialiased">
+<div id="root"></div>
+
+<!-- Application React compilée (sans avertissement Babel, exécution native immédiate) -->
+<script src="app.js"></script>
+</body>
+</html>
