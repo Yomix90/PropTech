@@ -1172,6 +1172,8 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       city: s.city,
       date,
       seats: 1,
+      slots,
+      isHour,
       meta: isHour ? `${fmtDate(date)} \xB7 ${slots.length} h (${slots.join(", ")})` : `${fmtDate(date)} \xB7 ${days} jour${days > 1 ? "s" : ""}`,
       total: base + fees
     });
@@ -1268,19 +1270,32 @@ const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
   const [promo, setPromo] = useState("");
   const [promoOn, setPromoOn] = useState(false);
   const [promoErr, setPromoErr] = useState("");
+  const [method, setMethod] = useState("cmi");
+  const [processing, setProcessing] = useState(false);
   const [form, setForm] = useState(() => ({
-    name: currentUser?.name || "",
-    email: currentUser?.email || "",
+    name: currentUser?.name || "Youssef Amrani",
+    email: currentUser?.email || "youssef@proptech.ma",
+    phone: currentUser?.phone || "+212 6 61 23 45 67",
     card: "",
     exp: "",
     cvc: ""
   }));
   const [errs, setErrs] = useState({});
-  const [paid, setPaid] = useState(false);
-  const ref = useMemo(() => `SW-2026-${Math.floor(1e3 + Math.random() * 9e3)}`);
+  const [paidOrder, setPaidOrder] = useState(null);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
   const subtotal = cart.reduce((s, i) => s + i.total, 0);
   const discount = promoOn ? subtotal * 0.1 : 0;
   const total = subtotal - discount;
+  const handleFillTestCard = () => {
+    setForm((prev) => ({
+      ...prev,
+      card: "4242 4242 4242 4242",
+      exp: "12/28",
+      cvc: "888"
+    }));
+    setErrs({});
+    toast("Carte de test CMI Maroc (3D Secure) pr\xE9-remplie", "credit-card");
+  };
   const applyPromo = () => {
     if (promo.trim().toUpperCase() === "COWORK10") {
       setPromoOn(true);
@@ -1297,13 +1312,15 @@ const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
     const er = {};
     if (form.name.trim().length < 3) er.name = "Nom trop court (3 caract\xE8res min.)";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) er.email = "Adresse e-mail invalide";
-    if (form.card.replace(/\s/g, "").length !== 16) er.card = "Le num\xE9ro doit contenir 16 chiffres";
-    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(form.exp)) er.exp = "Format MM/AA attendu";
-    else {
-      const [m, y] = form.exp.split("/").map(Number);
-      if (2e3 + y < 2025 || 2e3 + y === 2025 && m < (/* @__PURE__ */ new Date()).getMonth() + 1) er.exp = "Carte expir\xE9e";
+    if (method === "cmi") {
+      if (form.card.replace(/\s/g, "").length !== 16) er.card = "Le num\xE9ro doit contenir 16 chiffres";
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(form.exp)) er.exp = "Format MM/AA attendu";
+      else {
+        const [m, y] = form.exp.split("/").map(Number);
+        if (2e3 + y < 2025 || 2e3 + y === 2025 && m < (/* @__PURE__ */ new Date()).getMonth() + 1) er.exp = "Carte expir\xE9e";
+      }
+      if (!/^\d{3,4}$/.test(form.cvc)) er.cvc = "3 chiffres au dos";
     }
-    if (!/^\d{3,4}$/.test(form.cvc)) er.cvc = "3 chiffres au dos";
     setErrs(er);
     return Object.keys(er).length === 0;
   };
@@ -1311,21 +1328,123 @@ const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
     e.preventDefault();
     if (cart.length === 0) return;
     if (validate()) {
-      onDone({
-        date: cart[0].date,
-        meta: cart.length > 1 ? `${cart.length} r\xE9servations` : cart[0].meta,
-        spaceId: cart[0].id,
-        name: form.name,
-        email: form.email,
-        total
-      });
-      setPaid(true);
-      window.scrollTo({ top: 0 });
+      setProcessing(true);
+      setTimeout(() => {
+        const orderRef = `SW-2026-${Math.floor(1e3 + Math.random() * 9e3)}`;
+        const invoiceRef = `FACT-2026-004${Math.floor(10 + Math.random() * 89)}`;
+        const methodLabel = method === "cmi" ? "Carte Bancaire Maroc CMI (3D Secure)" : method === "cash" ? "Paiement en esp\xE8ces \xE0 l'accueil" : "Virement Bancaire (CIH / Attijariwafa)";
+        const orderSnapshot = {
+          ref: orderRef,
+          invoiceRef,
+          items: [...cart],
+          total,
+          subtotal,
+          discount,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          methodLabel,
+          date: (/* @__PURE__ */ new Date()).toLocaleDateString("fr-FR"),
+          paidAt: (/* @__PURE__ */ new Date()).toLocaleDateString("fr-FR") + " " + (/* @__PURE__ */ new Date()).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+        };
+        setPaidOrder(orderSnapshot);
+        setProcessing(false);
+        onDone({
+          date: cart[0].date,
+          meta: cart.length > 1 ? `${cart.length} r\xE9servations` : cart[0].meta,
+          spaceId: cart[0].id,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          total,
+          slots: cart[0].slots,
+          paymentMethod: methodLabel,
+          invoiceRef
+        });
+        window.scrollTo({ top: 0 });
+      }, 700);
     }
   };
-  if (paid) return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-lg px-4 py-20 text-center" }, /* @__PURE__ */ React.createElement("span", { className: "pop mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 text-emerald-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "check-circle-2", size: 40 })), /* @__PURE__ */ React.createElement("h1", { className: "mt-6 font-display text-3xl font-bold" }, "R\xE9servation confirm\xE9e !"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-sm text-slate-500" }, "R\xE9f\xE9rence ", /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, ref), " \xB7 un e-mail de confirmation vient de partir."), /* @__PURE__ */ React.createElement("div", { className: "mt-8 rounded-2xl border border-slate-200 bg-mist p-5 text-left text-sm" }, cart.map((i) => /* @__PURE__ */ React.createElement("div", { key: i.key, className: "flex justify-between py-1.5" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-600" }, i.name), /* @__PURE__ */ React.createElement("b", null, EUR.format(i.total)))), /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex justify-between border-t border-slate-200 pt-2.5 font-display font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total pay\xE9"), /* @__PURE__ */ React.createElement("span", null, EUR.format(total)))), /* @__PURE__ */ React.createElement("div", { className: "mt-8 flex flex-wrap justify-center gap-3" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "user" }), className: "rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/30" }, "Voir mes r\xE9servations"), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "home" }), className: "rounded-full border border-slate-200 px-6 py-3 text-sm font-bold" }, "Retour \xE0 l'accueil")));
+  if (paidOrder) {
+    const mainItem = paidOrder.items[0] || {};
+    return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-xl px-4 py-16 text-center" }, /* @__PURE__ */ React.createElement("span", { className: "pop mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 text-emerald-600 shadow-md" }, /* @__PURE__ */ React.createElement(Icon, { n: "check-circle-2", size: 42 })), /* @__PURE__ */ React.createElement("h1", { className: "mt-6 font-display text-3xl font-bold tracking-tight text-ink" }, "R\xE9servation & Paiement valid\xE9s !"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-sm text-slate-500" }, "R\xE9f. Transaction : ", /* @__PURE__ */ React.createElement("b", { className: "font-mono text-ink font-bold" }, paidOrder.ref)), /* @__PURE__ */ React.createElement("div", { className: "mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 14, className: "text-emerald-600" }), " ", paidOrder.methodLabel, " \xB7 Confirm\xE9"), /* @__PURE__ */ React.createElement("div", { className: "mt-6 rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-card space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-3" }, /* @__PURE__ */ React.createElement("span", { className: "text-xs font-bold uppercase tracking-wider text-slate-400" }, "D\xE9tail de la commande"), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-slate-400" }, paidOrder.paidAt)), /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, paidOrder.items.map((it, idx) => /* @__PURE__ */ React.createElement("div", { key: idx, className: "flex items-center justify-between gap-3 text-sm" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink" }, it.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, it.city, " \xB7 ", it.meta)), /* @__PURE__ */ React.createElement("b", { className: "font-mono text-brand-700" }, EUR.format(it.total))))), /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-100 pt-3 space-y-1.5 text-xs text-slate-500" }, paidOrder.discount > 0 && /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-emerald-600 font-semibold" }, /* @__PURE__ */ React.createElement("span", null, "Remise promotionnelle (\u221210%)"), /* @__PURE__ */ React.createElement("span", null, "\u2212", EUR.format(paidOrder.discount))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-display text-base font-bold text-ink pt-1 border-t border-slate-100" }, /* @__PURE__ */ React.createElement("span", null, "Montant total r\xE9gl\xE9"), /* @__PURE__ */ React.createElement("span", { className: "text-brand-600 font-mono" }, EUR.format(paidOrder.total))))), /* @__PURE__ */ React.createElement("div", { className: "mt-8 flex flex-wrap justify-center gap-3" }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => setInvoiceOpen(true),
+        className: "inline-flex items-center gap-2 rounded-full bg-navy px-6 py-3 text-sm font-bold text-white shadow-card hover:bg-ink transition"
+      },
+      /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 16 }),
+      "\u{1F4E5} T\xE9l\xE9charger Facture PDF"
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => nav({ name: "user" }),
+        className: "inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition"
+      },
+      /* @__PURE__ */ React.createElement(Icon, { n: "calendar-days", size: 16 }),
+      "Voir mes r\xE9servations"
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => nav({ name: "home" }),
+        className: "rounded-full border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
+      },
+      "Accueil"
+    )), /* @__PURE__ */ React.createElement(
+      InvoiceModal,
+      {
+        isOpen: invoiceOpen,
+        onClose: () => setInvoiceOpen(false),
+        invoice: {
+          invoiceNumber: paidOrder.invoiceRef,
+          clientName: paidOrder.name,
+          clientEmail: paidOrder.email,
+          clientPhone: paidOrder.phone,
+          clientCity: mainItem.city || "Casablanca",
+          spaceName: mainItem.name || "Espace Coworking",
+          date: paidOrder.date,
+          timeSlot: mainItem.meta || "09:00 \u2013 18:00 (Journ\xE9e)",
+          grossAmount: paidOrder.total,
+          paymentMethod: paidOrder.methodLabel,
+          paidAt: paidOrder.paidAt
+        }
+      }
+    ));
+  }
   if (cart.length === 0) return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-lg px-4 py-24 text-center" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-16 w-16 place-items-center rounded-full bg-mist text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "shopping-cart", size: 28 })), /* @__PURE__ */ React.createElement("h1", { className: "mt-5 font-display text-2xl font-bold" }, "Votre panier est vide"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-sm text-slate-500" }, "Trouvez l'espace parfait et r\xE9servez-le en quelques clics."), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "mt-6 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white" }, "Explorer les espaces"));
-  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-6xl px-4 py-10 md:px-6" }, /* @__PURE__ */ React.createElement(Kicker, null, "Paiement"), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight" }, "Finaliser la r\xE9servation"), /* @__PURE__ */ React.createElement("div", { className: "mt-8 grid gap-8 lg:grid-cols-[1fr_420px]" }, /* @__PURE__ */ React.createElement("form", { onSubmit: submit, className: "space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "flex items-center gap-2 font-display font-bold" }, /* @__PURE__ */ React.createElement(Icon, { n: "user", size: 17, className: "text-brand-600" }), "Vos coordonn\xE9es"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Nom complet", err: errs.name }, /* @__PURE__ */ React.createElement("input", { value: form.name, onChange: (e) => setForm({ ...form, name: e.target.value }), placeholder: "Youssef Amrani", className: `${inp} ${errs.name ? inpErr : ""}` })), /* @__PURE__ */ React.createElement(Field, { label: "E-mail", err: errs.email }, /* @__PURE__ */ React.createElement("input", { value: form.email, onChange: (e) => setForm({ ...form, email: e.target.value }), placeholder: "youssef@proptech.ma", className: `${inp} ${errs.email ? inpErr : ""}` })))), /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h2", { className: "flex items-center gap-2 font-display font-bold" }, /* @__PURE__ */ React.createElement(Icon, { n: "credit-card", size: 17, className: "text-brand-600" }), "Paiement s\xE9curis\xE9"), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1 text-[11px] font-semibold text-emerald-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "lock", size: 12 }), "Chiffr\xE9 SSL")), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-4" }, /* @__PURE__ */ React.createElement(Field, { label: "Num\xE9ro de carte", err: errs.card }, /* @__PURE__ */ React.createElement("input", { value: form.card, onChange: (e) => setForm({ ...form, card: fmtCard(e.target.value) }), placeholder: "4242 4242 4242 4242", className: `${inp} tracking-widest ${errs.card ? inpErr : ""}` })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-4" }, /* @__PURE__ */ React.createElement(Field, { label: "Expiration", err: errs.exp }, /* @__PURE__ */ React.createElement("input", { value: form.exp, onChange: (e) => setForm({ ...form, exp: fmtExp(e.target.value) }), placeholder: "MM/AA", className: `${inp} ${errs.exp ? inpErr : ""}` })), /* @__PURE__ */ React.createElement(Field, { label: "CVC", err: errs.cvc }, /* @__PURE__ */ React.createElement("input", { value: form.cvc, onChange: (e) => setForm({ ...form, cvc: e.target.value.replace(/\D/g, "").slice(0, 4) }), placeholder: "123", className: `${inp} ${errs.cvc ? inpErr : ""}` }))))), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-4 text-sm font-bold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700 active:scale-[.99]" }, /* @__PURE__ */ React.createElement(Icon, { n: "lock", size: 15 }), "Payer ", EUR.format(total))), /* @__PURE__ */ React.createElement("aside", { className: "h-fit space-y-4 lg:sticky lg:top-24" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Votre panier ", /* @__PURE__ */ React.createElement("span", { className: "text-slate-400" }, "(", cart.length, ")")), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-4" }, cart.map((i) => /* @__PURE__ */ React.createElement("div", { key: i.key, className: "flex gap-3" }, /* @__PURE__ */ React.createElement("img", { src: U(i.img, 200), alt: "", className: "h-16 w-20 rounded-xl object-cover" }), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "truncate text-sm font-bold" }, i.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, i.city, " \xB7 ", i.meta), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm font-bold text-brand-700" }, EUR.format(i.total))), /* @__PURE__ */ React.createElement("button", { onClick: () => setCart(cart.filter((x) => x.key !== i.key)), className: "h-fit text-slate-300 transition hover:text-rose-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "trash-2", size: 16 }))))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 flex gap-2" }, /* @__PURE__ */ React.createElement("input", { value: promo, onChange: (e) => setPromo(e.target.value), placeholder: "Code promo", className: `${inp} ${promoErr ? inpErr : ""}` }), /* @__PURE__ */ React.createElement("button", { onClick: applyPromo, className: "shrink-0 rounded-xl bg-navy px-4 text-sm font-bold text-white transition hover:bg-ink" }, "OK")), promoErr && /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 text-xs text-rose-600" }, promoErr), promoOn && /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex items-center gap-1 text-xs font-semibold text-emerald-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 12 }), "COWORK10 appliqu\xE9")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl bg-navy p-5 text-white shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-2 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-300" }, /* @__PURE__ */ React.createElement("span", null, "Sous-total"), /* @__PURE__ */ React.createElement("span", null, EUR.format(subtotal))), promoOn && /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-emerald-400" }, /* @__PURE__ */ React.createElement("span", null, "Remise \u221210 %"), /* @__PURE__ */ React.createElement("span", null, "\u2212", EUR.format(discount))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-300" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service"), /* @__PURE__ */ React.createElement("span", null, "inclus")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between border-t border-white/15 pt-2.5 font-display text-lg font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total"), /* @__PURE__ */ React.createElement("span", null, EUR.format(total))))))));
+  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-6xl px-4 py-10 md:px-6" }, /* @__PURE__ */ React.createElement(Kicker, null, "Paiement s\xE9curis\xE9 \xB7 Maroc"), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight" }, "Finaliser votre r\xE9servation"), /* @__PURE__ */ React.createElement("div", { className: "mt-8 grid gap-8 lg:grid-cols-[1fr_420px]" }, /* @__PURE__ */ React.createElement("form", { onSubmit: submit, className: "space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "flex items-center gap-2 font-display font-bold" }, /* @__PURE__ */ React.createElement(Icon, { n: "user", size: 17, className: "text-brand-600" }), "Vos coordonn\xE9es"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Nom complet", err: errs.name }, /* @__PURE__ */ React.createElement("input", { value: form.name, onChange: (e) => setForm({ ...form, name: e.target.value }), placeholder: "Youssef Amrani", className: `${inp} ${errs.name ? inpErr : ""}` })), /* @__PURE__ */ React.createElement(Field, { label: "E-mail", err: errs.email }, /* @__PURE__ */ React.createElement("input", { value: form.email, onChange: (e) => setForm({ ...form, email: e.target.value }), placeholder: "youssef@proptech.ma", className: `${inp} ${errs.email ? inpErr : ""}` })))), /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-4" }, /* @__PURE__ */ React.createElement("h2", { className: "flex items-center gap-2 font-display font-bold" }, /* @__PURE__ */ React.createElement(Icon, { n: "credit-card", size: 17, className: "text-brand-600" }), "Mode de r\xE8glement"), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1 text-[11px] font-semibold text-emerald-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "lock", size: 12 }), "Chiffr\xE9 SSL 256-bit")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-5" }, [
+    ["cmi", "Carte Bancaire CMI", "credit-card", "Visa, Mastercard, CMI"],
+    ["cash", "Paiement sur place", "banknote", "R\xE8glement \xE0 l'arriv\xE9e"],
+    ["virement", "Virement / Wafacash", "building-2", "Attijari, CIH, BCP"]
+  ].map(([mId, label, icon, sub]) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: mId,
+      type: "button",
+      onClick: () => setMethod(mId),
+      className: `p-3 rounded-xl border text-left transition ${method === mId ? "border-brand-600 bg-brand-50/70 ring-2 ring-brand-600/20" : "border-slate-200 hover:border-slate-300 bg-white"}`
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: icon, size: 18, className: method === mId ? "text-brand-600" : "text-slate-400" }),
+    /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 font-bold text-xs text-ink" }, label),
+    /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400" }, sub)
+  ))), method === "cmi" && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("span", { className: "text-xs font-semibold text-slate-500" }, "Coordonn\xE9es bancaires"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: handleFillTestCard,
+      className: "inline-flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-full border border-brand-200 transition"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "zap", size: 12 }),
+    "\u26A1 Remplir carte test CMI (Maroc)"
+  )), /* @__PURE__ */ React.createElement(Field, { label: "Num\xE9ro de carte CMI / Visa", err: errs.card }, /* @__PURE__ */ React.createElement("input", { value: form.card, onChange: (e) => setForm({ ...form, card: fmtCard(e.target.value) }), placeholder: "4242 4242 4242 4242", className: `${inp} tracking-widest font-mono ${errs.card ? inpErr : ""}` })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-4" }, /* @__PURE__ */ React.createElement(Field, { label: "Expiration", err: errs.exp }, /* @__PURE__ */ React.createElement("input", { value: form.exp, onChange: (e) => setForm({ ...form, exp: fmtExp(e.target.value) }), placeholder: "MM/AA", className: `${inp} font-mono ${errs.exp ? inpErr : ""}` })), /* @__PURE__ */ React.createElement(Field, { label: "Code CVC (dos)", err: errs.cvc }, /* @__PURE__ */ React.createElement("input", { value: form.cvc, onChange: (e) => setForm({ ...form, cvc: e.target.value.replace(/\D/g, "").slice(0, 4) }), placeholder: "123", className: `${inp} font-mono ${errs.cvc ? inpErr : ""}` })))), method === "cash" && /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-4 border border-slate-200 text-xs text-slate-600 space-y-1" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement(Icon, { n: "info", size: 14, className: "text-brand-600" }), "Paiement direct \xE0 la r\xE9ception :"), /* @__PURE__ */ React.createElement("p", null, "Votre place sera r\xE9serv\xE9e et bloqu\xE9e. Vous pourrez r\xE9gler en esp\xE8ces ou par TPE \xE0 votre arriv\xE9e aupr\xE8s de l'accueil de l'espace.")), method === "virement" && /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-4 border border-slate-200 text-xs text-slate-600 space-y-1" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement(Icon, { n: "info", size: 14, className: "text-brand-600" }), "Coordonn\xE9es bancaires Spotwork Maroc :"), /* @__PURE__ */ React.createElement("p", { className: "font-mono text-[11px] text-ink font-semibold" }, "RIB Attijariwafa Bank : 007 780 0001234567890123 45"), /* @__PURE__ */ React.createElement("p", null, "Votre r\xE9servation sera confirm\xE9e imm\xE9diatement avec la r\xE9f\xE9rence transmise par e-mail."))), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "submit",
+      disabled: processing,
+      className: "flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-4 text-sm font-bold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700 active:scale-[.99] disabled:opacity-60"
+    },
+    processing ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Icon, { n: "loader", size: 16, className: "animate-spin" }), /* @__PURE__ */ React.createElement("span", null, "S\xE9curisation CMI 3D-Secure en cours...")) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Icon, { n: "lock", size: 15 }), /* @__PURE__ */ React.createElement("span", null, "Confirmer et Payer ", EUR.format(total)))
+  )), /* @__PURE__ */ React.createElement("aside", { className: "h-fit space-y-4 lg:sticky lg:top-24" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Votre panier ", /* @__PURE__ */ React.createElement("span", { className: "text-slate-400" }, "(", cart.length, ")")), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-4" }, cart.map((i) => /* @__PURE__ */ React.createElement("div", { key: i.key, className: "flex gap-3" }, /* @__PURE__ */ React.createElement("img", { src: U(i.img, 200), alt: "", className: "h-16 w-20 rounded-xl object-cover" }), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "truncate text-sm font-bold" }, i.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, i.city, " \xB7 ", i.meta), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm font-bold text-brand-700" }, EUR.format(i.total))), /* @__PURE__ */ React.createElement("button", { onClick: () => setCart(cart.filter((x) => x.key !== i.key)), className: "h-fit text-slate-300 transition hover:text-rose-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "trash-2", size: 16 }))))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 flex gap-2" }, /* @__PURE__ */ React.createElement("input", { value: promo, onChange: (e) => setPromo(e.target.value), placeholder: "Code promo", className: `${inp} ${promoErr ? inpErr : ""}` }), /* @__PURE__ */ React.createElement("button", { onClick: applyPromo, className: "shrink-0 rounded-xl bg-navy px-4 text-sm font-bold text-white transition hover:bg-ink" }, "OK")), promoErr && /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 text-xs text-rose-600" }, promoErr), promoOn && /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex items-center gap-1 text-xs font-semibold text-emerald-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 12 }), "COWORK10 appliqu\xE9")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl bg-navy p-5 text-white shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-2 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-300" }, /* @__PURE__ */ React.createElement("span", null, "Sous-total"), /* @__PURE__ */ React.createElement("span", null, EUR.format(subtotal))), promoOn && /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-emerald-400" }, /* @__PURE__ */ React.createElement("span", null, "Remise \u221210 %"), /* @__PURE__ */ React.createElement("span", null, "\u2212", EUR.format(discount))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-300" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service"), /* @__PURE__ */ React.createElement("span", null, "inclus")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between border-t border-white/15 pt-2.5 font-display text-lg font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total"), /* @__PURE__ */ React.createElement("span", null, EUR.format(total))))))));
 };
 const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast, currentUser, spaces = SPACES }) => {
   if (!currentUser) {
@@ -2199,15 +2318,25 @@ const App = () => {
     SpotworkAPI.deleteSpace(spaceId);
     toast(`Espace \xAB ${deleted?.name || ""} \xBB supprim\xE9 du catalogue.`, "trash");
   };
-  const handleUpdateBookingStatus = (bookingId, newStatus) => {
+  const handleUpdateBookingStatus = async (bookingId, newStatus) => {
     setAllBookings((prev) => prev.map((b) => b.id === bookingId ? { ...b, status: newStatus } : b));
     const statusFr = newStatus === "confirmed" ? "Confirm\xE9e" : newStatus === "cancelled" ? "Annul\xE9e" : "En attente";
     setUserBookings((prev) => prev.map((b) => b.id === bookingId ? { ...b, status: statusFr } : b));
-    SpotworkAPI.updateBookingStatus(bookingId, newStatus);
-    if (newStatus === "confirmed") {
-      toast("Demande de r\xE9servation accept\xE9e et confirm\xE9e !", "check-circle");
-    } else if (newStatus === "cancelled") {
-      toast("Demande de r\xE9servation refus\xE9e.", "x-circle");
+    try {
+      const res = await SpotworkAPI.updateBookingStatus(bookingId, newStatus);
+      if (res && res.status === "success") {
+        if (newStatus === "confirmed") {
+          toast("Demande accept\xE9e et synchronis\xE9e avec la base de donn\xE9es !", "check-circle");
+        } else if (newStatus === "cancelled") {
+          toast("Demande refus\xE9e et synchronis\xE9e avec la base de donn\xE9es.", "x-circle");
+        } else {
+          toast("Statut synchronis\xE9 avec la base de donn\xE9es.", "check-circle");
+        }
+      } else {
+        toast(`Statut mis \xE0 jour (${newStatus === "confirmed" ? "Confirm\xE9e" : "Refus\xE9e"}).`, "check-circle");
+      }
+    } catch {
+      toast("Statut mis \xE0 jour localement.", "check-circle");
     }
   };
   const onDone = (b) => {
@@ -2219,7 +2348,18 @@ const App = () => {
     const spaceUuid = typeof spaceId === "string" && spaceId.includes("-") ? spaceId : `10000000-0000-0000-0000-${String(num).padStart(12, "0")}`;
     let startTime = "09:00:00";
     let endTime = "18:00:00";
-    if (b.meta && b.meta.includes(" \u2013 ")) {
+    if (Array.isArray(b.slots) && b.slots.length > 0) {
+      if (b.isHour) {
+        const sorted = [...b.slots].sort();
+        const startH = sorted[0];
+        const endH = sorted[sorted.length - 1];
+        if (startH) startTime = startH.includes(":") ? startH.length === 5 ? `${startH}:00` : startH : `${startH.padStart(2, "0")}:00:00`;
+        if (endH) {
+          const h = parseInt(endH.split(":")[0], 10) + 1;
+          endTime = `${String(h).padStart(2, "0")}:00:00`;
+        }
+      }
+    } else if (b.meta && b.meta.includes(" \u2013 ")) {
       const parts = b.meta.split(" \u2013 ");
       if (parts[0]) {
         const cleanStart = parts[0].trim().slice(0, 5);
@@ -2230,7 +2370,7 @@ const App = () => {
         if (/^\d{2}:\d{2}$/.test(cleanEnd)) endTime = cleanEnd + ":00";
       }
     }
-    const newBookingId = "bk-" + Date.now();
+    const tempBookingId = "bk-" + Date.now();
     const totalPrice = b.total || (bookedSpace ? bookedSpace.price * 4 : 180);
     SpotworkAPI.createBooking({
       space_id: spaceUuid,
@@ -2240,21 +2380,26 @@ const App = () => {
       total_price: totalPrice
     }).then((res) => {
       if (res && res.status === "success") {
-        toast("R\xE9servation synchronis\xE9e dans la base PostgreSQL Supabase !", "check-circle");
+        toast("R\xE9servation enregistr\xE9e et synchronis\xE9e avec la base de donn\xE9es !", "check-circle");
+        const realId = res.data?.booking?.id;
+        if (realId) {
+          setUserBookings((prev) => prev.map((item) => item.id === tempBookingId ? { ...item, id: realId } : item));
+          setAllBookings((prev) => prev.map((item) => item.id === tempBookingId ? { ...item, id: realId } : item));
+        }
       }
     }).catch(() => {
     });
     setUserBookings((p) => [{
-      id: newBookingId,
+      id: tempBookingId,
       spaceId,
       date: b.date,
       meta: b.meta,
       status: "Confirm\xE9e",
       totalPrice,
-      invoiceRef: `FACT-2026-${String(newBookingId).slice(-6)}`
+      invoiceRef: `FACT-2026-${String(tempBookingId).slice(-6)}`
     }, ...p]);
     setAllBookings((p) => [{
-      id: newBookingId,
+      id: tempBookingId,
       clientName: currentUser?.name || b.name || "Client PropTech",
       clientEmail: currentUser?.email || b.email || "client@proptech.ma",
       clientPhone: currentUser?.phone || "+212 6 61 23 45 67",
@@ -2264,10 +2409,12 @@ const App = () => {
       city,
       date: b.date,
       timeSlot: b.meta,
-      hours: 4,
+      hours: Array.isArray(b.slots) ? b.slots.length : 4,
       totalPrice,
       status: "confirmed",
-      createdAt: "\xC0 l'instant"
+      createdAt: "\xC0 l'instant",
+      paymentMethod: b.method === "cash" ? "Paiement sur place \xE0 l'accueil" : b.method === "transfer" ? "Virement / Wafacash" : "Carte Bancaire CMI (3D Secure)",
+      invoiceRef: `FACT-2026-${String(tempBookingId).slice(-6)}`
     }, ...p]);
     setCart([]);
   };
@@ -2284,22 +2431,62 @@ const App = () => {
               id: b.id,
               spaceId: numId,
               date: b.booking_date,
-              meta: `${b.start_time.slice(0, 5)} \u2013 ${b.end_time.slice(0, 5)}`,
+              meta: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} \u2013 ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
               status: b.status === "confirmed" ? "Confirm\xE9e" : b.status === "cancelled" ? "Annul\xE9e" : "En attente",
               totalPrice: b.total_price,
               invoiceRef: `FACT-2026-${String(b.id).slice(-6)}`
             };
           });
           setUserBookings((prev) => {
-            const existingIds = new Set(prev.map((p) => p.id));
-            const fresh = mapped.filter((m) => !existingIds.has(m.id));
-            return [...fresh, ...prev];
+            const existingMap = new Map(prev.map((p) => [p.id, p]));
+            mapped.forEach((m) => {
+              existingMap.set(m.id, { ...existingMap.get(m.id), ...m });
+            });
+            return Array.from(existingMap.values());
           });
         }
       }).catch(() => {
       });
+      if (currentUser.role === "manager" || currentUser.role === "admin") {
+        SpotworkAPI.getManagerBookings().then((bkgs) => {
+          if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
+            const mappedManager = bkgs.map((b) => {
+              const numId = parseInt(String(b.space_id).split("-").pop(), 10) || 1;
+              const cName = b.users?.full_name || "Client PropTech";
+              const initials = cName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
+              return {
+                id: b.id,
+                clientName: cName,
+                clientEmail: b.users?.email || "client@proptech.ma",
+                clientPhone: "+212 6 61 23 45 67",
+                clientInitials: initials,
+                spaceId: numId,
+                spaceName: b.spaces?.name || "Espace Coworking",
+                city: b.spaces?.city || "Casablanca",
+                date: b.booking_date,
+                timeSlot: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} \u2013 ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
+                hours: 4,
+                seats: 1,
+                totalPrice: b.total_price,
+                status: b.status || "confirmed",
+                createdAt: "R\xE9cemment",
+                paymentMethod: "Carte Bancaire CMI (3D Secure)",
+                invoiceRef: `FACT-2026-${String(b.id).slice(-4)}`
+              };
+            });
+            setAllBookings((prev) => {
+              const existingMap = new Map(prev.map((p) => [p.id, p]));
+              mappedManager.forEach((m) => {
+                existingMap.set(m.id, { ...existingMap.get(m.id), ...m });
+              });
+              return Array.from(existingMap.values());
+            });
+          }
+        }).catch(() => {
+        });
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, view.name]);
   useEffect(() => {
     let tries = 0;
     const t = setInterval(() => {

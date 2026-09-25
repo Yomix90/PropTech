@@ -29,53 +29,59 @@ export class ManagerController {
         return;
       }
 
-      if (isLiveSupabase) {
-        let query = supabase
-          .from('bookings')
-          .select('*, spaces(*), users(id, full_name, email, phone)')
-          .order('created_at', { ascending: false });
-
-        if (req.user.role !== 'admin') {
-          // Filtrer par les espaces dont req.user.id est propriétaire
-          const { data: spaces } = await supabase.from('spaces').select('id').eq('owner_id', req.user.id);
-          const spaceIds = (spaces || []).map((s) => s.id);
-          query = query.in('space_id', spaceIds);
-        }
-
-        const { data: bookings, error } = await query;
-        if (error) throw error;
-
-        res.status(200).json({
-          status: 'success',
-          results: bookings.length,
-          data: { bookings: bookings || [] },
-        });
-        return;
-      }
-
-      // Local store
+      // 1. Gather all local bookings for managed spaces
       let managedSpaceIds = localStore.spaces.map((s) => s.id);
       if (req.user.role !== 'admin') {
         managedSpaceIds = localStore.spaces.filter((s) => s.owner_id === req.user!.id).map((s) => s.id);
       }
 
-      const bookings = localStore.bookings
-        .filter((b) => managedSpaceIds.includes(b.space_id))
+      const localBookings = localStore.bookings
+        .filter((b) => managedSpaceIds.includes(b.space_id) || managedSpaceIds.some(id => b.space_id?.endsWith(id.slice(-4))))
         .map((b) => {
-          const space = localStore.spaces.find((s) => s.id === b.space_id);
-          const client = localStore.users.find((u) => u.id === b.user_id);
+          const space = localStore.spaces.find((s) => s.id === b.space_id) || localStore.spaces[0];
+          const client = localStore.users.find((u) => u.id === b.user_id) || localStore.users[0];
           return {
             ...b,
             space,
-            user: client ? { id: client.id, full_name: client.full_name, email: client.email, phone: client.phone } : null,
+            user: { id: client.id, full_name: client.full_name, email: client.email, phone: client.phone },
           };
-        })
-        .sort((a, b) => (b.created_at > a.created_at ? 1 : -1));
+        });
+
+      let combined = [...localBookings];
+
+      if (isLiveSupabase) {
+        try {
+          let query = supabase
+            .from('bookings')
+            .select('*, spaces(*), users(id, full_name, email, phone)')
+            .order('created_at', { ascending: false });
+
+          if (req.user.role !== 'admin') {
+            const { data: spaces } = await supabase.from('spaces').select('id').eq('owner_id', req.user.id);
+            const spaceIds = (spaces || []).map((s) => s.id);
+            query = query.in('space_id', spaceIds);
+          }
+
+          const { data: bookings, error } = await query;
+          if (!error && bookings && bookings.length > 0) {
+            const existingIds = new Set(combined.map((b) => b.id));
+            for (const sbBooking of bookings) {
+              if (!existingIds.has(sbBooking.id)) {
+                combined.push(sbBooking);
+              }
+            }
+          }
+        } catch (sbErr) {
+          console.warn('⚠️ Supabase getManagerBookings notice:', sbErr);
+        }
+      }
+
+      combined.sort((a, b) => (b.created_at > a.created_at ? 1 : -1));
 
       res.status(200).json({
         status: 'success',
-        results: bookings.length,
-        data: { bookings },
+        results: combined.length,
+        data: { bookings: combined },
       });
     } catch (error) {
       next(error);

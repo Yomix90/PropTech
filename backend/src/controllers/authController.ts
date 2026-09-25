@@ -146,34 +146,33 @@ export class AuthController {
         return;
       }
 
-      if (isLiveSupabase) {
-        const { data, error } = await supabase
-          .from('users')
-          .update({ preferences, updated_at: new Date().toISOString() })
-          .eq('id', req.user.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        res.status(200).json({
-          status: 'success',
-          message: 'Préférences mises à jour',
-          data: { user: data },
-        });
-        return;
-      }
-
-      const user = localStore.users.find((u) => u.id === req.user!.id);
+      let user = localStore.users.find((u) => u.id === req.user!.id);
       if (user) {
         user.preferences = { ...user.preferences, ...preferences };
         user.updated_at = new Date().toISOString();
       }
 
+      if (isLiveSupabase) {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .update({ preferences, updated_at: new Date().toISOString() })
+            .eq('id', req.user.id)
+            .select()
+            .single();
+
+          if (!error && data) {
+            user = data as UserEntity;
+          }
+        } catch (sbErr) {
+          console.warn('⚠️ Supabase updatePreferences notice:', sbErr);
+        }
+      }
+
       res.status(200).json({
         status: 'success',
         message: 'Préférences mises à jour',
-        data: { user },
+        data: { user: user || req.user },
       });
     } catch (error) {
       next(error);

@@ -1818,6 +1818,8 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES,bookings=[]})=>{
       city:s.city,
       date,
       seats: 1,
+      slots: slots,
+      isHour: isHour,
       meta:isHour?`${fmtDate(date)} · ${slots.length} h (${slots.join(', ')})`:`${fmtDate(date)} · ${days} jour${days>1?"s":""}`,
       total:base+fees
     });
@@ -2161,65 +2163,195 @@ const SpaceDetail=({id,nav,favs,toggleFav,reserve,spaces=SPACES,bookings=[]})=>{
 /* ================= CHECKOUT ================= */
 const Checkout=({cart,setCart,nav,onDone,toast,currentUser})=>{
   const [promo,setPromo]=useState("");const [promoOn,setPromoOn]=useState(false);const [promoErr,setPromoErr]=useState("");
+  const [method, setMethod] = useState("cmi"); // 'cmi' | 'cash' | 'virement'
+  const [processing, setProcessing] = useState(false);
   const [form,setForm]=useState(()=>({
-    name: currentUser?.name || "",
-    email: currentUser?.email || "",
+    name: currentUser?.name || "Youssef Amrani",
+    email: currentUser?.email || "youssef@proptech.ma",
+    phone: currentUser?.phone || "+212 6 61 23 45 67",
     card:"",exp:"",cvc:""
   }));
-  const [errs,setErrs]=useState({});const [paid,setPaid]=useState(false);
-  const ref=useMemo(()=>`SW-2026-${Math.floor(1000+Math.random()*9000)}`);
+  const [errs,setErrs]=useState({});
+  const [paidOrder, setPaidOrder]=useState(null); // Keep order snapshot
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+
   const subtotal=cart.reduce((s,i)=>s+i.total,0);
   const discount=promoOn?subtotal*0.10:0;
   const total=subtotal-discount;
+
+  const handleFillTestCard = () => {
+    setForm(prev => ({
+      ...prev,
+      card: "4242 4242 4242 4242",
+      exp: "12/28",
+      cvc: "888"
+    }));
+    setErrs({});
+    toast("Carte de test CMI Maroc (3D Secure) pré-remplie", "credit-card");
+  };
+
   const applyPromo=()=>{
     if(promo.trim().toUpperCase()==="COWORK10"){setPromoOn(true);setPromoErr("");toast("Code promo appliqué : −10 %","percent");}
     else setPromoErr("Code invalide. Essayez COWORK10 😉");
   };
   const fmtCard=v=>v.replace(/\D/g,"").slice(0,16).replace(/(.{4})/g,"$1 ").trim();
   const fmtExp=v=>{const d=v.replace(/\D/g,"").slice(0,4);return d.length>2?d.slice(0,2)+"/"+d.slice(2):d;};
+  
   const validate=()=>{
     const er={};
     if(form.name.trim().length<3)er.name="Nom trop court (3 caractères min.)";
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))er.email="Adresse e-mail invalide";
-    if(form.card.replace(/\s/g,"").length!==16)er.card="Le numéro doit contenir 16 chiffres";
-    if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(form.exp))er.exp="Format MM/AA attendu";
-    else{const [m,y]=form.exp.split("/").map(Number);if(2000+y<2025||(2000+y===2025&&m<new Date().getMonth()+1))er.exp="Carte expirée";}
-    if(!/^\d{3,4}$/.test(form.cvc))er.cvc="3 chiffres au dos";
+    if(method === "cmi") {
+      if(form.card.replace(/\s/g,"").length!==16)er.card="Le numéro doit contenir 16 chiffres";
+      if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(form.exp))er.exp="Format MM/AA attendu";
+      else{const [m,y]=form.exp.split("/").map(Number);if(2000+y<2025||(2000+y===2025&&m<new Date().getMonth()+1))er.exp="Carte expirée";}
+      if(!/^\d{3,4}$/.test(form.cvc))er.cvc="3 chiffres au dos";
+    }
     setErrs(er);return Object.keys(er).length===0;
   };
+
   const submit=e=>{
     e.preventDefault();
     if(cart.length===0)return;
     if(validate()){
-      onDone({
-        date:cart[0].date,
-        meta:cart.length>1?`${cart.length} réservations`:cart[0].meta,
-        spaceId:cart[0].id,
-        name:form.name,
-        email:form.email,
-        total:total
-      });
-      setPaid(true);
-      window.scrollTo({top:0});
+      setProcessing(true);
+      setTimeout(() => {
+        const orderRef = `SW-2026-${Math.floor(1000+Math.random()*9000)}`;
+        const invoiceRef = `FACT-2026-004${Math.floor(10+Math.random()*89)}`;
+        const methodLabel = method === "cmi" 
+          ? "Carte Bancaire Maroc CMI (3D Secure)" 
+          : method === "cash" 
+          ? "Paiement en espèces à l'accueil" 
+          : "Virement Bancaire (CIH / Attijariwafa)";
+
+        const orderSnapshot = {
+          ref: orderRef,
+          invoiceRef: invoiceRef,
+          items: [...cart],
+          total: total,
+          subtotal: subtotal,
+          discount: discount,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          methodLabel: methodLabel,
+          date: new Date().toLocaleDateString("fr-FR"),
+          paidAt: new Date().toLocaleDateString("fr-FR") + " " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+        };
+
+        setPaidOrder(orderSnapshot);
+        setProcessing(false);
+
+        // Appel onDone qui envoie la réservation vers l'API backend et la base PostgreSQL
+        onDone({
+          date: cart[0].date,
+          meta: cart.length > 1 ? `${cart.length} réservations` : cart[0].meta,
+          spaceId: cart[0].id,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          total: total,
+          slots: cart[0].slots,
+          paymentMethod: methodLabel,
+          invoiceRef: invoiceRef
+        });
+
+        window.scrollTo({top:0});
+      }, 700);
     }
   };
-  if(paid)return (
-    <main className="mx-auto max-w-lg px-4 py-20 text-center">
-      <span className="pop mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 text-emerald-600"><Icon n="check-circle-2" size={40}/></span>
-      <h1 className="mt-6 font-display text-3xl font-bold">Réservation confirmée !</h1>
-      <p className="mt-2 text-sm text-slate-500">Référence <b className="text-ink">{ref}</b> · un e-mail de confirmation vient de partir.</p>
-      <div className="mt-8 rounded-2xl border border-slate-200 bg-mist p-5 text-left text-sm">
-        {cart.map(i=>(
-          <div key={i.key} className="flex justify-between py-1.5"><span className="text-slate-600">{i.name}</span><b>{EUR.format(i.total)}</b></div>
-        ))}
-        <div className="mt-2 flex justify-between border-t border-slate-200 pt-2.5 font-display font-bold"><span>Total payé</span><span>{EUR.format(total)}</span></div>
-      </div>
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <button onClick={()=>nav({name:"user"})} className="rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/30">Voir mes réservations</button>
-        <button onClick={()=>nav({name:"home"})} className="rounded-full border border-slate-200 px-6 py-3 text-sm font-bold">Retour à l'accueil</button>
-      </div>
-    </main>
-  );
+
+  if(paidOrder) {
+    const mainItem = paidOrder.items[0] || {};
+    return (
+      <main className="mx-auto max-w-xl px-4 py-16 text-center">
+        <span className="pop mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 text-emerald-600 shadow-md">
+          <Icon n="check-circle-2" size={42}/>
+        </span>
+        <h1 className="mt-6 font-display text-3xl font-bold tracking-tight text-ink">Réservation & Paiement validés !</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          Réf. Transaction : <b className="font-mono text-ink font-bold">{paidOrder.ref}</b>
+        </p>
+        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+          <Icon n="shield-check" size={14} className="text-emerald-600"/> {paidOrder.methodLabel} · Confirmé
+        </div>
+
+        {/* Récapitulatif clair des prestations réservées */}
+        <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-card space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Détail de la commande</span>
+            <span className="text-xs text-slate-400">{paidOrder.paidAt}</span>
+          </div>
+
+          <div className="space-y-3">
+            {paidOrder.items.map((it, idx) => (
+              <div key={idx} className="flex items-center justify-between gap-3 text-sm">
+                <div>
+                  <p className="font-bold text-ink">{it.name}</p>
+                  <p className="text-xs text-slate-500">{it.city} · {it.meta}</p>
+                </div>
+                <b className="font-mono text-brand-700">{EUR.format(it.total)}</b>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-slate-100 pt-3 space-y-1.5 text-xs text-slate-500">
+            {paidOrder.discount > 0 && (
+              <div className="flex justify-between text-emerald-600 font-semibold">
+                <span>Remise promotionnelle (−10%)</span>
+                <span>−{EUR.format(paidOrder.discount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-display text-base font-bold text-ink pt-1 border-t border-slate-100">
+              <span>Montant total réglé</span>
+              <span className="text-brand-600 font-mono">{EUR.format(paidOrder.total)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Boutons d'actions */}
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <button
+            onClick={() => setInvoiceOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-navy px-6 py-3 text-sm font-bold text-white shadow-card hover:bg-ink transition"
+          >
+            <Icon n="file-text" size={16}/>📥 Télécharger Facture PDF
+          </button>
+          <button
+            onClick={() => nav({ name: "user" })}
+            className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition"
+          >
+            <Icon n="calendar-days" size={16}/>Voir mes réservations
+          </button>
+          <button
+            onClick={() => nav({ name: "home" })}
+            className="rounded-full border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
+          >
+            Accueil
+          </button>
+        </div>
+
+        <InvoiceModal
+          isOpen={invoiceOpen}
+          onClose={() => setInvoiceOpen(false)}
+          invoice={{
+            invoiceNumber: paidOrder.invoiceRef,
+            clientName: paidOrder.name,
+            clientEmail: paidOrder.email,
+            clientPhone: paidOrder.phone,
+            clientCity: mainItem.city || "Casablanca",
+            spaceName: mainItem.name || "Espace Coworking",
+            date: paidOrder.date,
+            timeSlot: mainItem.meta || "09:00 – 18:00 (Journée)",
+            grossAmount: paidOrder.total,
+            paymentMethod: paidOrder.methodLabel,
+            paidAt: paidOrder.paidAt
+          }}
+        />
+      </main>
+    );
+  }
+
   if(cart.length===0)return (
     <main className="mx-auto max-w-lg px-4 py-24 text-center">
       <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-mist text-slate-400"><Icon n="shopping-cart" size={28}/></span>
@@ -2228,10 +2360,11 @@ const Checkout=({cart,setCart,nav,onDone,toast,currentUser})=>{
       <button onClick={()=>nav({name:"explore"})} className="mt-6 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white">Explorer les espaces</button>
     </main>
   );
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 md:px-6">
-      <Kicker>Paiement</Kicker>
-      <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">Finaliser la réservation</h1>
+      <Kicker>Paiement sécurisé · Maroc</Kicker>
+      <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">Finaliser votre réservation</h1>
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_420px]">
         <form onSubmit={submit} className="space-y-6">
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
@@ -2245,27 +2378,95 @@ const Checkout=({cart,setCart,nav,onDone,toast,currentUser})=>{
               </Field>
             </div>
           </section>
+
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
-            <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-display font-bold"><Icon n="credit-card" size={17} className="text-brand-600"/>Paiement sécurisé</h2>
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><Icon n="lock" size={12}/>Chiffré SSL</span>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="flex items-center gap-2 font-display font-bold"><Icon n="credit-card" size={17} className="text-brand-600"/>Mode de règlement</h2>
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><Icon n="lock" size={12}/>Chiffré SSL 256-bit</span>
             </div>
-            <div className="mt-4 space-y-4">
-              <Field label="Numéro de carte" err={errs.card}>
-                <input value={form.card} onChange={e=>setForm({...form,card:fmtCard(e.target.value)})} placeholder="4242 4242 4242 4242" className={`${inp} tracking-widest ${errs.card?inpErr:""}`}/>
-              </Field>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Expiration" err={errs.exp}>
-                  <input value={form.exp} onChange={e=>setForm({...form,exp:fmtExp(e.target.value)})} placeholder="MM/AA" className={`${inp} ${errs.exp?inpErr:""}`}/>
+
+            {/* Sélecteur de méthode de paiement */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-5">
+              {[
+                ["cmi", "Carte Bancaire CMI", "credit-card", "Visa, Mastercard, CMI"],
+                ["cash", "Paiement sur place", "banknote", "Règlement à l'arrivée"],
+                ["virement", "Virement / Wafacash", "building-2", "Attijari, CIH, BCP"]
+              ].map(([mId, label, icon, sub]) => (
+                <button
+                  key={mId}
+                  type="button"
+                  onClick={() => setMethod(mId)}
+                  className={`p-3 rounded-xl border text-left transition ${
+                    method === mId
+                      ? "border-brand-600 bg-brand-50/70 ring-2 ring-brand-600/20"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  <Icon n={icon} size={18} className={method === mId ? "text-brand-600" : "text-slate-400"} />
+                  <p className="mt-1.5 font-bold text-xs text-ink">{label}</p>
+                  <p className="text-[10px] text-slate-400">{sub}</p>
+                </button>
+              ))}
+            </div>
+
+            {method === "cmi" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500">Coordonnées bancaires</span>
+                  <button
+                    type="button"
+                    onClick={handleFillTestCard}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-full border border-brand-200 transition"
+                  >
+                    <Icon n="zap" size={12}/>⚡ Remplir carte test CMI (Maroc)
+                  </button>
+                </div>
+                <Field label="Numéro de carte CMI / Visa" err={errs.card}>
+                  <input value={form.card} onChange={e=>setForm({...form,card:fmtCard(e.target.value)})} placeholder="4242 4242 4242 4242" className={`${inp} tracking-widest font-mono ${errs.card?inpErr:""}`}/>
                 </Field>
-                <Field label="CVC" err={errs.cvc}>
-                  <input value={form.cvc} onChange={e=>setForm({...form,cvc:e.target.value.replace(/\D/g,"").slice(0,4)})} placeholder="123" className={`${inp} ${errs.cvc?inpErr:""}`}/>
-                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Expiration" err={errs.exp}>
+                    <input value={form.exp} onChange={e=>setForm({...form,exp:fmtExp(e.target.value)})} placeholder="MM/AA" className={`${inp} font-mono ${errs.exp?inpErr:""}`}/>
+                  </Field>
+                  <Field label="Code CVC (dos)" err={errs.cvc}>
+                    <input value={form.cvc} onChange={e=>setForm({...form,cvc:e.target.value.replace(/\D/g,"").slice(0,4)})} placeholder="123" className={`${inp} font-mono ${errs.cvc?inpErr:""}`}/>
+                  </Field>
+                </div>
               </div>
-            </div>
+            )}
+
+            {method === "cash" && (
+              <div className="rounded-xl bg-slate-50 p-4 border border-slate-200 text-xs text-slate-600 space-y-1">
+                <p className="font-bold text-ink flex items-center gap-1.5"><Icon n="info" size={14} className="text-brand-600"/>Paiement direct à la réception :</p>
+                <p>Votre place sera réservée et bloquée. Vous pourrez régler en espèces ou par TPE à votre arrivée auprès de l'accueil de l'espace.</p>
+              </div>
+            )}
+
+            {method === "virement" && (
+              <div className="rounded-xl bg-slate-50 p-4 border border-slate-200 text-xs text-slate-600 space-y-1">
+                <p className="font-bold text-ink flex items-center gap-1.5"><Icon n="info" size={14} className="text-brand-600"/>Coordonnées bancaires Spotwork Maroc :</p>
+                <p className="font-mono text-[11px] text-ink font-semibold">RIB Attijariwafa Bank : 007 780 0001234567890123 45</p>
+                <p>Votre réservation sera confirmée immédiatement avec la référence transmise par e-mail.</p>
+              </div>
+            )}
           </section>
-          <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-4 text-sm font-bold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700 active:scale-[.99]">
-            <Icon n="lock" size={15}/>Payer {EUR.format(total)}
+
+          <button
+            type="submit"
+            disabled={processing}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-4 text-sm font-bold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700 active:scale-[.99] disabled:opacity-60"
+          >
+            {processing ? (
+              <>
+                <Icon n="loader" size={16} className="animate-spin" />
+                <span>Sécurisation CMI 3D-Secure en cours...</span>
+              </>
+            ) : (
+              <>
+                <Icon n="lock" size={15}/>
+                <span>Confirmer et Payer {EUR.format(total)}</span>
+              </>
+            )}
           </button>
         </form>
         <aside className="h-fit space-y-4 lg:sticky lg:top-24">
@@ -3952,15 +4153,26 @@ const App=()=>{
     toast(`Espace « ${deleted?.name || ""} » supprimé du catalogue.`, "trash");
   };
 
-  const handleUpdateBookingStatus = (bookingId, newStatus) => {
+  const handleUpdateBookingStatus = async (bookingId, newStatus) => {
     setAllBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
     const statusFr = newStatus === 'confirmed' ? "Confirmée" : newStatus === 'cancelled' ? "Annulée" : "En attente";
     setUserBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: statusFr } : b));
-    SpotworkAPI.updateBookingStatus(bookingId, newStatus);
-    if (newStatus === 'confirmed') {
-      toast("Demande de réservation acceptée et confirmée !", "check-circle");
-    } else if (newStatus === 'cancelled') {
-      toast("Demande de réservation refusée.", "x-circle");
+    
+    try {
+      const res = await SpotworkAPI.updateBookingStatus(bookingId, newStatus);
+      if (res && res.status === "success") {
+        if (newStatus === 'confirmed') {
+          toast("Demande acceptée et synchronisée avec la base de données !", "check-circle");
+        } else if (newStatus === 'cancelled') {
+          toast("Demande refusée et synchronisée avec la base de données.", "x-circle");
+        } else {
+          toast("Statut synchronisé avec la base de données.", "check-circle");
+        }
+      } else {
+        toast(`Statut mis à jour (${newStatus === 'confirmed' ? 'Confirmée' : 'Refusée'}).`, "check-circle");
+      }
+    } catch {
+      toast("Statut mis à jour localement.", "check-circle");
     }
   };
 
@@ -3976,7 +4188,18 @@ const App=()=>{
 
     let startTime = "09:00:00";
     let endTime = "18:00:00";
-    if (b.meta && b.meta.includes(' – ')) {
+    if (Array.isArray(b.slots) && b.slots.length > 0) {
+      if (b.isHour) {
+        const sorted = [...b.slots].sort();
+        const startH = sorted[0];
+        const endH = sorted[sorted.length - 1];
+        if (startH) startTime = startH.includes(':') ? (startH.length === 5 ? `${startH}:00` : startH) : `${startH.padStart(2, '0')}:00:00`;
+        if (endH) {
+          const h = parseInt(endH.split(':')[0], 10) + 1;
+          endTime = `${String(h).padStart(2, '0')}:00:00`;
+        }
+      }
+    } else if (b.meta && b.meta.includes(' – ')) {
       const parts = b.meta.split(' – ');
       if (parts[0]) {
         const cleanStart = parts[0].trim().slice(0, 5);
@@ -3988,7 +4211,7 @@ const App=()=>{
       }
     }
 
-    const newBookingId = "bk-" + Date.now();
+    const tempBookingId = "bk-" + Date.now();
     const totalPrice = b.total || (bookedSpace ? bookedSpace.price * 4 : 180);
 
     // Synchronisation en temps réel avec l'API backend et PostgreSQL Supabase
@@ -4000,22 +4223,27 @@ const App=()=>{
       total_price: totalPrice
     }).then(res => {
       if (res && res.status === "success") {
-        toast("Réservation synchronisée dans la base PostgreSQL Supabase !", "check-circle");
+        toast("Réservation enregistrée et synchronisée avec la base de données !", "check-circle");
+        const realId = res.data?.booking?.id;
+        if (realId) {
+          setUserBookings(prev => prev.map(item => item.id === tempBookingId ? { ...item, id: realId } : item));
+          setAllBookings(prev => prev.map(item => item.id === tempBookingId ? { ...item, id: realId } : item));
+        }
       }
     }).catch(() => {});
 
     setUserBookings(p => [{
-      id: newBookingId,
+      id: tempBookingId,
       spaceId: spaceId,
       date: b.date,
       meta: b.meta,
       status: "Confirmée",
       totalPrice: totalPrice,
-      invoiceRef: `FACT-2026-${String(newBookingId).slice(-6)}`
+      invoiceRef: `FACT-2026-${String(tempBookingId).slice(-6)}`
     }, ...p]);
 
     setAllBookings(p => [{
-      id: newBookingId,
+      id: tempBookingId,
       clientName: currentUser?.name || b.name || "Client PropTech",
       clientEmail: currentUser?.email || b.email || "client@proptech.ma",
       clientPhone: currentUser?.phone || "+212 6 61 23 45 67",
@@ -4025,10 +4253,12 @@ const App=()=>{
       city: city,
       date: b.date,
       timeSlot: b.meta,
-      hours: 4,
+      hours: Array.isArray(b.slots) ? b.slots.length : 4,
       totalPrice: totalPrice,
       status: "confirmed",
-      createdAt: "À l'instant"
+      createdAt: "À l'instant",
+      paymentMethod: b.method === 'cash' ? "Paiement sur place à l'accueil" : b.method === 'transfer' ? "Virement / Wafacash" : "Carte Bancaire CMI (3D Secure)",
+      invoiceRef: `FACT-2026-${String(tempBookingId).slice(-6)}`
     }, ...p]);
 
     setCart([]);
@@ -4048,21 +4278,61 @@ const App=()=>{
               id: b.id,
               spaceId: numId,
               date: b.booking_date,
-              meta: `${b.start_time.slice(0, 5)} – ${b.end_time.slice(0, 5)}`,
+              meta: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} – ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
               status: b.status === 'confirmed' ? "Confirmée" : b.status === 'cancelled' ? "Annulée" : "En attente",
               totalPrice: b.total_price,
               invoiceRef: `FACT-2026-${String(b.id).slice(-6)}`
             };
           });
           setUserBookings(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const fresh = mapped.filter(m => !existingIds.has(m.id));
-            return [...fresh, ...prev];
+            const existingMap = new Map(prev.map(p => [p.id, p]));
+            mapped.forEach(m => {
+              existingMap.set(m.id, { ...existingMap.get(m.id), ...m });
+            });
+            return Array.from(existingMap.values());
           });
         }
       }).catch(() => {});
+
+      if (currentUser.role === 'manager' || currentUser.role === 'admin') {
+        SpotworkAPI.getManagerBookings().then(bkgs => {
+          if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
+            const mappedManager = bkgs.map(b => {
+              const numId = parseInt(String(b.space_id).split('-').pop(), 10) || 1;
+              const cName = b.users?.full_name || "Client PropTech";
+              const initials = cName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || "CP";
+              return {
+                id: b.id,
+                clientName: cName,
+                clientEmail: b.users?.email || "client@proptech.ma",
+                clientPhone: "+212 6 61 23 45 67",
+                clientInitials: initials,
+                spaceId: numId,
+                spaceName: b.spaces?.name || "Espace Coworking",
+                city: b.spaces?.city || "Casablanca",
+                date: b.booking_date,
+                timeSlot: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} – ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
+                hours: 4,
+                seats: 1,
+                totalPrice: b.total_price,
+                status: b.status || "confirmed",
+                createdAt: "Récemment",
+                paymentMethod: "Carte Bancaire CMI (3D Secure)",
+                invoiceRef: `FACT-2026-${String(b.id).slice(-4)}`
+              };
+            });
+            setAllBookings(prev => {
+              const existingMap = new Map(prev.map(p => [p.id, p]));
+              mappedManager.forEach(m => {
+                existingMap.set(m.id, { ...existingMap.get(m.id), ...m });
+              });
+              return Array.from(existingMap.values());
+            });
+          }
+        }).catch(() => {});
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, view.name]);
 
   useEffect(()=>{
     let tries=0;
