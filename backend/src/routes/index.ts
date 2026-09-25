@@ -67,6 +67,7 @@ router.patch('/bookings/:id/status', authenticate, requireRole('manager', 'admin
 // ==============================================================================
 router.get('/recommendations', authenticate, RecommendationsController.getRecommendations);
 router.post('/recommendations/:id/click', authenticate, RecommendationsController.markClicked);
+router.post('/recommendations/feedback', authenticate, RecommendationsController.submitFeedback);
 
 // ==============================================================================
 // AVIS & NOTATIONS (REVIEWS)

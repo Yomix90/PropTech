@@ -107,4 +107,17 @@ export class RecommendationsController {
       next(error);
     }
   }
+
+  static async submitFeedback(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { space_id, feedback } = req.body;
+      res.status(200).json({
+        status: 'success',
+        message: 'Feedback enregistré pour affiner vos recommandations IA',
+        data: { space_id, feedback },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

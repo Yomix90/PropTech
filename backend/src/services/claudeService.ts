@@ -153,7 +153,7 @@ Réponds UNIQUEMENT avec un tableau JSON strict contenant 3 objets au format sui
   }
 
   /**
-   * Algorithme heuristique déterministe de recommandation (Fallback transparent)
+   * Algorithme heuristique déterministe de recommandation (Fallback intelligent & résilient)
    */
   private static calculateHeuristicRecommendations(
     user: UserEntity,
@@ -161,42 +161,91 @@ Réponds UNIQUEMENT avec un tableau JSON strict contenant 3 objets au format sui
     pastBookings: BookingEntity[]
   ): GeneratedRecommendation[] {
     const prefs = user.preferences || {};
-    const maxBudget = prefs.budget_max || 100;
-    const locPref = (prefs.location_preference || '').toLowerCase();
-    const neededAmenities = new Set(prefs.equipment_needed || ['wifi']);
+    const cityPref = (prefs.city || prefs.location_preference || user.city || 'Casablanca').toLowerCase();
+    const typePref = (prefs.type || '').toLowerCase();
+    const maxBudget = prefs.budget_max || 200;
+    const neededAmenities = new Set(prefs.equipment_needed || ['wifi', 'coffee']);
 
-    const pastSpaceIds = new Set(pastBookings.map((b) => b.space_id));
+    // Analyse des habitudes de réservation passées
+    const bookedSpacesCount: Record<string, number> = {};
+    const bookedCitiesCount: Record<string, number> = {};
+    let totalSpent = 0;
+
+    for (const b of pastBookings) {
+      bookedSpacesCount[b.space_id] = (bookedSpacesCount[b.space_id] || 0) + 1;
+      const sp = spaces.find(s => s.id === b.space_id);
+      if (sp) {
+        const city = sp.location.split('·')[0].trim().toLowerCase();
+        bookedCitiesCount[city] = (bookedCitiesCount[city] || 0) + 1;
+        totalSpent += sp.price_per_hour;
+      }
+    }
+
+    let topHabitCity = '';
+    let maxCityBookings = 0;
+    for (const [c, cnt] of Object.entries(bookedCitiesCount)) {
+      if (cnt > maxCityBookings) {
+        maxCityBookings = cnt;
+        topHabitCity = c;
+      }
+    }
+
+    const avgPriceHabit = pastBookings.length > 0 ? Math.round(totalSpent / pastBookings.length) : 50;
 
     const scored = spaces.map((space) => {
       let score = 50;
+      const spaceCity = space.location.split('·')[0].trim().toLowerCase();
+      const reasons: string[] = [];
 
-      // Bonus note moyenne
-      score += Math.round(space.rating * 6); // ex: 4.9 * 6 = ~29
+      // 1. Bonus Note d'excellence (jusqu'à 25 pts)
+      score += Math.round(space.rating * 5);
 
-      // Bonus localisation
-      if (locPref && space.location.toLowerCase().includes(locPref)) {
-        score += 15;
+      // 2. Bonus Préférence et Habitude de Ville (jusqu'à 25 pts)
+      if (cityPref && spaceCity.includes(cityPref)) {
+        score += 25;
+        reasons.push(`dans votre ville de prédilection (${space.location.split('·')[0].trim()})`);
+      } else if (topHabitCity && spaceCity.includes(topHabitCity)) {
+        score += 18;
+        reasons.push(`selon vos habitudes régulières à ${space.location.split('·')[0].trim()}`);
       }
 
-      // Bonus budget
+      // 3. Bonus Préférence de Type d'espace (jusqu'à 20 pts)
+      if (typePref && space.description.toLowerCase().includes(typePref)) {
+        score += 20;
+        reasons.push(`adapté à votre préférence de format de travail`);
+      }
+
+      // 4. Bonus Habitude Budgétaire (jusqu'à 15 pts)
       if (space.price_per_hour <= maxBudget) {
         score += 10;
+        if (Math.abs(space.price_per_hour - avgPriceHabit) <= 25) {
+          score += 5;
+        }
       }
 
-      // Bonus équipements correspondants
+      // 5. Bonus Équipements récurrents
       const matchedAmenities = space.amenities.filter((a) => neededAmenities.has(a));
-      score += matchedAmenities.length * 4;
+      score += Math.min(matchedAmenities.length * 4, 15);
 
-      // Bonus nouveauté (si pas encore réservé)
-      if (!pastSpaceIds.has(space.id)) {
-        score += 5;
+      // 6. Bonus d'historique (espace favori habituel ou nouvelle opportunité)
+      const timesBooked = bookedSpacesCount[space.id] || 0;
+      if (timesBooked > 0) {
+        score += 8;
+        reasons.push(`espace déjà réservé ${timesBooked} fois par vous`);
+      } else {
+        score += 5; // Découverte
       }
 
-      score = Math.min(score, 99);
+      score = Math.min(Math.max(score, 70), 99);
 
-      let reason = `Correspond à vos critères (${space.location.split('·')[0].trim()}) et dispose d'une note d'excellence de ${space.rating}/5.`;
+      let reason = `Sélectionné pour vous : `;
+      if (reasons.length > 0) {
+        reason += reasons.slice(0, 2).join(' et ') + `. `;
+      }
       if (matchedAmenities.length > 0) {
-        reason = `Idéal pour vos besoins : comprend ${matchedAmenities.slice(0, 2).join(' et ')} dans votre budget de ${space.price_per_hour} €/h.`;
+        reason += `Équipé de ${matchedAmenities.slice(0, 2).join(' et ')} pour ${space.price_per_hour} DH/h.`;
+      } else {
+        reason += `Noté ${space.rating}/5 par les coworkers avec accès premium.`;
       }
 
       return {

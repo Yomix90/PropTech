@@ -125,6 +125,18 @@ const SpotworkAPI = {
     } catch {
     }
   },
+  async submitAIFeedback(spaceId, feedback) {
+    try {
+      const res = await fetch(`${API_BASE}/recommendations/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SpotworkAPI.token}` },
+        body: JSON.stringify({ space_id: spaceId, feedback })
+      });
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
   async getManagerMetrics() {
     try {
       const res = await fetch(`${API_BASE}/manager/dashboard`, {
@@ -310,7 +322,7 @@ const IMG = {
   c: "photo-1524758631624-e2822e304c36",
   d: "photo-1556761175-b413da4baf72",
   e: "photo-1497215728101-856f4ea42174",
-  f: "photo-1527192491265-7e15c50b385d",
+  f: "photo-1600508774634-4e11d34730e2",
   g: "photo-1522202176988-66273c2fd55f",
   h: "photo-1519389950473-47ba0277781c",
   i: "photo-1504384308090-c894fdcc538d",
@@ -1028,8 +1040,44 @@ const Ring = ({ v }) => /* @__PURE__ */ React.createElement("svg", { width: "46"
     transform: "rotate(-90 20 20)"
   }
 ), /* @__PURE__ */ React.createElement("text", { x: "20", y: "24", textAnchor: "middle", fontSize: "10", fontWeight: "700", fill: "#0A1B33" }, v, "%"));
-const Home = ({ nav, favs, toggleFav, spaces = SPACES, bookings = [] }) => {
+const Home = ({ nav, favs, toggleFav, spaces = SPACES, bookings = [], currentUser = null, userBookings = [] }) => {
   const featured = spaces.filter((s) => s.featured);
+  const homeAiRecs = useMemo(() => {
+    if (!currentUser) return [];
+    const p = currentUser.preferences || {};
+    const prefCity = (p.city || currentUser.city || "Casablanca").toLowerCase();
+    const prefType = (p.type || "open").toLowerCase();
+    return spaces.map((s) => {
+      let score = 55 + Math.round((s.rating - 4) * 14);
+      const tags = [];
+      let reason = "";
+      if (s.city.toLowerCase() === prefCity) {
+        score += 24;
+        tags.push(`\u{1F4CD} ${s.city}`);
+      }
+      if (s.type.toLowerCase() === prefType) {
+        score += 20;
+        tags.push(`\u{1F3E2} ${TYPES.find((t) => t.id === s.type)?.label || s.type}`);
+      }
+      if (favs.has(s.id)) {
+        score += 15;
+        tags.push("\u2764\uFE0F Coup de c\u0153ur");
+      }
+      if (userBookings.some((b) => b.spaceId === s.id)) {
+        score += 12;
+        tags.push("\u{1F504} Habitude");
+      }
+      const matchScore = Math.min(99, Math.max(75, score));
+      if (s.city.toLowerCase() === prefCity && s.type.toLowerCase() === prefType) {
+        reason = `Align\xE9 sur votre pr\xE9f\xE9rence active : ${TYPES.find((t) => t.id === s.type)?.label} \xE0 ${s.city}.`;
+      } else if (s.city.toLowerCase() === prefCity) {
+        reason = `Recommand\xE9 selon vos habitudes \xE0 ${s.city} \xB7 Not\xE9 ${s.rating}/5.`;
+      } else {
+        reason = `Espace pris\xE9 des coworkers marocains avec \xE9quipement complet.`;
+      }
+      return { s, score: matchScore, reason, tags };
+    }).sort((a, b) => b.score - a.score).slice(0, 3);
+  }, [currentUser, userBookings, favs, spaces]);
   return /* @__PURE__ */ React.createElement("main", null, /* @__PURE__ */ React.createElement(Hero, { nav }), /* @__PURE__ */ React.createElement("div", { className: "border-y border-slate-100 bg-white py-4" }, /* @__PURE__ */ React.createElement("div", { className: "overflow-hidden" }, /* @__PURE__ */ React.createElement("div", { className: "marquee flex w-max items-center gap-10 text-sm font-semibold text-slate-400" }, [0, 1].map((k) => /* @__PURE__ */ React.createElement("div", { key: k, className: "flex items-center gap-10" }, [...CITIES, ...CITIES].map((c, i) => /* @__PURE__ */ React.createElement("span", { key: c + i, className: "flex items-center gap-10 whitespace-nowrap" }, /* @__PURE__ */ React.createElement("span", { className: "font-display" }, c), /* @__PURE__ */ React.createElement(Icon, { n: "asterisk", size: 12, className: "text-brand-300" })))))))), /* @__PURE__ */ React.createElement("section", { className: "mx-auto max-w-7xl px-4 py-14 md:px-6" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Parcourir", title: "Explorer par type d'espace" }), /* @__PURE__ */ React.createElement("div", { className: "no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0", "data-reveal": true }, TYPES.map((t, i) => {
     const count = spaces.filter((s) => s.type === t.id).length;
     return /* @__PURE__ */ React.createElement(
@@ -1043,7 +1091,22 @@ const Home = ({ nav, favs, toggleFav, spaces = SPACES, bookings = [] }) => {
       /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-50 text-brand-600 transition group-hover:bg-brand-600 group-hover:text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: t.icon, size: 16 })),
       /* @__PURE__ */ React.createElement("span", { className: "text-left" }, /* @__PURE__ */ React.createElement("span", { className: "block text-sm font-bold" }, t.label), /* @__PURE__ */ React.createElement("span", { className: "block text-[11px] text-slate-400" }, count, " espace", count > 1 ? "s" : ""))
     );
-  }))), /* @__PURE__ */ React.createElement("section", { className: "bg-mist py-14" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-7xl px-4 md:px-6" }, /* @__PURE__ */ React.createElement(
+  }))), currentUser && homeAiRecs.length > 0 && /* @__PURE__ */ React.createElement("section", { className: "mx-auto max-w-7xl px-4 pb-14 md:px-6" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-brand-200/90 bg-gradient-to-r from-brand-50/70 via-white to-indigo-50/40 p-6 md:p-8 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 mb-6" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-bold text-brand-700 shadow-2xs" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 13, className: "text-brand-600" }), "Recommandations IA pour vous"), /* @__PURE__ */ React.createElement("h2", { className: "mt-2 font-display text-2xl font-bold text-ink" }, "S\xE9lectionn\xE9 pour ", currentUser.firstName || currentUser.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "D'apr\xE8s vos pr\xE9f\xE9rences (", currentUser.city || "Casablanca", ") et vos habitudes de travail.")), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => nav({ name: "user", params: { tab: "ia" } }),
+      className: "inline-flex items-center gap-1.5 rounded-full bg-navy px-4 py-2 text-xs font-bold text-white hover:bg-brand-700 transition shadow-sm"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "brain", size: 13 }),
+    "Voir mon profil IA complet"
+  )), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, homeAiRecs.map(({ s, score, reason, tags }) => /* @__PURE__ */ React.createElement("div", { key: s.id, className: "relative rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-lift transition flex flex-col justify-between" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "relative h-36 overflow-hidden rounded-xl mb-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 500), alt: s.name, className: "h-full w-full object-cover" }), /* @__PURE__ */ React.createElement("span", { className: "absolute left-2.5 top-2.5 rounded-full bg-ink/80 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 10, className: "text-amber-400" }), "Match ", score, "%")), /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-bold text-sm text-ink" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, s.city, " \xB7 ", s.district)), /* @__PURE__ */ React.createElement("span", { className: "font-display font-bold text-xs text-brand-700" }, s.price, " DH/h")), /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex flex-wrap gap-1" }, tags.map((t, idx) => /* @__PURE__ */ React.createElement("span", { key: idx, className: "rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-600" }, t))), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[11px] text-slate-600 leading-snug flex items-start gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 11, className: "mt-0.5 shrink-0 text-brand-600" }), reason)), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => nav({ name: "space", params: { id: s.id } }),
+      className: "mt-3.5 w-full rounded-xl bg-slate-50 border border-slate-200 py-2 text-xs font-bold text-slate-700 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition"
+    },
+    "D\xE9couvrir l'espace"
+  )))))), /* @__PURE__ */ React.createElement("section", { className: "bg-mist py-14" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-7xl px-4 md:px-6" }, /* @__PURE__ */ React.createElement(
     SecHead,
     {
       kicker: "S\xE9lection",
@@ -1478,9 +1541,9 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
       } catch {
       }
       if (res && res.status === "success") {
-        toast("Pr\xE9f\xE9rences de recherche synchronis\xE9es avec PostgreSQL Supabase", "check-circle");
+        toast("Pr\xE9f\xE9rences synchronis\xE9es ! Recommandations IA imm\xE9diatement affin\xE9es.", "check-circle");
       } else {
-        toast("Pr\xE9f\xE9rences enregistr\xE9es localement", "check");
+        toast("Pr\xE9f\xE9rences enregistr\xE9es ! Profil IA mis \xE0 jour.", "check");
       }
     } catch {
       toast("Pr\xE9f\xE9rences enregistr\xE9es", "check");
@@ -1489,14 +1552,199 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
     }
   };
   const tabs = [["resas", "Mes r\xE9servations", "calendar-days"], ["ia", "Recommandations", "sparkles"], ["favoris", "Favoris", "heart"], ["prefs", "Pr\xE9f\xE9rences", "settings"]];
+  const [aiInteractions, setAiInteractions] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`spotwork_ai_interactions_${user.id}`);
+      if (saved) return JSON.parse(saved);
+    } catch {
+    }
+    return { feedback: {}, viewed: [], count: 0 };
+  });
+  const saveAiInteractions = (updated) => {
+    setAiInteractions(updated);
+    try {
+      localStorage.setItem(`spotwork_ai_interactions_${user.id}`, JSON.stringify(updated));
+    } catch {
+    }
+  };
+  const [aiFilter, setAiFilter] = useState("all");
+  const [isRefreshingAi, setIsRefreshingAi] = useState(false);
+  const clientHabits = useMemo(() => {
+    const bookedSpaces = bookings.map((b) => spaces.find((s) => s.id === b.spaceId)).filter(Boolean);
+    const favSpaces = [...favs].map((id) => spaces.find((s) => s.id === id)).filter(Boolean);
+    const cityCounts = {};
+    bookedSpaces.forEach((s) => {
+      cityCounts[s.city] = (cityCounts[s.city] || 0) + 3;
+    });
+    favSpaces.forEach((s) => {
+      cityCounts[s.city] = (cityCounts[s.city] || 0) + 1.5;
+    });
+    if (prefs.city) cityCounts[prefs.city] = (cityCounts[prefs.city] || 0) + 4;
+    let dominantCity = prefs.city || user.city || "Casablanca";
+    let maxCityScore = 0;
+    for (const [c, cnt] of Object.entries(cityCounts)) {
+      if (cnt > maxCityScore) {
+        maxCityScore = cnt;
+        dominantCity = c;
+      }
+    }
+    const typeCounts = {};
+    bookedSpaces.forEach((s) => {
+      typeCounts[s.type] = (typeCounts[s.type] || 0) + 3;
+    });
+    favSpaces.forEach((s) => {
+      typeCounts[s.type] = (typeCounts[s.type] || 0) + 1.5;
+    });
+    if (prefs.type) typeCounts[prefs.type] = (typeCounts[prefs.type] || 0) + 4;
+    let dominantType = prefs.type || "open";
+    let maxTypeScore = 0;
+    for (const [t, cnt] of Object.entries(typeCounts)) {
+      if (cnt > maxTypeScore) {
+        maxTypeScore = cnt;
+        dominantType = t;
+      }
+    }
+    const amenityCounts = {};
+    [...bookedSpaces, ...favSpaces].forEach((s) => {
+      (s.am || []).forEach((a) => {
+        amenityCounts[a] = (amenityCounts[a] || 0) + 1;
+      });
+    });
+    const topAmenities = Object.entries(amenityCounts).sort((a, b) => b[1] - a[1]).map(([a]) => a);
+    let avgPrice = 45;
+    if (bookedSpaces.length > 0) {
+      avgPrice = Math.round(bookedSpaces.reduce((acc, s) => acc + s.price, 0) / bookedSpaces.length);
+    } else if (favSpaces.length > 0) {
+      avgPrice = Math.round(favSpaces.reduce((acc, s) => acc + s.price, 0) / favSpaces.length);
+    }
+    const interactionBonus = (aiInteractions.count || 0) * 3;
+    const historyBonus = bookedSpaces.length * 5;
+    const favBonus = favSpaces.length * 3;
+    const prefBonus = (prefs.city ? 6 : 0) + (prefs.type ? 6 : 0);
+    const refinementLevel = Math.min(99, Math.max(72, 70 + interactionBonus + historyBonus + favBonus + prefBonus));
+    return {
+      dominantCity,
+      dominantType,
+      topAmenities,
+      avgPrice,
+      refinementLevel,
+      bookingsCount: bookedSpaces.length,
+      favsCount: favSpaces.length,
+      totalInteractions: (aiInteractions.count || 0) + bookedSpaces.length + favSpaces.length
+    };
+  }, [bookings, favs, prefs, spaces, aiInteractions, user]);
   const recommendations = useMemo(() => {
-    const favTypes = new Set([...favs].map((id) => spaces.find((s) => s.id === id)?.type));
-    return spaces.filter((s) => !favs.has(s.id)).map((s) => ({
-      s,
-      score: favTypes.has(s.type) ? 88 + Math.round(s.rating * 2) : 55 + Math.round(s.rating * 6),
-      reason: favTypes.has(s.type) ? `Correspond \xE0 votre pr\xE9f\xE9rence \xAB ${TYPES.find((t) => t.id === s.type)?.label.toLowerCase()} \xBB` : `Tr\xE8s bien not\xE9 \xE0 ${s.city}`
-    })).sort((a, b) => b.score - a.score).slice(0, 3);
-  }, [favs, spaces]);
+    const { dominantCity, dominantType, topAmenities, avgPrice } = clientHabits;
+    const bookedIds = new Set(bookings.map((b) => b.spaceId));
+    const feedback = aiInteractions.feedback || {};
+    const scored = spaces.map((s) => {
+      if (feedback[s.id] === "dislike") return null;
+      let score = 52;
+      const reasonsList = [];
+      const tags = [];
+      score += Math.round((s.rating - 4) * 14);
+      if (s.city.toLowerCase() === dominantCity.toLowerCase()) {
+        score += 24;
+        tags.push(`\u{1F4CD} Habitude ${s.city}`);
+        reasonsList.push(`situ\xE9 \xE0 ${s.city} (${s.district}) o\xF9 vous avez vos habitudes`);
+      } else if (prefs.city && s.city.toLowerCase() === prefs.city.toLowerCase()) {
+        score += 20;
+        tags.push(`\u{1F3AF} Pr\xE9f\xE9rence ${s.city}`);
+        reasonsList.push(`correspond \xE0 votre ville favorite (${s.city})`);
+      }
+      if (s.type === dominantType) {
+        score += 20;
+        const typeLabel = TYPES.find((t) => t.id === s.type)?.label || s.type;
+        tags.push(`\u{1F3E2} Format ${typeLabel}`);
+        reasonsList.push(`adapt\xE9 \xE0 votre habitude de ${typeLabel.toLowerCase()}`);
+      } else if (prefs.type && s.type === prefs.type) {
+        score += 16;
+        tags.push(`\u{1F4BC} Format souhait\xE9`);
+      }
+      const matchingAmenities = (s.am || []).filter((a) => topAmenities.includes(a));
+      if (matchingAmenities.length > 0) {
+        score += Math.min(matchingAmenities.length * 3.5, 14);
+        const amLabels = matchingAmenities.slice(0, 2).map((a) => AMENITIES.find((x) => x.id === a)?.label || a);
+        reasonsList.push(`int\xE8gre ${amLabels.join(" et ")}`);
+        tags.push(`\u2615 ${amLabels[0]}`);
+      }
+      if (Math.abs(s.price - avgPrice) <= 15) {
+        score += 10;
+        tags.push(`\u{1F4B0} ~${s.price} DH/h`);
+      } else if (s.price <= 50) {
+        score += 6;
+      }
+      if (feedback[s.id] === "like") {
+        score += 15;
+        tags.push(`\u{1F44D} Valid\xE9 par vous`);
+      }
+      let nature = "discover";
+      if (bookedIds.has(s.id)) {
+        nature = "habits";
+        score += 8;
+        tags.push(`\u{1F504} Espace d\xE9j\xE0 r\xE9serv\xE9`);
+      } else if (favs.has(s.id)) {
+        nature = "favorites";
+        score += 12;
+        tags.push(`\u2764\uFE0F Dans vos favoris`);
+      } else if (s.city.toLowerCase() === dominantCity.toLowerCase() || s.type === dominantType) {
+        nature = "habits";
+      }
+      const finalScore = Math.min(99, Math.max(72, Math.round(score)));
+      let reasonText = "";
+      if (reasonsList.length >= 2) {
+        reasonText = `S\xE9lectionn\xE9 pour vous car ${reasonsList.slice(0, 2).join(", et ")}.`;
+      } else if (reasonsList.length === 1) {
+        reasonText = `Recommand\xE9 pour votre profil car ${reasonsList[0]}. Not\xE9 ${s.rating}/5.`;
+      } else {
+        reasonText = `Espace d'excellence \xE0 ${s.city}, pl\xE9biscit\xE9 par les r\xE9sidents tech (${s.rating}/5).`;
+      }
+      return {
+        s,
+        score: finalScore,
+        reason: reasonText,
+        tags: tags.slice(0, 3),
+        nature
+      };
+    }).filter(Boolean);
+    let filtered = scored;
+    if (aiFilter === "habits") {
+      filtered = scored.filter((x) => x.nature === "habits");
+    } else if (aiFilter === "favorites") {
+      filtered = scored.filter((x) => favs.has(x.s.id) || x.tags.some((t) => t.includes("\u2764\uFE0F")));
+    } else if (aiFilter === "discover") {
+      filtered = scored.filter((x) => !bookedIds.has(x.s.id) && !favs.has(x.s.id));
+    }
+    filtered.sort((a, b) => b.score - a.score);
+    return (filtered.length >= 3 ? filtered : scored.sort((a, b) => b.score - a.score)).slice(0, 3);
+  }, [spaces, favs, bookings, prefs, clientHabits, aiInteractions, aiFilter]);
+  const handleLikeRecommendation = (spaceId) => {
+    const updated = {
+      ...aiInteractions,
+      feedback: { ...aiInteractions.feedback || {}, [spaceId]: "like" },
+      count: (aiInteractions.count || 0) + 1
+    };
+    saveAiInteractions(updated);
+    SpotworkAPI.submitAIFeedback(spaceId, "like");
+    toast("Recommandation valid\xE9e ! Votre profil IA a \xE9t\xE9 enrichi (+3% pr\xE9cision)", "sparkles");
+  };
+  const handleDislikeRecommendation = (spaceId) => {
+    const updated = {
+      ...aiInteractions,
+      feedback: { ...aiInteractions.feedback || {}, [spaceId]: "dislike" },
+      count: (aiInteractions.count || 0) + 1
+    };
+    saveAiInteractions(updated);
+    SpotworkAPI.submitAIFeedback(spaceId, "dislike");
+    toast("Espace retir\xE9 : les suggestions s'ajustent imm\xE9diatement selon vos go\xFBts", "trash");
+  };
+  const handleRefreshAi = () => {
+    setIsRefreshingAi(true);
+    setTimeout(() => {
+      setIsRefreshingAi(false);
+      toast("Recommandations recalcul\xE9es avec vos derni\xE8res habitudes et interactions !", "check-circle");
+    }, 400);
+  };
   const stColor = (st) => st === "Confirm\xE9e" ? "bg-emerald-50 text-emerald-600" : st === "En attente" ? "bg-amber-50 text-amber-600" : "bg-slate-100 text-slate-500";
   return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Kicker, null, "Espace membre \xB7 PropTech Maroc"), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight" }, "Bonjour ", user.firstName || user.name, " \u{1F44B}"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, user.email, " \xB7 ", user.city || "Maroc", " \xB7 ", /* @__PURE__ */ React.createElement("span", { className: `inline-flex px-2 py-0.5 rounded-full font-semibold border ${user.badgeCls || "bg-blue-50 text-brand-700 border-brand-200"}` }, user.roleLabel || user.role))), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25" }, /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 15 }), "Nouvelle r\xE9servation")), /* @__PURE__ */ React.createElement("div", { className: "mt-8 grid gap-8 lg:grid-cols-[230px_1fr]" }, /* @__PURE__ */ React.createElement("nav", { className: "no-scrollbar flex gap-1 overflow-x-auto lg:flex-col" }, tabs.map(([id, l, i]) => /* @__PURE__ */ React.createElement(
     "button",
@@ -1560,7 +1808,111 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
       /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 11 }),
       "Facture"
     ), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "text-slate-300 transition hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "chevron-right", size: 17 })));
-  })))), tab === "ia" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mb-5 flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 18, className: "mt-0.5 shrink-0 text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-brand-900" }, "Suggestions g\xE9n\xE9r\xE9es \xE0 partir de vos favoris, de vos r\xE9servations pass\xE9es et de vos pr\xE9f\xE9rences. Elles s'affinent \xE0 chaque interaction.")), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 md:grid-cols-3" }, recommendations.map(({ s, score, reason }, i) => /* @__PURE__ */ React.createElement("article", { key: s.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lift", "data-reveal": true, style: { transitionDelay: `${i * 80}ms` } }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 500), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: "absolute left-3 top-3 rounded-full bg-ink/80 px-2 py-1 text-[10px] font-bold text-white backdrop-blur" }, "Match ", score, "%")), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-display text-sm font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, s.city, " \xB7 ", EUR.format(s.price), "/", s.unit)), /* @__PURE__ */ React.createElement(Ring, { v: score })), /* @__PURE__ */ React.createElement("p", { className: "mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 11, className: "mt-0.5 shrink-0 text-brand-500" }), reason), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "mt-3 w-full rounded-full bg-navy py-2 text-xs font-bold text-white transition hover:bg-brand-700" }, "D\xE9couvrir")))))), tab === "favoris" && (favs.size === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center text-sm text-slate-400" }, "Aucun favori pour le moment \u2014 cliquez sur le \u2665 d'un espace.") : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, spaces.filter((s) => favs.has(s.id)).map((s) => /* @__PURE__ */ React.createElement(SpaceCard, { key: s.id, s, nav, favs, toggleFav })))), tab === "prefs" && /* @__PURE__ */ React.createElement("div", { className: "max-w-xl space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Notifications"), [["mail", "R\xE9capitulatifs par e-mail"], ["push", "Alertes de disponibilit\xE9 en temps r\xE9el"], ["news", "Newsletter mensuelle & bons plans"]].map(([k, l]) => /* @__PURE__ */ React.createElement("div", { key: k, className: "mt-4 flex items-center justify-between border-b border-slate-100 pb-4 last:border-0 last:pb-0" }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-600" }, l), /* @__PURE__ */ React.createElement(Toggle, { on: prefs[k], onClick: () => setPrefs({ ...prefs, [k]: !prefs[k] }) })))), /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Pr\xE9f\xE9rences de recherche"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Ville par d\xE9faut" }, /* @__PURE__ */ React.createElement("select", { value: prefs.city, onChange: (e) => setPrefs({ ...prefs, city: e.target.value }), className: inp }, CITIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c }, c)))), /* @__PURE__ */ React.createElement(Field, { label: "Type favori" }, /* @__PURE__ */ React.createElement("select", { value: prefs.type, onChange: (e) => setPrefs({ ...prefs, type: e.target.value }), className: inp }, TYPES.map((t) => /* @__PURE__ */ React.createElement("option", { key: t.id, value: t.id }, t.label))))), /* @__PURE__ */ React.createElement(
+  })))), tab === "ia" && /* @__PURE__ */ React.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50/80 via-white to-indigo-50/50 p-6 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-start justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 13, className: "text-brand-600" }), "Moteur de Recommandations Pr\xE9dictif PropTech Maroc"), /* @__PURE__ */ React.createElement("h2", { className: "mt-3 font-display text-xl md:text-2xl font-bold text-ink" }, "Vos suggestions intelligentes sur-mesure"), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 max-w-2xl text-xs md:text-sm text-slate-600 leading-relaxed" }, "L'intelligence artificielle analyse en continu vos r\xE9servations pass\xE9es, vos favoris et vos crit\xE8res de recherche. Plus vous interagissez, plus les suggestions deviennent pr\xE9cises pour votre activit\xE9.")), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: handleRefreshAi,
+      disabled: isRefreshingAi,
+      className: "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm hover:border-brand-300 hover:bg-slate-50 transition disabled:opacity-60"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: isRefreshingAi ? "loader" : "refresh-cw", size: 13, className: isRefreshingAi ? "animate-spin text-brand-600" : "" }),
+    isRefreshingAi ? "Recalcul en cours..." : "Actualiser l'IA"
+  )), /* @__PURE__ */ React.createElement("div", { className: "mt-5 border-t border-brand-100/80 pt-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between text-xs mb-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-bold text-slate-700 flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement(Icon, { n: "brain", size: 14, className: "text-brand-600" }), "Niveau d'affinement de vos habitudes :"), /* @__PURE__ */ React.createElement("span", { className: "font-mono font-bold text-brand-700 bg-brand-100/70 px-2 py-0.5 rounded-full" }, clientHabits.refinementLevel, " % (Profil tr\xE8s affin\xE9)")), /* @__PURE__ */ React.createElement("div", { className: "h-2 w-full overflow-hidden rounded-full bg-slate-200/80" }, /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      className: "h-full rounded-full bg-gradient-to-r from-brand-600 to-indigo-600 transition-all duration-700",
+      style: { width: `${clientHabits.refinementLevel}%` }
+    }
+  ))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200/80 bg-white/80 p-3 backdrop-blur" }, /* @__PURE__ */ React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-wider text-slate-400" }, "Ville dominante"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 font-display text-sm font-bold text-ink flex items-center gap-1 truncate" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 12, className: "text-brand-600 shrink-0" }), clientHabits.dominantCity), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, "Habitude principale")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200/80 bg-white/80 p-3 backdrop-blur" }, /* @__PURE__ */ React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-wider text-slate-400" }, "Format privil\xE9gi\xE9"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 font-display text-sm font-bold text-ink flex items-center gap-1 truncate" }, /* @__PURE__ */ React.createElement(Icon, { n: "layout-grid", size: 12, className: "text-indigo-600 shrink-0" }), TYPES.find((t) => t.id === clientHabits.dominantType)?.label || clientHabits.dominantType), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, "Poste de travail")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200/80 bg-white/80 p-3 backdrop-blur" }, /* @__PURE__ */ React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-wider text-slate-400" }, "Budget habituel"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 font-display text-sm font-bold text-emerald-700 flex items-center gap-1 truncate" }, /* @__PURE__ */ React.createElement(Icon, { n: "wallet", size: 12, className: "text-emerald-600 shrink-0" }), "~", clientHabits.avgPrice, " DH / heure"), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, "Moyenne r\xE9servations")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200/80 bg-white/80 p-3 backdrop-blur" }, /* @__PURE__ */ React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-wider text-slate-400" }, "Donn\xE9es analys\xE9es"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 font-display text-sm font-bold text-purple-700 flex items-center gap-1 truncate" }, /* @__PURE__ */ React.createElement(Icon, { n: "activity", size: 12, className: "text-purple-600 shrink-0" }), clientHabits.totalInteractions, " interactions"), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, clientHabits.bookingsCount, " r\xE9sas \xB7 ", clientHabits.favsCount, " favoris")))), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, [
+    { id: "all", label: `Toutes les recommandations (${recommendations.length})`, icon: "sparkles" },
+    { id: "habits", label: "Selon mes habitudes", icon: "history" },
+    { id: "favorites", label: "Inspir\xE9 de mes favoris", icon: "heart" },
+    { id: "discover", label: "Nouvelles d\xE9couvertes", icon: "compass" }
+  ].map((tabItem) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: tabItem.id,
+      onClick: () => setAiFilter(tabItem.id),
+      className: `inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${aiFilter === tabItem.id ? "bg-navy text-white shadow-sm" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: tabItem.icon, size: 12 }),
+    tabItem.label
+  ))), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-slate-400" }, "Affinement automatique \xE0 chaque r\xE9servation & clic")), recommendations.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border-2 border-dashed border-slate-200 bg-white p-10 text-center" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-600 mb-3" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 22 })), /* @__PURE__ */ React.createElement("p", { className: "font-display font-bold text-ink" }, "Aucun espace dans cette cat\xE9gorie"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1 max-w-sm mx-auto" }, "R\xE9initialisez les filtres pour visualiser l'ensemble de votre s\xE9lection personnalis\xE9e."), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setAiFilter("all"),
+      className: "mt-4 inline-flex items-center gap-1.5 rounded-full bg-navy px-4 py-2 text-xs font-bold text-white hover:bg-ink transition"
+    },
+    "Voir toutes les suggestions"
+  )) : /* @__PURE__ */ React.createElement("div", { className: "grid gap-6 md:grid-cols-3" }, recommendations.map(({ s, score, reason, tags }, i) => /* @__PURE__ */ React.createElement(
+    "article",
+    {
+      key: s.id,
+      className: "group flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift",
+      "data-reveal": true,
+      style: { transitionDelay: `${i * 80}ms` }
+    },
+    /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "relative h-44 overflow-hidden" }, /* @__PURE__ */ React.createElement(
+      "img",
+      {
+        src: U(s.imgs[0], 600),
+        alt: s.name,
+        className: "h-full w-full object-cover transition duration-500 group-hover:scale-105"
+      }
+    ), /* @__PURE__ */ React.createElement("div", { className: "absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" }), /* @__PURE__ */ React.createElement("div", { className: "absolute left-3 top-3 flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-xs font-bold text-white shadow-md backdrop-blur" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 11, className: "text-amber-400" }), "Match ", score, "%")), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => toggleFav(s.id),
+        className: "absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-slate-600 backdrop-blur transition hover:scale-110 shadow-sm",
+        title: "Ajouter aux favoris"
+      },
+      /* @__PURE__ */ React.createElement(
+        Icon,
+        {
+          n: "heart",
+          size: 15,
+          fill: favs.has(s.id) ? "#E11D48" : "none",
+          className: favs.has(s.id) ? "text-rose-500" : "text-slate-600"
+        }
+      )
+    ), /* @__PURE__ */ React.createElement("div", { className: "absolute bottom-3 left-3 right-3 text-white" }, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-semibold text-slate-200 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 11 }), s.city, " \xB7 ", s.district))), /* @__PURE__ */ React.createElement("div", { className: "p-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2 mb-2" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-display text-base font-bold text-ink leading-tight" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-brand-700 mt-0.5" }, EUR.format(s.price), "/", s.unit)), /* @__PURE__ */ React.createElement(Ring, { v: score })), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex flex-wrap gap-1.5" }, tags.map((tag, idx) => /* @__PURE__ */ React.createElement(
+      "span",
+      {
+        key: idx,
+        className: "inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600"
+      },
+      tag
+    ))), /* @__PURE__ */ React.createElement("div", { className: "mt-3.5 rounded-2xl bg-brand-50/70 p-3 border border-brand-100/80" }, /* @__PURE__ */ React.createElement("p", { className: "flex items-start gap-2 text-xs leading-relaxed text-slate-700" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 13, className: "mt-0.5 shrink-0 text-brand-600" }), /* @__PURE__ */ React.createElement("span", null, reason))))),
+    /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-100 p-4 bg-slate-50/50 space-y-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between text-[11px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-slate-500" }, "Pertinence IA :"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => handleLikeRecommendation(s.id),
+        className: "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition font-bold",
+        title: "Indiquer que cette suggestion vous correspond"
+      },
+      /* @__PURE__ */ React.createElement(Icon, { n: "thumbs-up", size: 11, className: "text-emerald-600" }),
+      "Pertinent"
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => handleDislikeRecommendation(s.id),
+        className: "inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 transition",
+        title: "Retirer cet espace des suggestions"
+      },
+      /* @__PURE__ */ React.createElement(Icon, { n: "thumbs-down", size: 11 })
+    ))), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => {
+          SpotworkAPI.clickRecommendation(s.id);
+          nav({ name: "space", params: { id: s.id } });
+        },
+        className: "w-full inline-flex items-center justify-center gap-2 rounded-xl bg-navy py-2.5 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700"
+      },
+      /* @__PURE__ */ React.createElement(Icon, { n: "calendar-check", size: 13 }),
+      "D\xE9couvrir & R\xE9server"
+    ))
+  )))), tab === "favoris" && (favs.size === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center text-sm text-slate-400" }, "Aucun favori pour le moment \u2014 cliquez sur le \u2665 d'un espace.") : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, spaces.filter((s) => favs.has(s.id)).map((s) => /* @__PURE__ */ React.createElement(SpaceCard, { key: s.id, s, nav, favs, toggleFav })))), tab === "prefs" && /* @__PURE__ */ React.createElement("div", { className: "max-w-xl space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Notifications"), [["mail", "R\xE9capitulatifs par e-mail"], ["push", "Alertes de disponibilit\xE9 en temps r\xE9el"], ["news", "Newsletter mensuelle & bons plans"]].map(([k, l]) => /* @__PURE__ */ React.createElement("div", { key: k, className: "mt-4 flex items-center justify-between border-b border-slate-100 pb-4 last:border-0 last:pb-0" }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-600" }, l), /* @__PURE__ */ React.createElement(Toggle, { on: prefs[k], onClick: () => setPrefs({ ...prefs, [k]: !prefs[k] }) })))), /* @__PURE__ */ React.createElement("section", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Pr\xE9f\xE9rences de recherche"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Ville par d\xE9faut" }, /* @__PURE__ */ React.createElement("select", { value: prefs.city, onChange: (e) => setPrefs({ ...prefs, city: e.target.value }), className: inp }, CITIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c }, c)))), /* @__PURE__ */ React.createElement(Field, { label: "Type favori" }, /* @__PURE__ */ React.createElement("select", { value: prefs.type, onChange: (e) => setPrefs({ ...prefs, type: e.target.value }), className: inp }, TYPES.map((t) => /* @__PURE__ */ React.createElement("option", { key: t.id, value: t.id }, t.label))))), /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: handleSavePreferences,
@@ -2541,7 +2893,7 @@ const App = () => {
   };
   if (!ready) return /* @__PURE__ */ React.createElement("div", { className: "grid min-h-screen place-items-center bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 22 })), /* @__PURE__ */ React.createElement("p", { className: "mt-3 font-display font-bold" }, "Spotwork PropTech Maroc")));
   const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
-  return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList, bookings: allBookings }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && (isManagerOrAdmin ? /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList, bookings: allBookings, currentUser, userBookings }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList, bookings: allBookings }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && (isManagerOrAdmin ? /* @__PURE__ */ React.createElement(
     AdminDash,
     {
       nav,
