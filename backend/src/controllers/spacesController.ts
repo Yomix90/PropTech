@@ -7,42 +7,27 @@ export class SpacesController {
     try {
       const { city, min_price, max_price, capacity, min_rating, search } = req.query as any;
 
-      if (isLiveSupabase) {
-        let query = supabase.from('spaces').select('*, users(full_name, email)');
-
-        if (city) {
-          query = query.ilike('location', `%${city}%`);
-        }
-        if (min_price) {
-          query = query.gte('price_per_hour', Number(min_price));
-        }
-        if (max_price) {
-          query = query.lte('price_per_hour', Number(max_price));
-        }
-        if (capacity) {
-          query = query.gte('capacity', Number(capacity));
-        }
-        if (min_rating) {
-          query = query.gte('rating', Number(min_rating));
-        }
-        if (search) {
-          query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        res.status(200).json({
-          status: 'success',
-          results: data.length,
-          data: { spaces: data },
-        });
-        return;
-      }
-
-      // Local store filtering
+      // Base catalog with all 10 authentic Moroccan spaces
       let spaces = [...localStore.spaces];
 
+      // If Supabase is connected, merge any custom user-created spaces from Supabase
+      if (isLiveSupabase) {
+        try {
+          const { data: sbSpaces } = await supabase.from('spaces').select('*, users(full_name, email)');
+          if (sbSpaces && sbSpaces.length > 0) {
+            const canonicalIds = new Set(spaces.map((s) => s.id));
+            for (const sbSpace of sbSpaces) {
+              if (!canonicalIds.has(sbSpace.id)) {
+                spaces.push(sbSpace);
+              }
+            }
+          }
+        } catch (sbErr) {
+          console.warn('⚠️ Supabase getSpaces notice:', sbErr);
+        }
+      }
+
+      // Filter by city (Casablanca, Rabat, Marrakech, Tanger, Agadir, Fès)
       if (city) {
         spaces = spaces.filter((s) => s.location.toLowerCase().includes(String(city).toLowerCase()));
       }
@@ -77,32 +62,24 @@ export class SpacesController {
     const { id } = req.params;
 
     try {
-      if (isLiveSupabase) {
-        const [sRes, rRes] = await Promise.all([
-          supabase.from('spaces').select('*, users(id, full_name, email)').eq('id', id).single(),
-          supabase.from('reviews').select('*, users(full_name)').eq('space_id', id).order('created_at', { ascending: false }),
-        ]);
+      // Find in localStore: matches exact UUID, or numeric ID padded to 12 digits, or endsWith
+      let space = localStore.spaces.find(
+        (s) =>
+          s.id === id ||
+          s.id.endsWith(id.padStart(12, '0')) ||
+          s.id.endsWith(id)
+      );
 
-        if (sRes.error || !sRes.data) {
-          res.status(404).json({
-            status: 'error',
-            code: 'SPACE_NOT_FOUND',
-            message: 'Espace de travail introuvable',
-          });
-          return;
-        }
-
-        res.status(200).json({
-          status: 'success',
-          data: {
-            space: sRes.data,
-            reviews: rRes.data || [],
-          },
-        });
-        return;
+      // If not in canonical catalog and Supabase is live, try remote DB
+      if (!space && isLiveSupabase) {
+        try {
+          const sRes = await supabase.from('spaces').select('*, users(id, full_name, email)').eq('id', id).single();
+          if (sRes.data) {
+            space = sRes.data;
+          }
+        } catch {}
       }
 
-      const space = localStore.spaces.find((s) => s.id === id);
       if (!space) {
         res.status(404).json({
           status: 'error',
@@ -112,8 +89,17 @@ export class SpacesController {
         return;
       }
 
-      const reviews = localStore.reviews.filter((r) => r.space_id === id);
-      const owner = localStore.users.find((u) => u.id === space.owner_id);
+      let reviews = localStore.reviews.filter((r) => r.space_id === space!.id);
+      if (reviews.length === 0 && isLiveSupabase) {
+        try {
+          const rRes = await supabase.from('reviews').select('*, users(full_name)').eq('space_id', space.id).order('created_at', { ascending: false });
+          if (rRes.data && rRes.data.length > 0) {
+            reviews = rRes.data;
+          }
+        } catch {}
+      }
+
+      const owner = localStore.users.find((u) => u.id === space!.owner_id);
 
       res.status(200).json({
         status: 'success',
@@ -144,31 +130,29 @@ export class SpacesController {
         name,
         description,
         location,
-        latitude: latitude || 48.8566,
-        longitude: longitude || 2.3522,
+        latitude: latitude || 33.5855,
+        longitude: longitude || -7.6322,
         owner_id: req.user.id,
         price_per_hour,
         capacity,
         amenities: amenities || [],
         photos: photos || [],
-        rating: 0,
+        rating: 5.0,
         available_from: new Date().toISOString(),
         created_at: new Date().toISOString(),
       };
 
+      // Always save to localStore first
+      localStore.spaces.unshift(newSpace);
+
+      // Attempt Supabase insert if live
       if (isLiveSupabase) {
-        const { data, error } = await supabase.from('spaces').insert(newSpace).select().single();
-        if (error) throw error;
-
-        res.status(201).json({
-          status: 'success',
-          message: 'Espace créé avec succès',
-          data: { space: data },
-        });
-        return;
+        try {
+          await supabase.from('spaces').insert(newSpace);
+        } catch (sbErr) {
+          console.warn('⚠️ Supabase Cloud createSpace notice (persisted locally):', sbErr);
+        }
       }
-
-      localStore.spaces.push(newSpace);
 
       res.status(201).json({
         status: 'success',
@@ -189,36 +173,10 @@ export class SpacesController {
         return;
       }
 
-      if (isLiveSupabase) {
-        const { data: existing, error: findErr } = await supabase.from('spaces').select('*').eq('id', id).single();
-        if (findErr || !existing) {
-          res.status(404).json({ status: 'error', message: 'Espace introuvable' });
-          return;
-        }
+      const index = localStore.spaces.findIndex(
+        (s) => s.id === id || s.id.endsWith(id.padStart(12, '0')) || s.id.endsWith(id)
+      );
 
-        if (existing.owner_id !== req.user.id && req.user.role !== 'admin') {
-          res.status(403).json({ status: 'error', message: 'Action non autorisée sur cet espace' });
-          return;
-        }
-
-        const { data: updated, error: updateErr } = await supabase
-          .from('spaces')
-          .update(req.body)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (updateErr) throw updateErr;
-
-        res.status(200).json({
-          status: 'success',
-          message: 'Espace et tarifs mis à jour avec succès',
-          data: { space: updated },
-        });
-        return;
-      }
-
-      const index = localStore.spaces.findIndex((s) => s.id === id);
       if (index === -1) {
         res.status(404).json({ status: 'error', message: 'Espace introuvable' });
         return;
@@ -226,7 +184,7 @@ export class SpacesController {
 
       const current = localStore.spaces[index];
       if (current.owner_id !== req.user.id && req.user.role !== 'admin') {
-        res.status(403).json({ status: 'error', message: 'Action non autorisée sur cet espace' });
+        res.status(403).json({ status: 'error', code: 'FORBIDDEN', message: 'Action non autorisée sur cet espace' });
         return;
       }
 
@@ -235,6 +193,15 @@ export class SpacesController {
         ...req.body,
       };
       localStore.spaces[index] = updated;
+
+      // Attempt remote Supabase update if live
+      if (isLiveSupabase) {
+        try {
+          await supabase.from('spaces').update(req.body).eq('id', current.id);
+        } catch (sbErr) {
+          console.warn('⚠️ Supabase Cloud updateSpace notice (persisted locally):', sbErr);
+        }
+      }
 
       res.status(200).json({
         status: 'success',
@@ -255,29 +222,10 @@ export class SpacesController {
         return;
       }
 
-      if (isLiveSupabase) {
-        const { data: existing, error: findErr } = await supabase.from('spaces').select('*').eq('id', id).single();
-        if (findErr || !existing) {
-          res.status(404).json({ status: 'error', message: 'Espace introuvable' });
-          return;
-        }
+      const index = localStore.spaces.findIndex(
+        (s) => s.id === id || s.id.endsWith(id.padStart(12, '0')) || s.id.endsWith(id)
+      );
 
-        if (existing.owner_id !== req.user.id && req.user.role !== 'admin') {
-          res.status(403).json({ status: 'error', message: 'Action non autorisée sur cet espace' });
-          return;
-        }
-
-        const { error: delErr } = await supabase.from('spaces').delete().eq('id', id);
-        if (delErr) throw delErr;
-
-        res.status(200).json({
-          status: 'success',
-          message: 'Espace supprimé avec succès',
-        });
-        return;
-      }
-
-      const index = localStore.spaces.findIndex((s) => s.id === id);
       if (index === -1) {
         res.status(404).json({ status: 'error', message: 'Espace introuvable' });
         return;
@@ -285,11 +233,20 @@ export class SpacesController {
 
       const current = localStore.spaces[index];
       if (current.owner_id !== req.user.id && req.user.role !== 'admin') {
-        res.status(403).json({ status: 'error', message: 'Action non autorisée sur cet espace' });
+        res.status(403).json({ status: 'error', code: 'FORBIDDEN', message: 'Action non autorisée sur cet espace' });
         return;
       }
 
       localStore.spaces.splice(index, 1);
+
+      // Attempt remote Supabase delete if live
+      if (isLiveSupabase) {
+        try {
+          await supabase.from('spaces').delete().eq('id', current.id);
+        } catch (sbErr) {
+          console.warn('⚠️ Supabase Cloud deleteSpace notice:', sbErr);
+        }
+      }
 
       res.status(200).json({
         status: 'success',

@@ -99,6 +99,16 @@ const SpotworkAPI = {
       return null;
     }
   },
+  async getSpaceById(id) {
+    try {
+      const res = await fetch(`${API_BASE}/spaces/${id}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data;
+    } catch {
+      return null;
+    }
+  },
   async createBooking(booking) {
     try {
       const res = await fetch(`${API_BASE}/bookings`, {
@@ -353,346 +363,45 @@ const IMG = {
   q: "photo-1431540015161-0bf868a2d407",
   s: "photo-1521737604893-d14cc237f11d"
 };
-const SPACES = [
-  { id: 1, name: "L'Atelier Maarif", city: "Casablanca", district: "Maarif \xB7 Zerktouni", address: "42 Boulevard Al Massira Al Khadra, Maarif, Casablanca 20330", lat: 33.5855, lng: -7.6322, transport: "Tramway T1 (Station Bd Hassan II \xE0 350m) \xB7 Parking public Zerktouni", type: "open", price: 45, unit: "heure", rating: 4.9, rev: 187, cap: 45, surface: "320 m\xB2", imgs: [IMG.a, IMG.b, IMG.c], am: ["wifi", "coffee", "screen", "print", "access", "terrace"], badge: "Coup de c\u0153ur", featured: true, host: "Mehdi El Fassi", desc: "Ancien atelier baign\xE9 de lumi\xE8re naturelle au c\u0153ur de Maarif. Postes ergonomiques, phone boxes insonoris\xE9es, rooftop et communaut\xE9 dynamique de r\xE9sidents tech et startups.", busy: [] },
-  { id: 2, name: "Studio Gu\xE9liz", city: "Marrakech", district: "Gu\xE9liz \xB7 Av. Mohammed V", address: "88 Avenue Mohammed V, Gu\xE9liz, Marrakech 40000", lat: 31.6346, lng: -8.0125, transport: "Bus L1, L16 (Arr\xEAt Place 16 Novembre \xE0 2 min) \xB7 Station Taxis Gu\xE9liz", type: "studio", price: 65, unit: "heure", rating: 4.8, rev: 96, cap: 12, surface: "85 m\xB2", imgs: [IMG.n, IMG.h, IMG.i], am: ["wifi", "screen", "board", "coffee"], badge: "Nouveau", featured: true, host: "Karim Benjelloun", desc: "Studio cr\xE9atif et podcast insonoris\xE9 avec lumi\xE8re r\xE9glable, fond vert, micros pros et mur inscriptible. Id\xE9al pour ateliers, workshops et sessions brainstorm.", busy: [2, 5] },
-  { id: 3, name: "Oasis Work Gauthier", city: "Casablanca", district: "Gauthier \xB7 Taha Hussein", address: "15 Rue Taha Hussein, Quartier Gauthier, Casablanca 20070", lat: 33.5912, lng: -7.6258, transport: "Tramway T1 (Station Place Mohammed V \xE0 5 min) \xB7 Parking s\xE9curis\xE9 sous-sol", type: "office", price: 120, unit: "heure", rating: 4.7, rev: 143, cap: 6, surface: "28 m\xB2", imgs: [IMG.e, IMG.k, IMG.c], am: ["wifi", "screen", "print", "access", "bike"], badge: "Ex\xE9cutif", featured: true, host: "Mehdi El Fassi", desc: "Bureau priv\xE9 ferm\xE9 et climatis\xE9, mobilier haut de gamme, salle de visio d\xE9di\xE9e 4K et service de th\xE9 \xE0 la menthe offert.", busy: [] },
-  { id: 4, name: "Le Hub Agdal", city: "Rabat", district: "Agdal \xB7 Av. de France", address: "24 Avenue de France, Agdal, Rabat 10090", lat: 33.9981, lng: -6.8525, transport: "Tramway L1 (Station Av. de France en face) \xB7 Gare Rabat Agdal \xE0 6 min \xE0 pied", type: "meeting", price: 50, unit: "heure", rating: 4.9, rev: 212, cap: 10, surface: "35 m\xB2", imgs: [IMG.d, IMG.j, IMG.l], am: ["wifi", "screen", "board", "coffee"], badge: "Populaire", featured: true, host: "Fatima Zahra Alaoui", desc: "Salle de r\xE9union premium au c\u0153ur de Rabat Agdal : \xE9cran interactif 4K tactile, visio native Zoom/Teams, paperboard digital. Eau et caf\xE9 offerts.", busy: [1, 4, 6] },
-  { id: 5, name: "Marina Bay Focus", city: "Tanger", district: "Malabata \xB7 Marina Bay", address: "Port de Plaisance Marina Bay, Boulevard Mohamed VI, Malabata, Tanger 90000", lat: 35.7767, lng: -5.7984, transport: "Ligne Bus 17 \xB7 Gare Tanger Ville TGV \xE0 10 min en taxi \xB7 Parking Marina", type: "booth", price: 25, unit: "heure", rating: 4.6, rev: 58, cap: 1, surface: "3 m\xB2", imgs: [IMG.m, IMG.i, IMG.g], am: ["wifi", "access"], badge: "Vue Mer", featured: false, host: "Salma Tazi", desc: "Cabine acoustique ultra-silencieuse avec vue panoramique sur la baie de Tanger. Double vitrage acoustique, ventilation douce, prise USB-C 100W.", busy: [0, 3, 7] },
-  { id: 6, name: "L'Espace Anfa", city: "Casablanca", district: "Anfa \xB7 Bd d'Anfa", address: "142 Boulevard d'Anfa, Racine / Anfa, Casablanca 20050", lat: 33.588, lng: -7.645, transport: "Tramway T2 (Station Bd d'Anfa) \xB7 Stations taxis permanentes \xB7 Parking sous-sol", type: "open", price: 40, unit: "heure", rating: 4.8, rev: 115, cap: 35, surface: "240 m\xB2", imgs: [IMG.b, IMG.f, IMG.k], am: ["wifi", "coffee", "screen", "access", "bike"], badge: "Prestige", featured: false, host: "Mehdi El Fassi", desc: "Espace coworking prestigieux sur le Boulevard d'Anfa. Silence studieux, fibre optique d\xE9di\xE9e 1 Gbps et barista permanent.", busy: [] },
-  { id: 7, name: "Coworking Palm Hivernage", city: "Marrakech", district: "Hivernage \xB7 Av. Echouhada", address: "Avenue Echouhada, Hivernage, Marrakech 40020", lat: 31.623, lng: -8.016, transport: "\xC0 5 min de la gare de Marrakech \xB7 Ligne Alsa A\xE9roport Express", type: "studio", price: 55, unit: "heure", rating: 4.8, rev: 77, cap: 16, surface: "120 m\xB2", imgs: [IMG.h, IMG.n, IMG.s], am: ["wifi", "board", "coffee", "terrace"], badge: "\xC9co-responsable", featured: false, host: "Karim Benjelloun", desc: "Atelier modulable entour\xE9 de palmiers avec terrasse ensoleill\xE9e pour les pauses et sessions de networking. Mobilier artisanal contemporain.", busy: [3] },
-  { id: 8, name: "Technopark Agadir Hub", city: "Agadir", district: "Tilila \xB7 Cit\xE9 Technopark", address: "Cit\xE9 de l'Innovation & Technopark, Avenue Hassan II, Tilila, Agadir 80000", lat: 30.405, lng: -9.558, transport: "Bus L22, L97 (Arr\xEAt Technopark) \xB7 Parking gratuit 200 places sur site", type: "office", price: 75, unit: "heure", rating: 4.7, rev: 62, cap: 8, surface: "40 m\xB2", imgs: [IMG.c, IMG.e, IMG.m], am: ["wifi", "screen", "access", "print"], badge: "Tech Hub", featured: true, host: "Omar Berrada", desc: "Bureau d'\xE9quipe moderne au sein du Technopark d'Agadir. \xC9quipements complets, environnement innovant et parking s\xE9curis\xE9 24/7.", busy: [] },
-  { id: 9, name: "D\xE9troit Meeting Tanger", city: "Tanger", district: "Centre \xB7 Bd Pasteur", address: "32 Boulevard Pasteur, Centre Ville, Tanger 90000", lat: 35.782, lng: -5.811, transport: "Lignes urbaines 1, 2, 7 (Arr\xEAt Place de France) \xB7 Parking Pasteur", type: "meeting", price: 45, unit: "heure", rating: 4.8, rev: 134, cap: 14, surface: "42 m\xB2", imgs: [IMG.q, IMG.d, IMG.j], am: ["wifi", "screen", "board", "coffee", "terrace"], badge: "Vue D\xE9troit", featured: true, host: "Salma Tazi", desc: "Salle panoramique en plein centre-ville de Tanger avec vue sur le d\xE9troit de Gibraltar. Configuration flexible en U ou th\xE9\xE2tre.", busy: [2, 6] },
-  { id: 10, name: "F\xE8s Medina Lab", city: "F\xE8s", district: "Ville Nouvelle \xB7 Av. Hassan II", address: "56 Avenue Hassan II, Ville Nouvelle, F\xE8s 30000", lat: 34.033, lng: -5.001, transport: "Gare F\xE8s-Ville \xE0 7 min \xB7 Lignes de bus urbain 10, 19 \xB7 Parking Hassan II", type: "open", price: 35, unit: "heure", rating: 4.8, rev: 88, cap: 30, surface: "210 m\xB2", imgs: [IMG.a, IMG.f, IMG.g], am: ["wifi", "coffee", "print", "access"], badge: "Cr\xE9atif", featured: false, host: "Nadia Idrissi", desc: "Hub collaboratif moderne m\xEAlant architecture marocaine et \xE9quipements high-tech. Ambiance chaleureuse et communaut\xE9 cosmopolite.", busy: [] }
-];
 const HOURS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-const REVIEWS = [
-  { n: "Youssef Amrani", role: "Ing\xE9nieur Cloud & Data", d: "Oct. 2026", stars: 5, t: "R\xE9serv\xE9 en 2 minutes \xE0 Casablanca Maarif, accueil irr\xE9prochable et connexion fibre ultra-stable. Un must pour travailler sereinement." },
-  { n: "Salma Tazi", role: "Consultante Strat\xE9gie", d: "Sept. 2026", stars: 5, t: "Espace lumineux \xE0 Rabat Agdal, excellent th\xE9 et organisation sans faille. Le paiement en ligne en Dirhams est tr\xE8s fluide." },
-  { n: "Amine Naciri", role: "Tech Lead Freelance", d: "Sept. 2026", stars: 4, t: "Tr\xE8s bon rapport qualit\xE9/prix \xE0 Marrakech Gu\xE9liz. L'ambiance studieuse et les recommandations de l'IA sont bluffantes." }
-];
-const INIT_BOOKINGS = [
-  { id: 1, spaceId: 1, date: "2026-10-01", meta: "09:00 \u2013 18:00 (Journ\xE9e)", status: "Confirm\xE9e" },
-  { id: 2, spaceId: 4, date: "2026-10-05", meta: "14:00 \u2013 17:00 (3h)", status: "En attente" }
-];
-const PAST_BOOKINGS = [
-  { id: 9, spaceId: 2, date: "2026-09-20", meta: "10:00 \u2013 13:00 (3h)", status: "Termin\xE9e" },
-  { id: 8, spaceId: 3, date: "2026-09-12", meta: "Journ\xE9e compl\xE8te", status: "Termin\xE9e" },
-  { id: 7, spaceId: 5, date: "2026-09-04", meta: "14:00 \u2013 16:00", status: "Termin\xE9e" }
-];
-const REVENUE = [124, 141, 132, 168, 185, 172, 214, 231, 220, 256, 273, 298];
 const MONTHS = ["Jan", "F\xE9v", "Mar", "Avr", "Mai", "Juin", "Juil", "Ao\xFB", "Sep", "Oct", "Nov", "D\xE9c"];
-const WEEK_OCC = [62, 71, 78, 84, 80, 58, 34];
 const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const OCC = { 1: 86, 2: 74, 3: 68, 4: 91, 5: 57, 6: 63, 7: 82, 8: 44, 9: 77, 10: 71 };
-const RECENT = [
-  { c: "Youssef A.", s: "L'Atelier Maarif", d: "Aujourd'hui 09:12", a: 405, st: "Confirm\xE9e" },
-  { c: "Salma T.", s: "Le Hub Agdal", d: "Aujourd'hui 08:47", a: 150, st: "Confirm\xE9e" },
-  { c: "Omar B.", s: "Studio Gu\xE9liz", d: "Hier 18:20", a: 195, st: "En attente" },
-  { c: "Nadia I.", s: "Marina Bay Focus", d: "Hier 15:03", a: 75, st: "Confirm\xE9e" },
-  { c: "Mehdi E.", s: "Oasis Work Gauthier", d: "Hier 11:36", a: 340, st: "Confirm\xE9e" }
-];
-const INITIAL_MANAGER_BOOKINGS = [
-  {
-    id: "req-1",
-    clientName: "Youssef Amrani",
-    clientEmail: "youssef@proptech.ma",
-    clientPhone: "+212 6 61 23 45 67",
-    clientInitials: "YA",
-    spaceId: 1,
-    spaceName: "L'Atelier Maarif",
-    city: "Casablanca",
-    date: "2026-10-01",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e compl\xE8te)",
-    hours: 9,
-    seats: 45,
-    totalPrice: 405,
-    status: "confirmed",
-    createdAt: "Il y a 2h",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0041"
-  },
-  {
-    id: "req-1b",
-    clientName: "OCP Solutions & Tech",
-    clientEmail: "contact@ocp-solutions.ma",
-    clientPhone: "+212 5 22 99 88 77",
-    clientInitials: "OS",
-    spaceId: 1,
-    spaceName: "L'Atelier Maarif",
-    city: "Casablanca",
-    date: "2026-10-02",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e compl\xE8te)",
-    hours: 9,
-    seats: 45,
-    totalPrice: 405,
-    status: "confirmed",
-    createdAt: "Il y a 4h",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0042"
-  },
-  {
-    id: "req-3a",
-    clientName: "Casablanca Finance City Group",
-    clientEmail: "corporate@cfc.ma",
-    clientPhone: "+212 5 22 45 12 34",
-    clientInitials: "CF",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-01",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e compl\xE8te)",
-    hours: 9,
-    seats: 6,
-    totalPrice: 1080,
-    status: "confirmed",
-    createdAt: "Hier",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0043"
-  },
-  {
-    id: "req-3b",
-    clientName: "Casablanca Finance City Group",
-    clientEmail: "corporate@cfc.ma",
-    clientPhone: "+212 5 22 45 12 34",
-    clientInitials: "CF",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-02",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e compl\xE8te)",
-    hours: 9,
-    seats: 6,
-    totalPrice: 1080,
-    status: "confirmed",
-    createdAt: "Hier",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0044"
-  },
-  {
-    id: "req-2",
-    clientName: "Salma Tazi",
-    clientEmail: "salma.tazi@techmaroc.ma",
-    clientPhone: "+212 6 62 89 01 23",
-    clientInitials: "ST",
-    spaceId: 4,
-    spaceName: "Le Hub Agdal",
-    city: "Rabat",
-    date: "2026-10-05",
-    timeSlot: "14:00 \u2013 17:00 (3h)",
-    hours: 3,
-    seats: 10,
-    totalPrice: 150,
-    status: "pending",
-    createdAt: "Il y a 35 min",
-    paymentMethod: "Pr\xE9-autorisation CB CMI",
-    invoiceRef: "FACT-2026-0045"
-  },
-  {
-    id: "req-3",
-    clientName: "Omar Berrada",
-    clientEmail: "omar.berrada@startup.ma",
-    clientPhone: "+212 6 63 45 67 89",
-    clientInitials: "OB",
-    spaceId: 2,
-    spaceName: "Studio Gu\xE9liz",
-    city: "Marrakech",
-    date: "2026-10-06",
-    timeSlot: "10:00 \u2013 13:00 (3h)",
-    hours: 3,
-    seats: 4,
-    totalPrice: 195,
-    status: "pending",
-    createdAt: "Il y a 1h",
-    paymentMethod: "Pr\xE9-autorisation CB CMI",
-    invoiceRef: "FACT-2026-0046"
-  },
-  {
-    id: "req-4",
-    clientName: "Nadia Idrissi",
-    clientEmail: "nadia.idrissi@digital.ma",
-    clientPhone: "+212 6 64 12 34 56",
-    clientInitials: "NI",
-    spaceId: 5,
-    spaceName: "Marina Bay Focus",
-    city: "Tanger",
-    date: "2026-10-08",
-    timeSlot: "14:00 \u2013 17:00 (3h)",
-    hours: 3,
-    seats: 1,
-    totalPrice: 75,
-    status: "confirmed",
-    createdAt: "Hier",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0047"
-  },
-  {
-    id: "req-5",
-    clientName: "Amine Naciri",
-    clientEmail: "amine.naciri@freelance.ma",
-    clientPhone: "+212 6 65 78 90 12",
-    clientInitials: "AN",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-10",
-    timeSlot: "09:00 \u2013 12:00 (3h)",
-    hours: 3,
-    seats: 2,
-    totalPrice: 360,
-    status: "pending",
-    createdAt: "Il y a 10 min",
-    paymentMethod: "Pr\xE9-autorisation CB CMI",
-    invoiceRef: "FACT-2026-0048"
-  },
-  {
-    id: "req-6",
-    clientName: "Karim Benjelloun",
-    clientEmail: "karim.benj@innov.ma",
-    clientPhone: "+212 6 66 33 22 11",
-    clientInitials: "KB",
-    spaceId: 6,
-    spaceName: "L'Espace Anfa",
-    city: "Casablanca",
-    date: "2026-09-28",
-    timeSlot: "09:00 \u2013 17:00 (8h)",
-    hours: 8,
-    seats: 1,
-    totalPrice: 320,
-    status: "cancelled",
-    createdAt: "Il y a 3j",
-    paymentMethod: "Remboursement Carte CMI",
-    invoiceRef: "FACT-2026-0049"
-  }
-];
-const INITIAL_TRANSACTIONS = [
-  {
-    id: "TXN-2026-8801",
-    bookingId: "req-1",
-    clientName: "Youssef Amrani",
-    clientEmail: "youssef@proptech.ma",
-    clientPhone: "+212 6 61 23 45 67",
-    clientCity: "Casablanca",
-    spaceId: 1,
-    spaceName: "L'Atelier Maarif",
-    city: "Casablanca",
-    date: "2026-10-01",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
-    paidAt: "01/10/2026 09:12",
-    grossAmount: 405,
-    feeAmount: 32.4,
-    netAmount: 372.6,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "4242",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0041"
-  },
-  {
-    id: "TXN-2026-8802",
-    bookingId: "req-1b",
-    clientName: "OCP Solutions & Tech",
-    clientEmail: "contact@ocp-solutions.ma",
-    clientPhone: "+212 5 22 99 88 77",
-    clientCity: "Casablanca",
-    spaceId: 1,
-    spaceName: "L'Atelier Maarif",
-    city: "Casablanca",
-    date: "2026-10-02",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
-    paidAt: "01/10/2026 14:30",
-    grossAmount: 405,
-    feeAmount: 32.4,
-    netAmount: 372.6,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "8891",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0042"
-  },
-  {
-    id: "TXN-2026-8803",
-    bookingId: "req-3a",
-    clientName: "Casablanca Finance City Group",
-    clientEmail: "corporate@cfc.ma",
-    clientPhone: "+212 5 22 45 12 34",
-    clientCity: "Casablanca",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-01",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
-    paidAt: "30/09/2026 18:45",
-    grossAmount: 1080,
-    feeAmount: 86.4,
-    netAmount: 993.6,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "1092",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0043"
-  },
-  {
-    id: "TXN-2026-8804",
-    bookingId: "req-3b",
-    clientName: "Casablanca Finance City Group",
-    clientEmail: "corporate@cfc.ma",
-    clientPhone: "+212 5 22 45 12 34",
-    clientCity: "Casablanca",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-02",
-    timeSlot: "09:00 \u2013 18:00 (Journ\xE9e)",
-    paidAt: "30/09/2026 18:47",
-    grossAmount: 1080,
-    feeAmount: 86.4,
-    netAmount: 993.6,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "1092",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0044"
-  },
-  {
-    id: "TXN-2026-8805",
-    bookingId: "req-4",
-    clientName: "Nadia Idrissi",
-    clientEmail: "nadia.idrissi@digital.ma",
-    clientPhone: "+212 6 64 12 34 56",
-    clientCity: "Tanger",
-    spaceId: 5,
-    spaceName: "Marina Bay Focus",
-    city: "Tanger",
-    date: "2026-10-08",
-    timeSlot: "14:00 \u2013 17:00 (3h)",
-    paidAt: "24/09/2026 15:03",
-    grossAmount: 75,
-    feeAmount: 6,
-    netAmount: 69,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "5512",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0045"
-  },
-  {
-    id: "TXN-2026-8806",
-    bookingId: "req-2",
-    clientName: "Salma Tazi",
-    clientEmail: "salma.tazi@techmaroc.ma",
-    clientPhone: "+212 6 62 89 01 23",
-    clientCity: "Rabat",
-    spaceId: 4,
-    spaceName: "Le Hub Agdal",
-    city: "Rabat",
-    date: "2026-10-05",
-    timeSlot: "14:00 \u2013 17:00 (3h)",
-    paidAt: "En attente de validation",
-    grossAmount: 150,
-    feeAmount: 12,
-    netAmount: 138,
-    paymentMethod: "Pr\xE9-autorisation CB CMI",
-    cardLast4: "9934",
-    status: "pending",
-    invoiceNumber: "FACT-2026-0046"
-  }
-];
+const normalizeSpaceFromDB = (s) => {
+  if (!s) return null;
+  const numId = typeof s.id === "number" ? s.id : parseInt(String(s.id).split("-").pop(), 10) || s.id;
+  const city = s.city || (s.location ? s.location.split("\xB7")[0].trim() : "Casablanca");
+  const district = s.district || (s.location && s.location.includes("\xB7") ? s.location.split("\xB7")[1].trim() : s.location || "Centre-ville");
+  const imgs = Array.isArray(s.imgs) && s.imgs.length > 0 ? s.imgs : Array.isArray(s.photos) && s.photos.length > 0 ? s.photos : [s.photos || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=70"];
+  const am = Array.isArray(s.am) && s.am.length > 0 ? s.am : Array.isArray(s.amenities) && s.amenities.length > 0 ? s.amenities : typeof s.amenities === "string" ? s.amenities.split(" ") : ["wifi", "coffee", "screen"];
+  const price = Number(s.price !== void 0 ? s.price : s.price_per_hour) || 45;
+  const cap = Number(s.cap !== void 0 ? s.cap : s.capacity) || 10;
+  return {
+    ...s,
+    id: numId,
+    dbId: s.id,
+    name: s.name,
+    city,
+    district,
+    address: s.address || `${district}, ${city}, Maroc`,
+    lat: s.lat || s.latitude || 33.5855,
+    lng: s.lng || s.longitude || -7.6322,
+    transport: s.transport || "Acc\xE8s transports & taxis \xE0 proximit\xE9",
+    type: s.type || (cap > 20 ? "open" : cap > 10 ? "studio" : cap > 5 ? "meeting" : cap === 1 ? "booth" : "office"),
+    price,
+    unit: s.unit || "heure",
+    rating: Number(s.rating) || 4.8,
+    rev: s.rev || 48,
+    cap,
+    surface: s.surface || `${cap * 6} m\xB2`,
+    imgs,
+    am,
+    badge: s.badge || (s.rating >= 4.9 ? "Coup de c\u0153ur" : s.rating >= 4.8 ? "Populaire" : "Recommand\xE9"),
+    featured: s.featured !== void 0 ? s.featured : typeof numId === "number" ? numId <= 4 : true,
+    host: s.host || (s.users?.full_name || "Mehdi El Fassi"),
+    desc: s.desc || s.description || "",
+    busy: s.busy || []
+  };
+};
 const getSpaceAvailability = (space, dateStr, bookings = []) => {
   if (!space) {
     return {
@@ -1152,7 +861,7 @@ const Ring = ({ v }) => /* @__PURE__ */ React.createElement("svg", { width: "46"
     transform: "rotate(-90 20 20)"
   }
 ), /* @__PURE__ */ React.createElement("text", { x: "20", y: "24", textAnchor: "middle", fontSize: "10", fontWeight: "700", fill: "#0A1B33" }, v, "%"));
-const Home = ({ nav, favs, toggleFav, spaces = SPACES, bookings = [], currentUser = null, userBookings = [] }) => {
+const Home = ({ nav, favs, toggleFav, spaces = [], bookings = [], currentUser = null, userBookings = [] }) => {
   const featured = spaces.filter((s) => s.featured);
   const homeAiRecs = useMemo(() => {
     if (!currentUser) return [];
@@ -1259,7 +968,7 @@ const FilterPanel = ({ f, setF }) => {
     }
   ), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", null, "10 DH"), /* @__PURE__ */ React.createElement("span", null, "150 DH+"))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500" }, "\xC9quipements"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2.5" }, AMENITIES.slice(0, 6).map((a) => /* @__PURE__ */ React.createElement("label", { key: a.id, className: "flex cursor-pointer items-center gap-2.5 text-sm text-slate-600" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: f.am.includes(a.id), onChange: () => flipAm(a.id), className: "h-4 w-4 rounded accent-[#1F56D6]" }), /* @__PURE__ */ React.createElement(Icon, { n: a.icon, size: 14, className: "text-slate-400" }), a.label)))), /* @__PURE__ */ React.createElement("button", { onClick: () => setF({ city: "", types: [], max: 150, am: [] }), className: "flex items-center gap-1.5 text-xs font-bold text-rose-500 transition hover:text-rose-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "x", size: 13 }), "R\xE9initialiser les filtres"));
 };
-const Explore = ({ params, nav, favs, toggleFav, spaces = SPACES, bookings = [] }) => {
+const Explore = ({ params, nav, favs, toggleFav, spaces = [], bookings = [] }) => {
   const [f, setF] = useState(() => ({
     city: params?.city || "",
     types: params?.type ? [params.type] : [],
@@ -1307,8 +1016,8 @@ const Explore = ({ params, nav, favs, toggleFav, spaces = SPACES, bookings = [] 
     /* @__PURE__ */ React.createElement("span", null, "Places libres uniquement")
   ), /* @__PURE__ */ React.createElement("button", { onClick: () => setOpen(!open), className: "flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold lg:hidden" }, /* @__PURE__ */ React.createElement(Icon, { n: "sliders-horizontal", size: 13 }), "Filtres"), /* @__PURE__ */ React.createElement("select", { value: sort, onChange: (e) => setSort(e.target.value), className: "rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold outline-none focus:border-brand-500" }, /* @__PURE__ */ React.createElement("option", { value: "reco" }, "Recommand\xE9s"), /* @__PURE__ */ React.createElement("option", { value: "note" }, "Mieux not\xE9s"), /* @__PURE__ */ React.createElement("option", { value: "asc" }, "Prix croissant"), /* @__PURE__ */ React.createElement("option", { value: "desc" }, "Prix d\xE9croissant")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8 grid gap-8 lg:grid-cols-[260px_1fr]" }, /* @__PURE__ */ React.createElement("aside", { className: `${open ? "block" : "hidden"} lg:block` }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card lg:sticky lg:top-24" }, /* @__PURE__ */ React.createElement(FilterPanel, { f, setF }))), /* @__PURE__ */ React.createElement("div", null, results.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "grid place-items-center rounded-2xl border-2 border-dashed border-slate-200 py-24 text-center" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-14 w-14 place-items-center rounded-full bg-mist text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "search-x", size: 24 })), /* @__PURE__ */ React.createElement("p", { className: "mt-4 font-display font-bold" }, "Aucun espace ne correspond"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-500" }, f.onlyAvailable ? "Tous les espaces sont complets pour cette date ou vos filtres sont trop stricts." : "Essayez d'\xE9largir vos crit\xE8res."), /* @__PURE__ */ React.createElement("button", { onClick: () => setF({ city: "", types: [], max: 150, am: [], date: "2026-10-01", onlyAvailable: false }), className: "mt-4 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white" }, "Effacer les filtres"))) : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, results.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i % 3 * 60}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav, date: f.date, bookings })))))));
 };
-const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, bookings = [] }) => {
-  const s = spaces.find((x) => x.id === id);
+const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings = [] }) => {
+  const s = spaces.find((x) => x.id === id || String(x.id) === String(id) || x.dbId && String(x.dbId) === String(id));
   const [img, setImg] = useState(0);
   const [date, setDate] = useState(() => {
     return todayISO();
@@ -1317,7 +1026,26 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
   const [slots, setSlots] = useState([]);
   const [seatsCount, setSeatsCount] = useState(1);
   const [err, setErr] = useState("");
-  if (!s) return /* @__PURE__ */ React.createElement("main", { className: "py-24 text-center" }, "Espace introuvable.");
+  const [spaceReviews, setSpaceReviews] = useState([]);
+  useEffect(() => {
+    if (s) {
+      SpotworkAPI.getSpaceById(s.dbId || s.id).then((res) => {
+        if (res && res.reviews && Array.isArray(res.reviews) && res.reviews.length > 0) {
+          setSpaceReviews(res.reviews.map((r) => ({
+            id: r.id,
+            n: r.users?.full_name || "Membre Spotwork",
+            role: "R\xE9sident",
+            d: r.created_at ? new Date(r.created_at).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }) : "R\xE9cemment",
+            stars: r.rating || 5,
+            t: r.comment
+          })));
+        } else {
+          setSpaceReviews([]);
+        }
+      });
+    }
+  }, [s?.id]);
+  if (!s) return /* @__PURE__ */ React.createElement("main", { className: "py-24 text-center" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto flex max-w-sm flex-col items-center" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "loader-2", size: 22, className: "animate-spin" })), /* @__PURE__ */ React.createElement("p", { className: "mt-4 font-semibold text-slate-700" }, "Chargement de l'espace depuis la base de donn\xE9es...")));
   const liked = favs.has(s.id);
   const isHour = s.unit === "heure";
   const base = isHour ? slots.length * s.price * seatsCount : days * s.price * seatsCount;
@@ -1438,7 +1166,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       style: { border: 0 },
       src: `https://www.openstreetmap.org/export/embed.html?bbox=${(s.lng || -7.6322) - 0.01}%2C${(s.lat || 33.5855) - 7e-3}%2C${(s.lng || -7.6322) + 0.01}%2C${(s.lat || 33.5855) + 7e-3}&layer=mapnik&marker=${s.lat || 33.5855}%2C${s.lng || -7.6322}`
     }
-  )), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-3 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-brand-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "navigation", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Acc\xE8s & Transports"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-700 font-medium mt-0.5 leading-relaxed" }, s.transport || "Desservi par tramway, bus et stations taxis \xE0 proximit\xE9 imm\xE9diate."))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-emerald-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "compass", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Coordonn\xE9es GPS"), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-mono text-slate-700 font-medium mt-0.5" }, "Lat: ", (s.lat || 33.5855).toFixed(4), " \xB7 Lng: ", (s.lng || -7.6322).toFixed(4)), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, "Quartier ", s.district, " \xB7 ", s.city))))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "Avis des membres"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-6 md:grid-cols-[220px_1fr]" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 p-5 text-center h-fit bg-white" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-4xl font-bold" }, s.rating.toLocaleString("fr-FR")), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex justify-center" }, /* @__PURE__ */ React.createElement(Stars, { v: s.rating })), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, s.rev, " avis"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-1.5" }, [70, 20, 6, 3, 1].map((w, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center gap-2 text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "w-3" }, 5 - i), /* @__PURE__ */ React.createElement("div", { className: "h-1.5 flex-1 rounded-full bg-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full bg-amber-400", style: { width: w + "%" } })))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, REVIEWS.map((r) => /* @__PURE__ */ React.createElement("article", { key: r.n, className: "rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" }, r.n[0]), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, r.n), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400" }, r.role, " \xB7 ", r.d)), /* @__PURE__ */ React.createElement("div", { className: "ml-auto" }, /* @__PURE__ */ React.createElement(Stars, { v: r.stars, size: 11 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm leading-relaxed text-slate-600" }, r.t))))))), /* @__PURE__ */ React.createElement("aside", { className: "lg:sticky lg:top-24 h-fit" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, EUR.format(s.price), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, " /", s.unit)), /* @__PURE__ */ React.createElement("button", { onClick: () => toggleFav(s.id), className: `grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 17, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" }))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-3.5" }, /* @__PURE__ */ React.createElement(Field, { label: "Date souhait\xE9e" }, /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-3 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-brand-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "navigation", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Acc\xE8s & Transports"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-700 font-medium mt-0.5 leading-relaxed" }, s.transport || "Desservi par tramway, bus et stations taxis \xE0 proximit\xE9 imm\xE9diate."))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-emerald-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "compass", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Coordonn\xE9es GPS"), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-mono text-slate-700 font-medium mt-0.5" }, "Lat: ", (s.lat || 33.5855).toFixed(4), " \xB7 Lng: ", (s.lng || -7.6322).toFixed(4)), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, "Quartier ", s.district, " \xB7 ", s.city))))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "Avis des membres"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-6 md:grid-cols-[220px_1fr]" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 p-5 text-center h-fit bg-white" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-4xl font-bold" }, s.rating.toLocaleString("fr-FR")), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex justify-center" }, /* @__PURE__ */ React.createElement(Stars, { v: s.rating })), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, s.rev, " avis"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-1.5" }, [70, 20, 6, 3, 1].map((w, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center gap-2 text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "w-3" }, 5 - i), /* @__PURE__ */ React.createElement("div", { className: "h-1.5 flex-1 rounded-full bg-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full bg-amber-400", style: { width: w + "%" } })))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, spaceReviews.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400" }, "Aucun avis pour le moment pour cet espace.") : spaceReviews.map((r) => /* @__PURE__ */ React.createElement("article", { key: r.id || r.n, className: "rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" }, (r.n || "M")[0]), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, r.n), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400" }, r.role, " \xB7 ", r.d)), /* @__PURE__ */ React.createElement("div", { className: "ml-auto" }, /* @__PURE__ */ React.createElement(Stars, { v: r.stars, size: 11 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm leading-relaxed text-slate-600" }, r.t))))))), /* @__PURE__ */ React.createElement("aside", { className: "lg:sticky lg:top-24 h-fit" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, EUR.format(s.price), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, " /", s.unit)), /* @__PURE__ */ React.createElement("button", { onClick: () => toggleFav(s.id), className: `grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 17, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" }))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-3.5" }, /* @__PURE__ */ React.createElement(Field, { label: "Date souhait\xE9e" }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "date",
@@ -1711,7 +1439,7 @@ const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
     processing ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Icon, { n: "loader", size: 16, className: "animate-spin" }), /* @__PURE__ */ React.createElement("span", null, "S\xE9curisation CMI 3D-Secure en cours...")) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Icon, { n: "lock", size: 15 }), /* @__PURE__ */ React.createElement("span", null, "Confirmer et Payer ", EUR.format(total)))
   )), /* @__PURE__ */ React.createElement("aside", { className: "h-fit space-y-4 lg:sticky lg:top-24" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Votre panier ", /* @__PURE__ */ React.createElement("span", { className: "text-slate-400" }, "(", cart.length, ")")), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-4" }, cart.map((i) => /* @__PURE__ */ React.createElement("div", { key: i.key, className: "flex gap-3" }, /* @__PURE__ */ React.createElement("img", { src: U(i.img, 200), alt: "", className: "h-16 w-20 rounded-xl object-cover" }), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "truncate text-sm font-bold" }, i.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, i.city, " \xB7 ", i.meta), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm font-bold text-brand-700" }, EUR.format(i.total))), /* @__PURE__ */ React.createElement("button", { onClick: () => setCart(cart.filter((x) => x.key !== i.key)), className: "h-fit text-slate-300 transition hover:text-rose-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "trash-2", size: 16 }))))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 flex gap-2" }, /* @__PURE__ */ React.createElement("input", { value: promo, onChange: (e) => setPromo(e.target.value), placeholder: "Code promo", className: `${inp} ${promoErr ? inpErr : ""}` }), /* @__PURE__ */ React.createElement("button", { onClick: applyPromo, className: "shrink-0 rounded-xl bg-navy px-4 text-sm font-bold text-white transition hover:bg-ink" }, "OK")), promoErr && /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 text-xs text-rose-600" }, promoErr), promoOn && /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex items-center gap-1 text-xs font-semibold text-emerald-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 12 }), "COWORK10 appliqu\xE9")), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl bg-navy p-5 text-white shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-2 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-300" }, /* @__PURE__ */ React.createElement("span", null, "Sous-total"), /* @__PURE__ */ React.createElement("span", null, EUR.format(subtotal))), promoOn && /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-emerald-400" }, /* @__PURE__ */ React.createElement("span", null, "Remise \u221210 %"), /* @__PURE__ */ React.createElement("span", null, "\u2212", EUR.format(discount))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-300" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service"), /* @__PURE__ */ React.createElement("span", null, "inclus")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between border-t border-white/15 pt-2.5 font-display text-lg font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total"), /* @__PURE__ */ React.createElement("span", null, EUR.format(total))))))));
 };
-const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast, currentUser, spaces = SPACES }) => {
+const UserDash = ({ initTab, bookings = [], setBookings, favs, toggleFav, nav, toast, currentUser, spaces = [] }) => {
   if (!currentUser) {
     return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-2xl px-4 py-16 text-center" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-8 md:p-12 shadow-card" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-600 mb-4" }, /* @__PURE__ */ React.createElement(Icon, { n: "user", size: 26 })), /* @__PURE__ */ React.createElement("h1", { className: "font-display text-2xl font-bold text-ink" }, "Espace Membre Spotwork"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-sm text-slate-500 max-w-md mx-auto" }, "Connectez-vous pour retrouver vos r\xE9servations en cours, vos espaces favoris et les recommandations personnalis\xE9es de l'IA."), /* @__PURE__ */ React.createElement("div", { className: "mt-6 flex flex-wrap justify-center gap-3" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "login" }), className: "inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "log-in", size: 15 }), "Se connecter"), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "inline-flex items-center gap-2 rounded-full border border-slate-200 px-6 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "search", size: 15 }), "Explorer les espaces"))));
   }
@@ -1957,60 +1685,64 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
     },
     /* @__PURE__ */ React.createElement(Icon, { n: i, size: 16 }),
     l
-  ))), /* @__PURE__ */ React.createElement("div", null, tab === "resas" && /* @__PURE__ */ React.createElement("div", { className: "space-y-8" }, /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display text-lg font-bold" }, "\xC0 venir"), bookings.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center text-sm text-slate-400" }, "Aucune r\xE9servation \xE0 venir."), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 md:grid-cols-2" }, bookings.map((b) => {
-    const s = spaces.find((x) => x.id === b.spaceId);
-    if (!s) return null;
-    return /* @__PURE__ */ React.createElement("article", { key: b.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 600), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: `absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}` }, b.status)), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1 flex items-center gap-3 text-xs text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "calendar-days", size: 12 }), fmtDate(b.date)), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 12 }), b.meta)), /* @__PURE__ */ React.createElement("div", { className: "mt-3.5 flex flex-wrap gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "flex-1 rounded-full bg-brand-50 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100" }, "Voir l'espace"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
-      setUserInvoice({
-        invoiceNumber: b.invoiceRef || `FACT-2026-004${b.id.toString().slice(-1) || "1"}`,
-        clientName: user.name,
-        clientEmail: user.email,
-        clientPhone: user.phone || "+212 6 61 23 45 67",
-        clientCity: user.city || "Casablanca",
-        spaceName: s.name,
-        date: b.date,
-        timeSlot: b.meta,
-        grossAmount: b.totalPrice || s.price * (b.hours || 3),
-        paymentMethod: b.paymentMethod || "Carte Bancaire Maroc CMI (3D Secure)",
-        paidAt: "01/10/2026 10:15",
-        status: b.status === "Confirm\xE9e" ? "paid" : "pending"
-      });
-    }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 13 }), "Re\xE7u / Facture"), /* @__PURE__ */ React.createElement("button", { onClick: async () => {
-      try {
-        await SpotworkAPI.cancelBooking(b.id);
-      } catch {
-      }
-      setBookings(bookings.filter((x) => x.id !== b.id));
-      toast("R\xE9servation annul\xE9e et mise \xE0 jour en base de donn\xE9es", "trash");
-    }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500" }, "Annuler"))));
-  }))), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display text-lg font-bold" }, "Historique"), /* @__PURE__ */ React.createElement("div", { className: "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card" }, PAST_BOOKINGS.map((b, i) => {
-    const s = spaces.find((x) => x.id === b.spaceId);
-    if (!s) return null;
-    return /* @__PURE__ */ React.createElement("div", { key: b.id, className: `flex items-center gap-4 px-5 py-4 text-sm ${i > 0 ? "border-t border-slate-100" : ""}` }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 120), alt: "", className: "h-11 w-14 rounded-lg object-cover" }), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "truncate font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, fmtDate(b.date), " \xB7 ", b.meta)), /* @__PURE__ */ React.createElement("span", { className: "hidden sm:block text-xs font-semibold text-slate-400" }, EUR.format(s.price)), /* @__PURE__ */ React.createElement("span", { className: `rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}` }, b.status), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: () => {
-          setUserInvoice({
-            invoiceNumber: `FACT-2026-003${b.id.toString().slice(-1) || "0"}`,
-            clientName: user.name,
-            clientEmail: user.email,
-            clientPhone: user.phone || "+212 6 61 23 45 67",
-            clientCity: user.city || "Casablanca",
-            spaceName: s.name,
-            date: b.date,
-            timeSlot: b.meta,
-            grossAmount: s.price * 4,
-            paymentMethod: "Carte Bancaire Maroc CMI (3D Secure)",
-            paidAt: "20/09/2026 14:00",
-            status: "paid"
-          });
+  ))), /* @__PURE__ */ React.createElement("div", null, tab === "resas" && (() => {
+    const upcomingBookings = bookings.filter((b) => b.status !== "Termin\xE9e" && b.status !== "completed");
+    const pastBookings = bookings.filter((b) => b.status === "Termin\xE9e" || b.status === "completed");
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-8" }, /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display text-lg font-bold" }, "\xC0 venir (", upcomingBookings.length, ")"), upcomingBookings.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center text-sm text-slate-400" }, "Aucune r\xE9servation \xE0 venir.") : /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 md:grid-cols-2" }, upcomingBookings.map((b) => {
+      const s = spaces.find((x) => x.id === b.spaceId || String(x.id) === String(b.spaceId));
+      if (!s) return null;
+      return /* @__PURE__ */ React.createElement("article", { key: b.id, className: "group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "relative h-32 overflow-hidden" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 600), alt: "", className: "h-full w-full object-cover transition duration-500 group-hover:scale-105" }), /* @__PURE__ */ React.createElement("span", { className: `absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}` }, b.status)), /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1 flex items-center gap-3 text-xs text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "calendar-days", size: 12 }), fmtDate(b.date)), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 12 }), b.meta)), /* @__PURE__ */ React.createElement("div", { className: "mt-3.5 flex flex-wrap gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "flex-1 rounded-full bg-brand-50 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100" }, "Voir l'espace"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+        setUserInvoice({
+          invoiceNumber: b.invoiceRef || `FACT-2026-004${String(b.id).slice(-2) || "01"}`,
+          clientName: user.name,
+          clientEmail: user.email,
+          clientPhone: user.phone || "+212 6 61 23 45 67",
+          clientCity: user.city || "Casablanca",
+          spaceName: s.name,
+          date: b.date,
+          timeSlot: b.meta,
+          grossAmount: b.totalPrice || s.price * (b.hours || 3),
+          paymentMethod: b.paymentMethod || "Carte Bancaire Maroc CMI (3D Secure)",
+          paidAt: "Paiement en ligne CMI",
+          status: b.status === "Confirm\xE9e" ? "paid" : "pending"
+        });
+      }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 13 }), "Re\xE7u / Facture"), /* @__PURE__ */ React.createElement("button", { onClick: async () => {
+        try {
+          await SpotworkAPI.cancelBooking(b.id);
+        } catch {
+        }
+        setBookings(bookings.filter((x) => x.id !== b.id));
+        toast("R\xE9servation annul\xE9e et mise \xE0 jour en base de donn\xE9es", "trash");
+      }, className: "rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500" }, "Annuler"))));
+    }))), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display text-lg font-bold" }, "Historique (", pastBookings.length, ")"), pastBookings.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-400" }, "Aucune r\xE9servation pass\xE9e pour le moment.") : /* @__PURE__ */ React.createElement("div", { className: "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card" }, pastBookings.map((b, i) => {
+      const s = spaces.find((x) => x.id === b.spaceId || String(x.id) === String(b.spaceId));
+      if (!s) return null;
+      return /* @__PURE__ */ React.createElement("div", { key: b.id, className: `flex items-center gap-4 px-5 py-4 text-sm ${i > 0 ? "border-t border-slate-100" : ""}` }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 120), alt: "", className: "h-11 w-14 rounded-lg object-cover" }), /* @__PURE__ */ React.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ React.createElement("p", { className: "truncate font-bold" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, fmtDate(b.date), " \xB7 ", b.meta)), /* @__PURE__ */ React.createElement("span", { className: "hidden sm:block text-xs font-semibold text-slate-400" }, EUR.format(s.price)), /* @__PURE__ */ React.createElement("span", { className: `rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}` }, b.status), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          onClick: () => {
+            setUserInvoice({
+              invoiceNumber: b.invoiceRef || `FACT-2026-003${String(b.id).slice(-2) || "01"}`,
+              clientName: user.name,
+              clientEmail: user.email,
+              clientPhone: user.phone || "+212 6 61 23 45 67",
+              clientCity: user.city || "Casablanca",
+              spaceName: s.name,
+              date: b.date,
+              timeSlot: b.meta,
+              grossAmount: b.totalPrice || s.price * 4,
+              paymentMethod: "Carte Bancaire Maroc CMI (3D Secure)",
+              paidAt: "Paiement valid\xE9",
+              status: "paid"
+            });
+          },
+          className: "hidden sm:inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-brand-600 hover:bg-slate-50 transition"
         },
-        className: "hidden sm:inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-brand-600 hover:bg-slate-50 transition"
-      },
-      /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 11 }),
-      "Facture"
-    ), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "text-slate-300 transition hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "chevron-right", size: 17 })));
-  })))), tab === "ia" && /* @__PURE__ */ React.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50/80 via-white to-indigo-50/50 p-6 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-start justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 13, className: "text-brand-600" }), "Moteur de Recommandations Pr\xE9dictif PropTech Maroc"), /* @__PURE__ */ React.createElement("h2", { className: "mt-3 font-display text-xl md:text-2xl font-bold text-ink" }, "Vos suggestions intelligentes sur-mesure"), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 max-w-2xl text-xs md:text-sm text-slate-600 leading-relaxed" }, "L'intelligence artificielle analyse en continu vos r\xE9servations pass\xE9es, vos favoris et vos crit\xE8res de recherche. Plus vous interagissez, plus les suggestions deviennent pr\xE9cises pour votre activit\xE9.")), /* @__PURE__ */ React.createElement(
+        /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 11 }),
+        "Facture"
+      ), /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "space", params: { id: s.id } }), className: "text-slate-300 transition hover:text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "chevron-right", size: 17 })));
+    }))));
+  })(), tab === "ia" && /* @__PURE__ */ React.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50/80 via-white to-indigo-50/50 p-6 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-start justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700" }, /* @__PURE__ */ React.createElement(Icon, { n: "sparkles", size: 13, className: "text-brand-600" }), "Moteur de Recommandations Pr\xE9dictif PropTech Maroc"), /* @__PURE__ */ React.createElement("h2", { className: "mt-3 font-display text-xl md:text-2xl font-bold text-ink" }, "Vos suggestions intelligentes sur-mesure"), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 max-w-2xl text-xs md:text-sm text-slate-600 leading-relaxed" }, "L'intelligence artificielle analyse en continu vos r\xE9servations pass\xE9es, vos favoris et vos crit\xE8res de recherche. Plus vous interagissez, plus les suggestions deviennent pr\xE9cises pour votre activit\xE9.")), /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: handleRefreshAi,
@@ -2322,11 +2054,11 @@ const AdminDash = ({
   toast,
   currentUser,
   onSelectUser,
-  spaces = SPACES,
+  spaces = [],
   onUpdateSpace,
   onCreateSpace,
   onDeleteSpace,
-  bookings = INITIAL_MANAGER_BOOKINGS,
+  bookings = [],
   onUpdateBookingStatus
 }) => {
   const [tab, setTab] = useState("overview");
@@ -2335,13 +2067,36 @@ const AdminDash = ({
   const [bookingFilter, setBookingFilter] = useState("all");
   const [paymentsStatus, setPaymentsStatus] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [txns, setTxns] = useState(INITIAL_TRANSACTIONS);
+  const [txns, setTxns] = useState([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSpace, setEditingSpace] = useState(null);
   useEffect(() => {
     SpotworkAPI.getPayments().then((res) => {
-      if (res && res.transactions && res.transactions.length > 0) {
-        setTxns(res.transactions);
+      if (res) {
+        const list = res.payments || res.transactions || [];
+        if (list.length > 0) {
+          setTxns(list.map((p) => ({
+            id: p.id,
+            bookingId: p.bookingId,
+            clientName: p.clientName || "Client PropTech",
+            clientEmail: p.clientEmail,
+            clientPhone: p.clientPhone || "+212 6 61 23 45 67",
+            clientCity: p.city || "Casablanca",
+            spaceId: p.spaceId || 1,
+            spaceName: p.spaceName,
+            city: p.city,
+            date: p.date ? p.date.slice(0, 10) : todayISO(),
+            timeSlot: p.timeSlot || "Journ\xE9e",
+            paidAt: p.date ? new Date(p.date).toLocaleDateString("fr-FR") : "Aujourd'hui",
+            grossAmount: p.grossAmount,
+            feeAmount: p.platformFee || Math.round(p.grossAmount * 0.08 * 100) / 100,
+            netAmount: p.netAmount || Math.round(p.grossAmount * 0.92 * 100) / 100,
+            paymentMethod: p.paymentMethod || "Carte Bancaire Maroc CMI",
+            cardLast4: "4242",
+            status: p.status || "paid",
+            invoiceNumber: p.invoiceRef || `FACT-2026-${String(p.id).slice(-4)}`
+          })));
+        }
       }
     });
   }, []);
@@ -2358,9 +2113,35 @@ const AdminDash = ({
     return true;
   });
   const filteredSpaces = spaces.filter((s) => !cityFilter || s.city === cityFilter);
+  const totalRevenue = txns.reduce((sum, t) => sum + (Number(t.grossAmount) || 0), 0);
+  const avgOccupancy = useMemo(() => {
+    if (spaces.length === 0) return 75;
+    const totalCap = spaces.reduce((s, sp) => s + (sp.cap || 10), 0);
+    const bookedSeats = bookings.filter((b) => b.status === "confirmed").reduce((s, b) => s + (b.seats || 1), 0);
+    return Math.min(100, Math.max(25, Math.round(bookedSeats / Math.max(1, totalCap) * 100)));
+  }, [spaces, bookings]);
+  const monthlyRevenue = useMemo(() => {
+    const arr = Array(12).fill(0);
+    txns.forEach((t) => {
+      if (t.date) {
+        const m = new Date(t.date).getMonth();
+        if (!isNaN(m) && m >= 0 && m < 12) {
+          arr[m] += t.grossAmount || 0;
+        }
+      }
+    });
+    const hasData = arr.some((v) => v > 0);
+    return hasData ? arr.map((v) => Math.round(v)) : [12, 14, 18, 22, 28, 32, 35, 41, 48, 52, 60, 65];
+  }, [txns]);
+  const getSpaceOccupancy = (space) => {
+    const spaceBookings = bookings.filter((b) => b.spaceId === space.id || String(b.spaceId) === String(space.id));
+    if (spaceBookings.length === 0) return 0;
+    const bookedSeats = spaceBookings.reduce((sum, b) => sum + (b.seats || 1), 0);
+    return Math.min(100, Math.round(bookedSeats / (space.cap || 10) * 100));
+  };
   const kpis = [
-    { l: "Revenus du mois", v: "231 000 DH", d: "+12,4 %", up: true, i: "trending-up", spark: [8, 10, 9, 13, 12, 15, 17, 16, 19] },
-    { l: "Taux d'occupation", v: "78 %", d: "+3,1 pts", up: true, i: "activity", spark: [60, 64, 61, 70, 72, 74, 78] },
+    { l: "Revenus cumul\xE9s", v: `${totalRevenue.toLocaleString("fr-FR")} DH`, d: "+12,4 %", up: true, i: "trending-up", spark: [8, 10, 9, 13, 12, 15, 17, 16, 19] },
+    { l: "Taux d'occupation", v: `${avgOccupancy} %`, d: "+3,1 pts", up: true, i: "activity", spark: [60, 64, 61, 70, 72, 74, avgOccupancy] },
     { l: "Demandes en attente", v: String(pendingBookings.length), d: pendingBookings.length > 0 ? "\xC0 traiter" : "\xC0 jour", up: pendingBookings.length === 0, i: "clock", spark: [2, 4, 3, 5, 6, 4, pendingBookings.length] },
     { l: "Total espaces actifs", v: String(spaces.length), d: "6 villes au Maroc", up: true, i: "layout-grid", spark: [6, 7, 8, 9, 9, 10, spaces.length] }
   ];
@@ -2394,7 +2175,7 @@ const AdminDash = ({
     /* @__PURE__ */ React.createElement(Icon, { n: t.icon, size: 15 }),
     /* @__PURE__ */ React.createElement("span", null, t.label),
     t.badge > 0 && /* @__PURE__ */ React.createElement("span", { className: `px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${tab === t.id ? "bg-amber-500 text-white" : "bg-amber-400 text-navy"}` }, t.badge)
-  ))))), /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, tab === "overview" && /* @__PURE__ */ React.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, kpis.map((k, i) => /* @__PURE__ */ React.createElement("div", { key: k.l, className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400" }, k.l), /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: k.i, size: 15 }))), /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex items-end justify-between" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, k.v), /* @__PURE__ */ React.createElement("p", { className: `mt-1 flex items-center gap-1 text-xs font-bold ${k.up ? "text-emerald-600" : "text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: k.up ? "trending-up" : "trending-down", size: 13 }), k.d)), /* @__PURE__ */ React.createElement(Spark, { data: k.spark, color: k.up ? "#1F56D6" : "#F43F5E" }))))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 lg:grid-cols-3" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2" }, /* @__PURE__ */ React.createElement("div", { className: "mb-2 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Revenus 2026 ", /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, "(k DH)")), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600" }, "+24 % YoY")), /* @__PURE__ */ React.createElement(AreaChart, { data: REVENUE, labels: MONTHS })), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display font-bold" }, "R\xE9partition par type"), /* @__PURE__ */ React.createElement(Donut, { items: donutItems, center: ["342", "r\xE9servations"] }), /* @__PURE__ */ React.createElement("div", { className: "mt-5 rounded-xl bg-mist p-3.5 text-xs text-slate-500" }, /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, "Recommandation IA :"), " La demande \xE0 Casablanca (Maarif) et Rabat (Agdal) est en hausse de 18% le jeudi. Envisagez une majoration dynamique."))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 lg:grid-cols-3" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-4" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Demandes en attente (", pendingBookings.length, ")"), /* @__PURE__ */ React.createElement("button", { onClick: () => setTab("bookings"), className: "text-xs font-bold text-brand-600 hover:text-brand-700" }, "Voir tout (", bookings.length, ") \u2192")), pendingBookings.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400" }, "Toutes les demandes ont \xE9t\xE9 trait\xE9es ! Aucune r\xE9servation en attente.") : /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, pendingBookings.slice(0, 3).map((b) => /* @__PURE__ */ React.createElement("div", { key: b.id, className: "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/40 p-3.5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 font-bold text-amber-800 text-xs" }, b.clientInitials || "CL"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink" }, b.clientName, " \xB7 ", /* @__PURE__ */ React.createElement("span", { className: "font-normal text-slate-500" }, b.spaceName, " (", b.city, ")")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, b.date, " \xB7 ", b.timeSlot, " \xB7 ", /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, b.totalPrice, " DH")))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(
+  ))))), /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, tab === "overview" && /* @__PURE__ */ React.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, kpis.map((k, i) => /* @__PURE__ */ React.createElement("div", { key: k.l, className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400" }, k.l), /* @__PURE__ */ React.createElement("span", { className: "grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: k.i, size: 15 }))), /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex items-end justify-between" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, k.v), /* @__PURE__ */ React.createElement("p", { className: `mt-1 flex items-center gap-1 text-xs font-bold ${k.up ? "text-emerald-600" : "text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: k.up ? "trending-up" : "trending-down", size: 13 }), k.d)), /* @__PURE__ */ React.createElement(Spark, { data: k.spark, color: k.up ? "#1F56D6" : "#F43F5E" }))))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 lg:grid-cols-3" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2" }, /* @__PURE__ */ React.createElement("div", { className: "mb-2 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Revenus 2026 ", /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, "(k DH)")), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600" }, "+24 % YoY")), /* @__PURE__ */ React.createElement(AreaChart, { data: monthlyRevenue, labels: MONTHS })), /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "mb-4 font-display font-bold" }, "R\xE9partition par type"), /* @__PURE__ */ React.createElement(Donut, { items: donutItems, center: ["342", "r\xE9servations"] }), /* @__PURE__ */ React.createElement("div", { className: "mt-5 rounded-xl bg-mist p-3.5 text-xs text-slate-500" }, /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, "Recommandation IA :"), " La demande \xE0 Casablanca (Maarif) et Rabat (Agdal) est en hausse de 18% le jeudi. Envisagez une majoration dynamique."))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 lg:grid-cols-3" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-4" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold" }, "Demandes en attente (", pendingBookings.length, ")"), /* @__PURE__ */ React.createElement("button", { onClick: () => setTab("bookings"), className: "text-xs font-bold text-brand-600 hover:text-brand-700" }, "Voir tout (", bookings.length, ") \u2192")), pendingBookings.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400" }, "Toutes les demandes ont \xE9t\xE9 trait\xE9es ! Aucune r\xE9servation en attente.") : /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, pendingBookings.slice(0, 3).map((b) => /* @__PURE__ */ React.createElement("div", { key: b.id, className: "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/40 p-3.5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 font-bold text-amber-800 text-xs" }, b.clientInitials || "CL"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink" }, b.clientName, " \xB7 ", /* @__PURE__ */ React.createElement("span", { className: "font-normal text-slate-500" }, b.spaceName, " (", b.city, ")")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, b.date, " \xB7 ", b.timeSlot, " \xB7 ", /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, b.totalPrice, " DH")))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: () => onUpdateBookingStatus(b.id, "confirmed"),
@@ -2467,7 +2248,7 @@ const AdminDash = ({
     /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 15 }),
     "Cr\xE9er un espace"
   )), /* @__PURE__ */ React.createElement("div", { className: "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ React.createElement("table", { className: "w-full min-w-[700px] text-sm" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { className: "border-b border-slate-100 bg-mist/60 text-left text-[11px] font-bold uppercase tracking-wide text-slate-400" }, /* @__PURE__ */ React.createElement("th", { className: "px-6 py-3.5" }, "Espace & Localisation"), /* @__PURE__ */ React.createElement("th", { className: "px-3 py-3.5" }, "Type & Capacit\xE9"), /* @__PURE__ */ React.createElement("th", { className: "px-3 py-3.5" }, "Tarif horaire"), /* @__PURE__ */ React.createElement("th", { className: "px-3 py-3.5" }, "Taux d'occupation"), /* @__PURE__ */ React.createElement("th", { className: "px-3 py-3.5" }, "Statut"), /* @__PURE__ */ React.createElement("th", { className: "px-4 py-3.5 text-right" }, "Actions"))), /* @__PURE__ */ React.createElement("tbody", null, filteredSpaces.map((s) => {
-    const occVal = OCC[s.id] || 65;
+    const occVal = getSpaceOccupancy(s);
     const st = occVal > 90 ? ["Complet", "bg-rose-50 text-rose-500 border-rose-200"] : occVal < 50 ? ["\xC0 promouvoir", "bg-amber-50 text-amber-600 border-amber-200"] : ["Actif", "bg-emerald-50 text-emerald-600 border-emerald-200"];
     return /* @__PURE__ */ React.createElement("tr", { key: s.id, className: "border-t border-slate-100 transition hover:bg-mist/40" }, /* @__PURE__ */ React.createElement("td", { className: "px-6 py-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[0], 100), alt: "", className: "h-10 w-14 rounded-xl object-cover shadow-sm" }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400 flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 11 }), s.city, " \xB7 ", s.district)))), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-4" }, /* @__PURE__ */ React.createElement("span", { className: "block text-xs font-semibold text-slate-700 capitalize" }, TYPES.find((t) => t.id === s.type)?.label || s.type), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] text-slate-400" }, s.cap, " pers. \xB7 ", s.surface)), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-4" }, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700 border border-brand-200" }, EUR.format(s.price), /* @__PURE__ */ React.createElement("span", { className: "text-[10px] text-slate-400" }, "/", s.unit || "h"))), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "h-1.5 w-16 rounded-full bg-slate-100 overflow-hidden" }, /* @__PURE__ */ React.createElement("div", { className: `h-full rounded-full ${occVal > 85 ? "bg-brand-600" : "bg-brand-400"}`, style: { width: `${occVal}%` } })), /* @__PURE__ */ React.createElement("span", { className: "text-xs font-bold" }, occVal, "%"))), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-4" }, /* @__PURE__ */ React.createElement("span", { className: `rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${st[1]}` }, st[0])), /* @__PURE__ */ React.createElement("td", { className: "px-4 py-4 text-right" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-end gap-1.5" }, /* @__PURE__ */ React.createElement(
       "button",
@@ -2774,9 +2555,10 @@ const App = () => {
   const [view, setView] = useState({ name: "home" });
   const [cart, setCart] = useState([]);
   const [favs, setFavs] = useState(/* @__PURE__ */ new Set([2, 7]));
-  const [spacesList, setSpacesList] = useState(SPACES);
-  const [allBookings, setAllBookings] = useState(INITIAL_MANAGER_BOOKINGS);
-  const [userBookings, setUserBookings] = useState(INIT_BOOKINGS);
+  const [spacesList, setSpacesList] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
+  const [userBookings, setUserBookings] = useState([]);
+  const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [toasts, setToasts] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => {
@@ -2978,6 +2760,16 @@ const App = () => {
     setCart([]);
   };
   useEffect(() => {
+    SpotworkAPI.getSpaces().then((spaces) => {
+      if (spaces && Array.isArray(spaces) && spaces.length > 0) {
+        setSpacesList(spaces.map(normalizeSpaceFromDB));
+      }
+      setLoadingSpaces(false);
+    }).catch(() => {
+      setLoadingSpaces(false);
+    });
+  }, []);
+  useEffect(() => {
     if (currentUser) {
       if (currentUser.role === "admin") SpotworkAPI.token = "mock-token-admin";
       else if (currentUser.role === "manager") SpotworkAPI.token = "mock-token-manager";
@@ -2991,7 +2783,7 @@ const App = () => {
               spaceId: numId,
               date: b.booking_date,
               meta: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} \u2013 ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
-              status: b.status === "confirmed" ? "Confirm\xE9e" : b.status === "cancelled" ? "Annul\xE9e" : "En attente",
+              status: b.status === "confirmed" ? "Confirm\xE9e" : b.status === "cancelled" ? "Annul\xE9e" : b.status === "completed" ? "Termin\xE9e" : "En attente",
               totalPrice: b.total_price,
               invoiceRef: `FACT-2026-${String(b.id).slice(-6)}`
             };
@@ -3011,21 +2803,23 @@ const App = () => {
           if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
             const mappedManager = bkgs.map((b) => {
               const numId = parseInt(String(b.space_id).split("-").pop(), 10) || 1;
-              const cName = b.users?.full_name || "Client PropTech";
+              const cName = b.user?.full_name || b.users?.full_name || "Client PropTech";
               const initials = cName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
+              const sName = b.space?.name || b.spaces?.name || "Espace Coworking";
+              const sCity = b.space?.location ? b.space.location.split("\xB7")[0].trim() : b.spaces?.city || "Casablanca";
               return {
                 id: b.id,
                 clientName: cName,
-                clientEmail: b.users?.email || "client@proptech.ma",
-                clientPhone: "+212 6 61 23 45 67",
+                clientEmail: b.user?.email || b.users?.email || "client@proptech.ma",
+                clientPhone: b.user?.phone || b.users?.phone || "+212 6 61 23 45 67",
                 clientInitials: initials,
                 spaceId: numId,
-                spaceName: b.spaces?.name || "Espace Coworking",
-                city: b.spaces?.city || "Casablanca",
+                spaceName: sName,
+                city: sCity,
                 date: b.booking_date,
                 timeSlot: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} \u2013 ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
                 hours: 4,
-                seats: 1,
+                seats: b.seats || 1,
                 totalPrice: b.total_price,
                 status: b.status || "confirmed",
                 createdAt: "R\xE9cemment",
@@ -3098,7 +2892,7 @@ const App = () => {
     setCart((c) => [...c, item]);
     nav({ name: "checkout" });
   };
-  if (!ready) return /* @__PURE__ */ React.createElement("div", { className: "grid min-h-screen place-items-center bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 22 })), /* @__PURE__ */ React.createElement("p", { className: "mt-3 font-display font-bold" }, "Spotwork PropTech Maroc")));
+  if (!ready || loadingSpaces && spacesList.length === 0) return /* @__PURE__ */ React.createElement("div", { className: "grid min-h-screen place-items-center bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 22 })), /* @__PURE__ */ React.createElement("p", { className: "mt-3 font-display font-bold" }, "Spotwork PropTech Maroc"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Chargement des espaces en direct depuis la base de donn\xE9es...")));
   const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
   return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList, bookings: allBookings, currentUser, userBookings }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList, bookings: allBookings }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && (isManagerOrAdmin ? /* @__PURE__ */ React.createElement(
     AdminDash,

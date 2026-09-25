@@ -100,6 +100,16 @@ const SpotworkAPI = {
       return null;
     }
   },
+  async getSpaceById(id) {
+    try {
+      const res = await fetch(`${API_BASE}/spaces/${id}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data;
+    } catch {
+      return null;
+    }
+  },
   async createBooking(booking) {
     try {
       const res = await fetch(`${API_BASE}/bookings`, {
@@ -343,348 +353,55 @@ const IMG = {
   m: "photo-1593115057322-e94b77572f20", n: "photo-1541746972996-4e0b0f43e02a", q: "photo-1431540015161-0bf868a2d407",
   s: "photo-1521737604893-d14cc237f11d"
 };
-const SPACES = [
-  { id: 1, name: "L'Atelier Maarif", city: "Casablanca", district: "Maarif · Zerktouni", address: "42 Boulevard Al Massira Al Khadra, Maarif, Casablanca 20330", lat: 33.5855, lng: -7.6322, transport: "Tramway T1 (Station Bd Hassan II à 350m) · Parking public Zerktouni", type: "open", price: 45, unit: "heure", rating: 4.9, rev: 187, cap: 45, surface: "320 m²", imgs: [IMG.a, IMG.b, IMG.c], am: ["wifi", "coffee", "screen", "print", "access", "terrace"], badge: "Coup de cœur", featured: true, host: "Mehdi El Fassi", desc: "Ancien atelier baigné de lumière naturelle au cœur de Maarif. Postes ergonomiques, phone boxes insonorisées, rooftop et communauté dynamique de résidents tech et startups.", busy: [] },
-  { id: 2, name: "Studio Guéliz", city: "Marrakech", district: "Guéliz · Av. Mohammed V", address: "88 Avenue Mohammed V, Guéliz, Marrakech 40000", lat: 31.6346, lng: -8.0125, transport: "Bus L1, L16 (Arrêt Place 16 Novembre à 2 min) · Station Taxis Guéliz", type: "studio", price: 65, unit: "heure", rating: 4.8, rev: 96, cap: 12, surface: "85 m²", imgs: [IMG.n, IMG.h, IMG.i], am: ["wifi", "screen", "board", "coffee"], badge: "Nouveau", featured: true, host: "Karim Benjelloun", desc: "Studio créatif et podcast insonorisé avec lumière réglable, fond vert, micros pros et mur inscriptible. Idéal pour ateliers, workshops et sessions brainstorm.", busy: [2, 5] },
-  { id: 3, name: "Oasis Work Gauthier", city: "Casablanca", district: "Gauthier · Taha Hussein", address: "15 Rue Taha Hussein, Quartier Gauthier, Casablanca 20070", lat: 33.5912, lng: -7.6258, transport: "Tramway T1 (Station Place Mohammed V à 5 min) · Parking sécurisé sous-sol", type: "office", price: 120, unit: "heure", rating: 4.7, rev: 143, cap: 6, surface: "28 m²", imgs: [IMG.e, IMG.k, IMG.c], am: ["wifi", "screen", "print", "access", "bike"], badge: "Exécutif", featured: true, host: "Mehdi El Fassi", desc: "Bureau privé fermé et climatisé, mobilier haut de gamme, salle de visio dédiée 4K et service de thé à la menthe offert.", busy: [] },
-  { id: 4, name: "Le Hub Agdal", city: "Rabat", district: "Agdal · Av. de France", address: "24 Avenue de France, Agdal, Rabat 10090", lat: 33.9981, lng: -6.8525, transport: "Tramway L1 (Station Av. de France en face) · Gare Rabat Agdal à 6 min à pied", type: "meeting", price: 50, unit: "heure", rating: 4.9, rev: 212, cap: 10, surface: "35 m²", imgs: [IMG.d, IMG.j, IMG.l], am: ["wifi", "screen", "board", "coffee"], badge: "Populaire", featured: true, host: "Fatima Zahra Alaoui", desc: "Salle de réunion premium au cœur de Rabat Agdal : écran interactif 4K tactile, visio native Zoom/Teams, paperboard digital. Eau et café offerts.", busy: [1, 4, 6] },
-  { id: 5, name: "Marina Bay Focus", city: "Tanger", district: "Malabata · Marina Bay", address: "Port de Plaisance Marina Bay, Boulevard Mohamed VI, Malabata, Tanger 90000", lat: 35.7767, lng: -5.7984, transport: "Ligne Bus 17 · Gare Tanger Ville TGV à 10 min en taxi · Parking Marina", type: "booth", price: 25, unit: "heure", rating: 4.6, rev: 58, cap: 1, surface: "3 m²", imgs: [IMG.m, IMG.i, IMG.g], am: ["wifi", "access"], badge: "Vue Mer", featured: false, host: "Salma Tazi", desc: "Cabine acoustique ultra-silencieuse avec vue panoramique sur la baie de Tanger. Double vitrage acoustique, ventilation douce, prise USB-C 100W.", busy: [0, 3, 7] },
-  { id: 6, name: "L'Espace Anfa", city: "Casablanca", district: "Anfa · Bd d'Anfa", address: "142 Boulevard d'Anfa, Racine / Anfa, Casablanca 20050", lat: 33.5880, lng: -7.6450, transport: "Tramway T2 (Station Bd d'Anfa) · Stations taxis permanentes · Parking sous-sol", type: "open", price: 40, unit: "heure", rating: 4.8, rev: 115, cap: 35, surface: "240 m²", imgs: [IMG.b, IMG.f, IMG.k], am: ["wifi", "coffee", "screen", "access", "bike"], badge: "Prestige", featured: false, host: "Mehdi El Fassi", desc: "Espace coworking prestigieux sur le Boulevard d'Anfa. Silence studieux, fibre optique dédiée 1 Gbps et barista permanent.", busy: [] },
-  { id: 7, name: "Coworking Palm Hivernage", city: "Marrakech", district: "Hivernage · Av. Echouhada", address: "Avenue Echouhada, Hivernage, Marrakech 40020", lat: 31.6230, lng: -8.0160, transport: "À 5 min de la gare de Marrakech · Ligne Alsa Aéroport Express", type: "studio", price: 55, unit: "heure", rating: 4.8, rev: 77, cap: 16, surface: "120 m²", imgs: [IMG.h, IMG.n, IMG.s], am: ["wifi", "board", "coffee", "terrace"], badge: "Éco-responsable", featured: false, host: "Karim Benjelloun", desc: "Atelier modulable entouré de palmiers avec terrasse ensoleillée pour les pauses et sessions de networking. Mobilier artisanal contemporain.", busy: [3] },
-  { id: 8, name: "Technopark Agadir Hub", city: "Agadir", district: "Tilila · Cité Technopark", address: "Cité de l'Innovation & Technopark, Avenue Hassan II, Tilila, Agadir 80000", lat: 30.4050, lng: -9.5580, transport: "Bus L22, L97 (Arrêt Technopark) · Parking gratuit 200 places sur site", type: "office", price: 75, unit: "heure", rating: 4.7, rev: 62, cap: 8, surface: "40 m²", imgs: [IMG.c, IMG.e, IMG.m], am: ["wifi", "screen", "access", "print"], badge: "Tech Hub", featured: true, host: "Omar Berrada", desc: "Bureau d'équipe moderne au sein du Technopark d'Agadir. Équipements complets, environnement innovant et parking sécurisé 24/7.", busy: [] },
-  { id: 9, name: "Détroit Meeting Tanger", city: "Tanger", district: "Centre · Bd Pasteur", address: "32 Boulevard Pasteur, Centre Ville, Tanger 90000", lat: 35.7820, lng: -5.8110, transport: "Lignes urbaines 1, 2, 7 (Arrêt Place de France) · Parking Pasteur", type: "meeting", price: 45, unit: "heure", rating: 4.8, rev: 134, cap: 14, surface: "42 m²", imgs: [IMG.q, IMG.d, IMG.j], am: ["wifi", "screen", "board", "coffee", "terrace"], badge: "Vue Détroit", featured: true, host: "Salma Tazi", desc: "Salle panoramique en plein centre-ville de Tanger avec vue sur le détroit de Gibraltar. Configuration flexible en U ou théâtre.", busy: [2, 6] },
-  { id: 10, name: "Fès Medina Lab", city: "Fès", district: "Ville Nouvelle · Av. Hassan II", address: "56 Avenue Hassan II, Ville Nouvelle, Fès 30000", lat: 34.0330, lng: -5.0010, transport: "Gare Fès-Ville à 7 min · Lignes de bus urbain 10, 19 · Parking Hassan II", type: "open", price: 35, unit: "heure", rating: 4.8, rev: 88, cap: 30, surface: "210 m²", imgs: [IMG.a, IMG.f, IMG.g], am: ["wifi", "coffee", "print", "access"], badge: "Créatif", featured: false, host: "Nadia Idrissi", desc: "Hub collaboratif moderne mêlant architecture marocaine et équipements high-tech. Ambiance chaleureuse et communauté cosmopolite.", busy: [] }
-];
 const HOURS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-const REVIEWS = [
-  { n: "Youssef Amrani", role: "Ingénieur Cloud & Data", d: "Oct. 2026", stars: 5, t: "Réservé en 2 minutes à Casablanca Maarif, accueil irréprochable et connexion fibre ultra-stable. Un must pour travailler sereinement." },
-  { n: "Salma Tazi", role: "Consultante Stratégie", d: "Sept. 2026", stars: 5, t: "Espace lumineux à Rabat Agdal, excellent thé et organisation sans faille. Le paiement en ligne en Dirhams est très fluide." },
-  { n: "Amine Naciri", role: "Tech Lead Freelance", d: "Sept. 2026", stars: 4, t: "Très bon rapport qualité/prix à Marrakech Guéliz. L'ambiance studieuse et les recommandations de l'IA sont bluffantes." }
-];
-const INIT_BOOKINGS = [
-  { id: 1, spaceId: 1, date: "2026-10-01", meta: "09:00 – 18:00 (Journée)", status: "Confirmée" },
-  { id: 2, spaceId: 4, date: "2026-10-05", meta: "14:00 – 17:00 (3h)", status: "En attente" }
-];
-const PAST_BOOKINGS = [
-  { id: 9, spaceId: 2, date: "2026-09-20", meta: "10:00 – 13:00 (3h)", status: "Terminée" },
-  { id: 8, spaceId: 3, date: "2026-09-12", meta: "Journée complète", status: "Terminée" },
-  { id: 7, spaceId: 5, date: "2026-09-04", meta: "14:00 – 16:00", status: "Terminée" }
-];
-const REVENUE = [124, 141, 132, 168, 185, 172, 214, 231, 220, 256, 273, 298];
 const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
-const WEEK_OCC = [62, 71, 78, 84, 80, 58, 34];
 const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const OCC = { 1: 86, 2: 74, 3: 68, 4: 91, 5: 57, 6: 63, 7: 82, 8: 44, 9: 77, 10: 71 };
-const RECENT = [
-  { c: "Youssef A.", s: "L'Atelier Maarif", d: "Aujourd'hui 09:12", a: 405, st: "Confirmée" },
-  { c: "Salma T.", s: "Le Hub Agdal", d: "Aujourd'hui 08:47", a: 150, st: "Confirmée" },
-  { c: "Omar B.", s: "Studio Guéliz", d: "Hier 18:20", a: 195, st: "En attente" },
-  { c: "Nadia I.", s: "Marina Bay Focus", d: "Hier 15:03", a: 75, st: "Confirmée" },
-  { c: "Mehdi E.", s: "Oasis Work Gauthier", d: "Hier 11:36", a: 340, st: "Confirmée" }
-];
 
-const INITIAL_MANAGER_BOOKINGS = [
-  {
-    id: "req-1",
-    clientName: "Youssef Amrani",
-    clientEmail: "youssef@proptech.ma",
-    clientPhone: "+212 6 61 23 45 67",
-    clientInitials: "YA",
-    spaceId: 1,
-    spaceName: "L'Atelier Maarif",
-    city: "Casablanca",
-    date: "2026-10-01",
-    timeSlot: "09:00 – 18:00 (Journée complète)",
-    hours: 9,
-    seats: 45,
-    totalPrice: 405,
-    status: "confirmed",
-    createdAt: "Il y a 2h",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0041"
-  },
-  {
-    id: "req-1b",
-    clientName: "OCP Solutions & Tech",
-    clientEmail: "contact@ocp-solutions.ma",
-    clientPhone: "+212 5 22 99 88 77",
-    clientInitials: "OS",
-    spaceId: 1,
-    spaceName: "L'Atelier Maarif",
-    city: "Casablanca",
-    date: "2026-10-02",
-    timeSlot: "09:00 – 18:00 (Journée complète)",
-    hours: 9,
-    seats: 45,
-    totalPrice: 405,
-    status: "confirmed",
-    createdAt: "Il y a 4h",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0042"
-  },
-  {
-    id: "req-3a",
-    clientName: "Casablanca Finance City Group",
-    clientEmail: "corporate@cfc.ma",
-    clientPhone: "+212 5 22 45 12 34",
-    clientInitials: "CF",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-01",
-    timeSlot: "09:00 – 18:00 (Journée complète)",
-    hours: 9,
-    seats: 6,
-    totalPrice: 1080,
-    status: "confirmed",
-    createdAt: "Hier",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0043"
-  },
-  {
-    id: "req-3b",
-    clientName: "Casablanca Finance City Group",
-    clientEmail: "corporate@cfc.ma",
-    clientPhone: "+212 5 22 45 12 34",
-    clientInitials: "CF",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-02",
-    timeSlot: "09:00 – 18:00 (Journée complète)",
-    hours: 9,
-    seats: 6,
-    totalPrice: 1080,
-    status: "confirmed",
-    createdAt: "Hier",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0044"
-  },
-  {
-    id: "req-2",
-    clientName: "Salma Tazi",
-    clientEmail: "salma.tazi@techmaroc.ma",
-    clientPhone: "+212 6 62 89 01 23",
-    clientInitials: "ST",
-    spaceId: 4,
-    spaceName: "Le Hub Agdal",
-    city: "Rabat",
-    date: "2026-10-05",
-    timeSlot: "14:00 – 17:00 (3h)",
-    hours: 3,
-    seats: 10,
-    totalPrice: 150,
-    status: "pending",
-    createdAt: "Il y a 35 min",
-    paymentMethod: "Pré-autorisation CB CMI",
-    invoiceRef: "FACT-2026-0045"
-  },
-  {
-    id: "req-3",
-    clientName: "Omar Berrada",
-    clientEmail: "omar.berrada@startup.ma",
-    clientPhone: "+212 6 63 45 67 89",
-    clientInitials: "OB",
-    spaceId: 2,
-    spaceName: "Studio Guéliz",
-    city: "Marrakech",
-    date: "2026-10-06",
-    timeSlot: "10:00 – 13:00 (3h)",
-    hours: 3,
-    seats: 4,
-    totalPrice: 195,
-    status: "pending",
-    createdAt: "Il y a 1h",
-    paymentMethod: "Pré-autorisation CB CMI",
-    invoiceRef: "FACT-2026-0046"
-  },
-  {
-    id: "req-4",
-    clientName: "Nadia Idrissi",
-    clientEmail: "nadia.idrissi@digital.ma",
-    clientPhone: "+212 6 64 12 34 56",
-    clientInitials: "NI",
-    spaceId: 5,
-    spaceName: "Marina Bay Focus",
-    city: "Tanger",
-    date: "2026-10-08",
-    timeSlot: "14:00 – 17:00 (3h)",
-    hours: 3,
-    seats: 1,
-    totalPrice: 75,
-    status: "confirmed",
-    createdAt: "Hier",
-    paymentMethod: "Carte Bancaire CMI (3D Secure)",
-    invoiceRef: "FACT-2026-0047"
-  },
-  {
-    id: "req-5",
-    clientName: "Amine Naciri",
-    clientEmail: "amine.naciri@freelance.ma",
-    clientPhone: "+212 6 65 78 90 12",
-    clientInitials: "AN",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-10",
-    timeSlot: "09:00 – 12:00 (3h)",
-    hours: 3,
-    seats: 2,
-    totalPrice: 360,
-    status: "pending",
-    createdAt: "Il y a 10 min",
-    paymentMethod: "Pré-autorisation CB CMI",
-    invoiceRef: "FACT-2026-0048"
-  },
-  {
-    id: "req-6",
-    clientName: "Karim Benjelloun",
-    clientEmail: "karim.benj@innov.ma",
-    clientPhone: "+212 6 66 33 22 11",
-    clientInitials: "KB",
-    spaceId: 6,
-    spaceName: "L'Espace Anfa",
-    city: "Casablanca",
-    date: "2026-09-28",
-    timeSlot: "09:00 – 17:00 (8h)",
-    hours: 8,
-    seats: 1,
-    totalPrice: 320,
-    status: "cancelled",
-    createdAt: "Il y a 3j",
-    paymentMethod: "Remboursement Carte CMI",
-    invoiceRef: "FACT-2026-0049"
-  }
-];
-
-const INITIAL_TRANSACTIONS = [
-  {
-    id: "TXN-2026-8801",
-    bookingId: "req-1",
-    clientName: "Youssef Amrani",
-    clientEmail: "youssef@proptech.ma",
-    clientPhone: "+212 6 61 23 45 67",
-    clientCity: "Casablanca",
-    spaceId: 1,
-    spaceName: "L'Atelier Maarif",
-    city: "Casablanca",
-    date: "2026-10-01",
-    timeSlot: "09:00 – 18:00 (Journée)",
-    paidAt: "01/10/2026 09:12",
-    grossAmount: 405,
-    feeAmount: 32.40,
-    netAmount: 372.60,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "4242",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0041"
-  },
-  {
-    id: "TXN-2026-8802",
-    bookingId: "req-1b",
-    clientName: "OCP Solutions & Tech",
-    clientEmail: "contact@ocp-solutions.ma",
-    clientPhone: "+212 5 22 99 88 77",
-    clientCity: "Casablanca",
-    spaceId: 1,
-    spaceName: "L'Atelier Maarif",
-    city: "Casablanca",
-    date: "2026-10-02",
-    timeSlot: "09:00 – 18:00 (Journée)",
-    paidAt: "01/10/2026 14:30",
-    grossAmount: 405,
-    feeAmount: 32.40,
-    netAmount: 372.60,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "8891",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0042"
-  },
-  {
-    id: "TXN-2026-8803",
-    bookingId: "req-3a",
-    clientName: "Casablanca Finance City Group",
-    clientEmail: "corporate@cfc.ma",
-    clientPhone: "+212 5 22 45 12 34",
-    clientCity: "Casablanca",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-01",
-    timeSlot: "09:00 – 18:00 (Journée)",
-    paidAt: "30/09/2026 18:45",
-    grossAmount: 1080,
-    feeAmount: 86.40,
-    netAmount: 993.60,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "1092",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0043"
-  },
-  {
-    id: "TXN-2026-8804",
-    bookingId: "req-3b",
-    clientName: "Casablanca Finance City Group",
-    clientEmail: "corporate@cfc.ma",
-    clientPhone: "+212 5 22 45 12 34",
-    clientCity: "Casablanca",
-    spaceId: 3,
-    spaceName: "Oasis Work Gauthier",
-    city: "Casablanca",
-    date: "2026-10-02",
-    timeSlot: "09:00 – 18:00 (Journée)",
-    paidAt: "30/09/2026 18:47",
-    grossAmount: 1080,
-    feeAmount: 86.40,
-    netAmount: 993.60,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "1092",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0044"
-  },
-  {
-    id: "TXN-2026-8805",
-    bookingId: "req-4",
-    clientName: "Nadia Idrissi",
-    clientEmail: "nadia.idrissi@digital.ma",
-    clientPhone: "+212 6 64 12 34 56",
-    clientCity: "Tanger",
-    spaceId: 5,
-    spaceName: "Marina Bay Focus",
-    city: "Tanger",
-    date: "2026-10-08",
-    timeSlot: "14:00 – 17:00 (3h)",
-    paidAt: "24/09/2026 15:03",
-    grossAmount: 75,
-    feeAmount: 6.00,
-    netAmount: 69.00,
-    paymentMethod: "Carte Bancaire Maroc CMI",
-    cardLast4: "5512",
-    status: "paid",
-    invoiceNumber: "FACT-2026-0045"
-  },
-  {
-    id: "TXN-2026-8806",
-    bookingId: "req-2",
-    clientName: "Salma Tazi",
-    clientEmail: "salma.tazi@techmaroc.ma",
-    clientPhone: "+212 6 62 89 01 23",
-    clientCity: "Rabat",
-    spaceId: 4,
-    spaceName: "Le Hub Agdal",
-    city: "Rabat",
-    date: "2026-10-05",
-    timeSlot: "14:00 – 17:00 (3h)",
-    paidAt: "En attente de validation",
-    grossAmount: 150,
-    feeAmount: 12.00,
-    netAmount: 138.00,
-    paymentMethod: "Pré-autorisation CB CMI",
-    cardLast4: "9934",
-    status: "pending",
-    invoiceNumber: "FACT-2026-0046"
-  }
-];
+const normalizeSpaceFromDB = (s) => {
+  if (!s) return null;
+  const numId = typeof s.id === 'number' ? s.id : parseInt(String(s.id).split('-').pop(), 10) || s.id;
+  const city = s.city || (s.location ? s.location.split('·')[0].trim() : "Casablanca");
+  const district = s.district || (s.location && s.location.includes('·') ? s.location.split('·')[1].trim() : (s.location || "Centre-ville"));
+  const imgs = Array.isArray(s.imgs) && s.imgs.length > 0 
+    ? s.imgs 
+    : (Array.isArray(s.photos) && s.photos.length > 0 
+        ? s.photos 
+        : [s.photos || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=70"]);
+  const am = Array.isArray(s.am) && s.am.length > 0 
+    ? s.am 
+    : (Array.isArray(s.amenities) && s.amenities.length > 0 
+        ? s.amenities 
+        : (typeof s.amenities === 'string' ? s.amenities.split(' ') : ["wifi", "coffee", "screen"]));
+  const price = Number(s.price !== undefined ? s.price : s.price_per_hour) || 45;
+  const cap = Number(s.cap !== undefined ? s.cap : s.capacity) || 10;
+  
+  return {
+    ...s,
+    id: numId,
+    dbId: s.id,
+    name: s.name,
+    city,
+    district,
+    address: s.address || `${district}, ${city}, Maroc`,
+    lat: s.lat || s.latitude || 33.5855,
+    lng: s.lng || s.longitude || -7.6322,
+    transport: s.transport || "Accès transports & taxis à proximité",
+    type: s.type || (cap > 20 ? "open" : cap > 10 ? "studio" : cap > 5 ? "meeting" : cap === 1 ? "booth" : "office"),
+    price,
+    unit: s.unit || "heure",
+    rating: Number(s.rating) || 4.8,
+    rev: s.rev || 48,
+    cap,
+    surface: s.surface || `${cap * 6} m²`,
+    imgs,
+    am,
+    badge: s.badge || (s.rating >= 4.9 ? "Coup de cœur" : s.rating >= 4.8 ? "Populaire" : "Recommandé"),
+    featured: s.featured !== undefined ? s.featured : (typeof numId === 'number' ? numId <= 4 : true),
+    host: s.host || (s.users?.full_name || "Mehdi El Fassi"),
+    desc: s.desc || s.description || "",
+    busy: s.busy || []
+  };
+};
 
 /* ================= MOTEUR DE GESTION DU PLANNING & DES DISPONIBILITÉS ================= */
 const getSpaceAvailability = (space, dateStr, bookings = []) => {
@@ -1604,7 +1321,7 @@ const Ring = ({ v }) => (
 );
 
 /* ================= HOME ================= */
-const Home = ({ nav, favs, toggleFav, spaces = SPACES, bookings = [], currentUser = null, userBookings = [] }) => {
+const Home = ({ nav, favs, toggleFav, spaces = [], bookings = [], currentUser = null, userBookings = [] }) => {
   const featured = spaces.filter(s => s.featured);
 
   // Recommandations IA personnalisées pour la page d'accueil
@@ -1920,7 +1637,7 @@ const FilterPanel = ({ f, setF }) => {
   );
 };
 
-const Explore = ({ params, nav, favs, toggleFav, spaces = SPACES, bookings = [] }) => {
+const Explore = ({ params, nav, favs, toggleFav, spaces = [], bookings = [] }) => {
   const [f, setF] = useState(() => ({
     city: params?.city || "", types: params?.type ? [params.type] : [],
     max: params?.budget ? +params.budget : 150, am: [],
@@ -2023,8 +1740,8 @@ const Explore = ({ params, nav, favs, toggleFav, spaces = SPACES, bookings = [] 
 };
 
 /* ================= DÉTAIL ESPACE AVEC SYNCHRONISATION DES PLACES ET DU PLANNING ================= */
-const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, bookings = [] }) => {
-  const s = spaces.find(x => x.id === id);
+const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings = [] }) => {
+  const s = spaces.find(x => x.id === id || String(x.id) === String(id) || (x.dbId && String(x.dbId) === String(id)));
   const [img, setImg] = useState(0);
   const [date, setDate] = useState(() => {
     return todayISO();
@@ -2033,8 +1750,37 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
   const [slots, setSlots] = useState([]);
   const [seatsCount, setSeatsCount] = useState(1);
   const [err, setErr] = useState("");
+  const [spaceReviews, setSpaceReviews] = useState([]);
 
-  if (!s) return <main className="py-24 text-center">Espace introuvable.</main>;
+  useEffect(() => {
+    if (s) {
+      SpotworkAPI.getSpaceById(s.dbId || s.id).then(res => {
+        if (res && res.reviews && Array.isArray(res.reviews) && res.reviews.length > 0) {
+          setSpaceReviews(res.reviews.map(r => ({
+            id: r.id,
+            n: r.users?.full_name || "Membre Spotwork",
+            role: "Résident",
+            d: r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : "Récemment",
+            stars: r.rating || 5,
+            t: r.comment
+          })));
+        } else {
+          setSpaceReviews([]);
+        }
+      });
+    }
+  }, [s?.id]);
+
+  if (!s) return (
+    <main className="py-24 text-center">
+      <div className="mx-auto flex max-w-sm flex-col items-center">
+        <span className="grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white">
+          <Icon n="loader-2" size={22} className="animate-spin" />
+        </span>
+        <p className="mt-4 font-semibold text-slate-700">Chargement de l'espace depuis la base de données...</p>
+      </div>
+    </main>
+  );
   const liked = favs.has(s.id);
   const isHour = s.unit === "heure";
   const base = isHour ? slots.length * s.price * seatsCount : days * s.price * seatsCount;
@@ -2320,16 +2066,22 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
                 </div>
               </div>
               <div className="space-y-4">
-                {REVIEWS.map(r => (
-                  <article key={r.n} className="rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs">
-                    <div className="flex items-center gap-3">
-                      <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{r.n[0]}</span>
-                      <div><p className="text-sm font-bold">{r.n}</p><p className="text-[11px] text-slate-400">{r.role} · {r.d}</p></div>
-                      <div className="ml-auto"><Stars v={r.stars} size={11} /></div>
-                    </div>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-600">{r.t}</p>
-                  </article>
-                ))}
+                {spaceReviews.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
+                    Aucun avis pour le moment pour cet espace.
+                  </div>
+                ) : (
+                  spaceReviews.map(r => (
+                    <article key={r.id || r.n} className="rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs">
+                      <div className="flex items-center gap-3">
+                        <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{(r.n || "M")[0]}</span>
+                        <div><p className="text-sm font-bold">{r.n}</p><p className="text-[11px] text-slate-400">{r.role} · {r.d}</p></div>
+                        <div className="ml-auto"><Stars v={r.stars} size={11} /></div>
+                      </div>
+                      <p className="mt-3 text-sm leading-relaxed text-slate-600">{r.t}</p>
+                    </article>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -2932,7 +2684,7 @@ const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
 };
 
 /* ================= DASHBOARD CLIENT ================= */
-const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast, currentUser, spaces = SPACES }) => {
+const UserDash = ({ initTab, bookings = [], setBookings, favs, toggleFav, nav, toast, currentUser, spaces = [] }) => {
   if (!currentUser) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
@@ -3241,103 +2993,116 @@ const UserDash = ({ initTab, bookings, setBookings, favs, toggleFav, nav, toast,
           ))}
         </nav>
         <div>
-          {tab === "resas" && (
-            <div className="space-y-8">
-              <section>
-                <h2 className="mb-4 font-display text-lg font-bold">À venir</h2>
-                {bookings.length === 0 && <p className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">Aucune réservation à venir.</p>}
-                <div className="grid gap-4 md:grid-cols-2">
-                  {bookings.map(b => {
-                    const s = spaces.find(x => x.id === b.spaceId); if (!s) return null;
-                    return (
-                      <article key={b.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-lift">
-                        <div className="relative h-32 overflow-hidden">
-                          <img src={U(s.imgs[0], 600)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                          <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}`}>{b.status}</span>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-display font-bold">{s.name}</h3>
-                          <p className="mt-1 flex items-center gap-3 text-xs text-slate-500">
-                            <span className="flex items-center gap-1"><Icon n="calendar-days" size={12} />{fmtDate(b.date)}</span>
-                            <span className="flex items-center gap-1"><Icon n="clock" size={12} />{b.meta}</span>
-                          </p>
-                          <div className="mt-3.5 flex flex-wrap gap-2">
-                            <button onClick={() => nav({ name: "space", params: { id: s.id } })} className="flex-1 rounded-full bg-brand-50 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100">Voir l'espace</button>
-                            <button onClick={() => {
-                              setUserInvoice({
-                                invoiceNumber: b.invoiceRef || `FACT-2026-004${b.id.toString().slice(-1) || '1'}`,
-                                clientName: user.name,
-                                clientEmail: user.email,
-                                clientPhone: user.phone || "+212 6 61 23 45 67",
-                                clientCity: user.city || "Casablanca",
-                                spaceName: s.name,
-                                date: b.date,
-                                timeSlot: b.meta,
-                                grossAmount: b.totalPrice || (s.price * (b.hours || 3)),
-                                paymentMethod: b.paymentMethod || "Carte Bancaire Maroc CMI (3D Secure)",
-                                paidAt: "01/10/2026 10:15",
-                                status: b.status === "Confirmée" ? "paid" : "pending"
-                              });
-                            }} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1">
-                              <Icon n="file-text" size={13} />Reçu / Facture
+          {tab === "resas" && (() => {
+            const upcomingBookings = bookings.filter(b => b.status !== "Terminée" && b.status !== "completed");
+            const pastBookings = bookings.filter(b => b.status === "Terminée" || b.status === "completed");
+            return (
+              <div className="space-y-8">
+                <section>
+                  <h2 className="mb-4 font-display text-lg font-bold">À venir ({upcomingBookings.length})</h2>
+                  {upcomingBookings.length === 0 ? (
+                    <p className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">Aucune réservation à venir.</p>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {upcomingBookings.map(b => {
+                        const s = spaces.find(x => x.id === b.spaceId || String(x.id) === String(b.spaceId)); if (!s) return null;
+                        return (
+                          <article key={b.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-lift">
+                            <div className="relative h-32 overflow-hidden">
+                              <img src={U(s.imgs[0], 600)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                              <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}`}>{b.status}</span>
+                            </div>
+                            <div className="p-4">
+                              <h3 className="font-display font-bold">{s.name}</h3>
+                              <p className="mt-1 flex items-center gap-3 text-xs text-slate-500">
+                                <span className="flex items-center gap-1"><Icon n="calendar-days" size={12} />{fmtDate(b.date)}</span>
+                                <span className="flex items-center gap-1"><Icon n="clock" size={12} />{b.meta}</span>
+                              </p>
+                              <div className="mt-3.5 flex flex-wrap gap-2">
+                                <button onClick={() => nav({ name: "space", params: { id: s.id } })} className="flex-1 rounded-full bg-brand-50 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100">Voir l'espace</button>
+                                <button onClick={() => {
+                                  setUserInvoice({
+                                    invoiceNumber: b.invoiceRef || `FACT-2026-004${String(b.id).slice(-2) || '01'}`,
+                                    clientName: user.name,
+                                    clientEmail: user.email,
+                                    clientPhone: user.phone || "+212 6 61 23 45 67",
+                                    clientCity: user.city || "Casablanca",
+                                    spaceName: s.name,
+                                    date: b.date,
+                                    timeSlot: b.meta,
+                                    grossAmount: b.totalPrice || (s.price * (b.hours || 3)),
+                                    paymentMethod: b.paymentMethod || "Carte Bancaire Maroc CMI (3D Secure)",
+                                    paidAt: "Paiement en ligne CMI",
+                                    status: b.status === "Confirmée" ? "paid" : "pending"
+                                  });
+                                }} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 flex items-center gap-1">
+                                  <Icon n="file-text" size={13} />Reçu / Facture
+                                </button>
+                                <button onClick={async () => {
+                                  try {
+                                    await SpotworkAPI.cancelBooking(b.id);
+                                  } catch { }
+                                  setBookings(bookings.filter(x => x.id !== b.id));
+                                  toast("Réservation annulée et mise à jour en base de données", "trash");
+                                }} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500">Annuler</button>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+                <section>
+                  <h2 className="mb-4 font-display text-lg font-bold">Historique ({pastBookings.length})</h2>
+                  {pastBookings.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-400">
+                      Aucune réservation passée pour le moment.
+                    </div>
+                  ) : (
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
+                      {pastBookings.map((b, i) => {
+                        const s = spaces.find(x => x.id === b.spaceId || String(x.id) === String(b.spaceId)); if (!s) return null;
+                        return (
+                          <div key={b.id} className={`flex items-center gap-4 px-5 py-4 text-sm ${i > 0 ? "border-t border-slate-100" : ""}`}>
+                            <img src={U(s.imgs[0], 120)} alt="" className="h-11 w-14 rounded-lg object-cover" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-bold">{s.name}</p>
+                              <p className="text-xs text-slate-400">{fmtDate(b.date)} · {b.meta}</p>
+                            </div>
+                            <span className="hidden sm:block text-xs font-semibold text-slate-400">{EUR.format(s.price)}</span>
+                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}`}>{b.status}</span>
+                            <button
+                              onClick={() => {
+                                setUserInvoice({
+                                  invoiceNumber: b.invoiceRef || `FACT-2026-003${String(b.id).slice(-2) || '01'}`,
+                                  clientName: user.name,
+                                  clientEmail: user.email,
+                                  clientPhone: user.phone || "+212 6 61 23 45 67",
+                                  clientCity: user.city || "Casablanca",
+                                  spaceName: s.name,
+                                  date: b.date,
+                                  timeSlot: b.meta,
+                                  grossAmount: b.totalPrice || (s.price * 4),
+                                  paymentMethod: "Carte Bancaire Maroc CMI (3D Secure)",
+                                  paidAt: "Paiement validé",
+                                  status: "paid"
+                                });
+                              }}
+                              className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-brand-600 hover:bg-slate-50 transition"
+                            >
+                              <Icon n="file-text" size={11} />Facture
                             </button>
-                            <button onClick={async () => {
-                              try {
-                                await SpotworkAPI.cancelBooking(b.id);
-                              } catch { }
-                              setBookings(bookings.filter(x => x.id !== b.id));
-                              toast("Réservation annulée et mise à jour en base de données", "trash");
-                            }} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-500">Annuler</button>
+                            <button onClick={() => nav({ name: "space", params: { id: s.id } })} className="text-slate-300 transition hover:text-brand-600"><Icon n="chevron-right" size={17} /></button>
                           </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </section>
-              <section>
-                <h2 className="mb-4 font-display text-lg font-bold">Historique</h2>
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
-                  {PAST_BOOKINGS.map((b, i) => {
-                    const s = spaces.find(x => x.id === b.spaceId); if (!s) return null;
-                    return (
-                      <div key={b.id} className={`flex items-center gap-4 px-5 py-4 text-sm ${i > 0 ? "border-t border-slate-100" : ""}`}>
-                        <img src={U(s.imgs[0], 120)} alt="" className="h-11 w-14 rounded-lg object-cover" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-bold">{s.name}</p>
-                          <p className="text-xs text-slate-400">{fmtDate(b.date)} · {b.meta}</p>
-                        </div>
-                        <span className="hidden sm:block text-xs font-semibold text-slate-400">{EUR.format(s.price)}</span>
-                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${stColor(b.status)}`}>{b.status}</span>
-                        <button
-                          onClick={() => {
-                            setUserInvoice({
-                              invoiceNumber: `FACT-2026-003${b.id.toString().slice(-1) || '0'}`,
-                              clientName: user.name,
-                              clientEmail: user.email,
-                              clientPhone: user.phone || "+212 6 61 23 45 67",
-                              clientCity: user.city || "Casablanca",
-                              spaceName: s.name,
-                              date: b.date,
-                              timeSlot: b.meta,
-                              grossAmount: s.price * 4,
-                              paymentMethod: "Carte Bancaire Maroc CMI (3D Secure)",
-                              paidAt: "20/09/2026 14:00",
-                              status: "paid"
-                            });
-                          }}
-                          className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-brand-600 hover:bg-slate-50 transition"
-                        >
-                          <Icon n="file-text" size={11} />Facture
-                        </button>
-                        <button onClick={() => nav({ name: "space", params: { id: s.id } })} className="text-slate-300 transition hover:text-brand-600"><Icon n="chevron-right" size={17} /></button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            </div>
-          )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              </div>
+            );
+          })()}
           {tab === "ia" && (
             <div className="space-y-6">
               {/* Carte Synthèse & Niveau d'apprentissage du Profil IA */}
@@ -3960,11 +3725,11 @@ const AdminDash = ({
   toast,
   currentUser,
   onSelectUser,
-  spaces = SPACES,
+  spaces = [],
   onUpdateSpace,
   onCreateSpace,
   onDeleteSpace,
-  bookings = INITIAL_MANAGER_BOOKINGS,
+  bookings = [],
   onUpdateBookingStatus
 }) => {
   const [tab, setTab] = useState("overview");
@@ -3973,14 +3738,37 @@ const AdminDash = ({
   const [bookingFilter, setBookingFilter] = useState("all");
   const [paymentsStatus, setPaymentsStatus] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [txns, setTxns] = useState(INITIAL_TRANSACTIONS);
+  const [txns, setTxns] = useState([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSpace, setEditingSpace] = useState(null);
 
   useEffect(() => {
     SpotworkAPI.getPayments().then(res => {
-      if (res && res.transactions && res.transactions.length > 0) {
-        setTxns(res.transactions);
+      if (res) {
+        const list = res.payments || res.transactions || [];
+        if (list.length > 0) {
+          setTxns(list.map(p => ({
+            id: p.id,
+            bookingId: p.bookingId,
+            clientName: p.clientName || "Client PropTech",
+            clientEmail: p.clientEmail,
+            clientPhone: p.clientPhone || "+212 6 61 23 45 67",
+            clientCity: p.city || "Casablanca",
+            spaceId: p.spaceId || 1,
+            spaceName: p.spaceName,
+            city: p.city,
+            date: p.date ? p.date.slice(0, 10) : todayISO(),
+            timeSlot: p.timeSlot || "Journée",
+            paidAt: p.date ? new Date(p.date).toLocaleDateString('fr-FR') : "Aujourd'hui",
+            grossAmount: p.grossAmount,
+            feeAmount: p.platformFee || Math.round(p.grossAmount * 0.08 * 100) / 100,
+            netAmount: p.netAmount || Math.round(p.grossAmount * 0.92 * 100) / 100,
+            paymentMethod: p.paymentMethod || "Carte Bancaire Maroc CMI",
+            cardLast4: "4242",
+            status: p.status || "paid",
+            invoiceNumber: p.invoiceRef || `FACT-2026-${String(p.id).slice(-4)}`
+          })));
+        }
       }
     });
   }, []);
@@ -4001,9 +3789,38 @@ const AdminDash = ({
 
   const filteredSpaces = spaces.filter(s => !cityFilter || s.city === cityFilter);
 
+  const totalRevenue = txns.reduce((sum, t) => sum + (Number(t.grossAmount) || 0), 0);
+  const avgOccupancy = useMemo(() => {
+    if (spaces.length === 0) return 75;
+    const totalCap = spaces.reduce((s, sp) => s + (sp.cap || 10), 0);
+    const bookedSeats = bookings.filter(b => b.status === "confirmed").reduce((s, b) => s + (b.seats || 1), 0);
+    return Math.min(100, Math.max(25, Math.round((bookedSeats / Math.max(1, totalCap)) * 100)));
+  }, [spaces, bookings]);
+
+  const monthlyRevenue = useMemo(() => {
+    const arr = Array(12).fill(0);
+    txns.forEach(t => {
+      if (t.date) {
+        const m = new Date(t.date).getMonth();
+        if (!isNaN(m) && m >= 0 && m < 12) {
+          arr[m] += (t.grossAmount || 0);
+        }
+      }
+    });
+    const hasData = arr.some(v => v > 0);
+    return hasData ? arr.map(v => Math.round(v)) : [12, 14, 18, 22, 28, 32, 35, 41, 48, 52, 60, 65];
+  }, [txns]);
+
+  const getSpaceOccupancy = (space) => {
+    const spaceBookings = bookings.filter(b => b.spaceId === space.id || String(b.spaceId) === String(space.id));
+    if (spaceBookings.length === 0) return 0;
+    const bookedSeats = spaceBookings.reduce((sum, b) => sum + (b.seats || 1), 0);
+    return Math.min(100, Math.round((bookedSeats / (space.cap || 10)) * 100));
+  };
+
   const kpis = [
-    { l: "Revenus du mois", v: "231 000 DH", d: "+12,4 %", up: true, i: "trending-up", spark: [8, 10, 9, 13, 12, 15, 17, 16, 19] },
-    { l: "Taux d'occupation", v: "78 %", d: "+3,1 pts", up: true, i: "activity", spark: [60, 64, 61, 70, 72, 74, 78] },
+    { l: "Revenus cumulés", v: `${totalRevenue.toLocaleString('fr-FR')} DH`, d: "+12,4 %", up: true, i: "trending-up", spark: [8, 10, 9, 13, 12, 15, 17, 16, 19] },
+    { l: "Taux d'occupation", v: `${avgOccupancy} %`, d: "+3,1 pts", up: true, i: "activity", spark: [60, 64, 61, 70, 72, 74, avgOccupancy] },
     { l: "Demandes en attente", v: String(pendingBookings.length), d: pendingBookings.length > 0 ? "À traiter" : "À jour", up: pendingBookings.length === 0, i: "clock", spark: [2, 4, 3, 5, 6, 4, pendingBookings.length] },
     { l: "Total espaces actifs", v: String(spaces.length), d: "6 villes au Maroc", up: true, i: "layout-grid", spark: [6, 7, 8, 9, 9, 10, spaces.length] }
   ];
@@ -4095,7 +3912,7 @@ const AdminDash = ({
                   <h2 className="font-display font-bold">Revenus 2026 <span className="text-sm font-medium text-slate-400">(k DH)</span></h2>
                   <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600">+24 % YoY</span>
                 </div>
-                <AreaChart data={REVENUE} labels={MONTHS} />
+                <AreaChart data={monthlyRevenue} labels={MONTHS} />
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
                 <h2 className="mb-4 font-display font-bold">Répartition par type</h2>
@@ -4221,7 +4038,7 @@ const AdminDash = ({
                   </thead>
                   <tbody>
                     {filteredSpaces.map(s => {
-                      const occVal = OCC[s.id] || 65;
+                      const occVal = getSpaceOccupancy(s);
                       const st = occVal > 90 ? ["Complet", "bg-rose-50 text-rose-500 border-rose-200"] : occVal < 50 ? ["À promouvoir", "bg-amber-50 text-amber-600 border-amber-200"] : ["Actif", "bg-emerald-50 text-emerald-600 border-emerald-200"];
                       return (
                         <tr key={s.id} className="border-t border-slate-100 transition hover:bg-mist/40">
@@ -4905,9 +4722,10 @@ const App = () => {
   const [view, setView] = useState({ name: "home" });
   const [cart, setCart] = useState([]);
   const [favs, setFavs] = useState(new Set([2, 7]));
-  const [spacesList, setSpacesList] = useState(SPACES);
-  const [allBookings, setAllBookings] = useState(INITIAL_MANAGER_BOOKINGS);
-  const [userBookings, setUserBookings] = useState(INIT_BOOKINGS);
+  const [spacesList, setSpacesList] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
+  const [userBookings, setUserBookings] = useState([]);
+  const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [toasts, setToasts] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -5124,6 +4942,18 @@ const App = () => {
     setCart([]);
   };
 
+  // Chargement dynamique des espaces depuis la base de données PostgreSQL Supabase
+  useEffect(() => {
+    SpotworkAPI.getSpaces().then(spaces => {
+      if (spaces && Array.isArray(spaces) && spaces.length > 0) {
+        setSpacesList(spaces.map(normalizeSpaceFromDB));
+      }
+      setLoadingSpaces(false);
+    }).catch(() => {
+      setLoadingSpaces(false);
+    });
+  }, []);
+
   useEffect(() => {
     if (currentUser) {
       if (currentUser.role === 'admin') SpotworkAPI.token = 'mock-token-admin';
@@ -5139,7 +4969,7 @@ const App = () => {
               spaceId: numId,
               date: b.booking_date,
               meta: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} – ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
-              status: b.status === 'confirmed' ? "Confirmée" : b.status === 'cancelled' ? "Annulée" : "En attente",
+              status: b.status === 'confirmed' ? "Confirmée" : b.status === 'cancelled' ? "Annulée" : b.status === 'completed' ? "Terminée" : "En attente",
               totalPrice: b.total_price,
               invoiceRef: `FACT-2026-${String(b.id).slice(-6)}`
             };
@@ -5159,21 +4989,23 @@ const App = () => {
           if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
             const mappedManager = bkgs.map(b => {
               const numId = parseInt(String(b.space_id).split('-').pop(), 10) || 1;
-              const cName = b.users?.full_name || "Client PropTech";
+              const cName = b.user?.full_name || b.users?.full_name || "Client PropTech";
               const initials = cName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || "CP";
+              const sName = b.space?.name || b.spaces?.name || "Espace Coworking";
+              const sCity = b.space?.location ? b.space.location.split('·')[0].trim() : (b.spaces?.city || "Casablanca");
               return {
                 id: b.id,
                 clientName: cName,
-                clientEmail: b.users?.email || "client@proptech.ma",
-                clientPhone: "+212 6 61 23 45 67",
+                clientEmail: b.user?.email || b.users?.email || "client@proptech.ma",
+                clientPhone: b.user?.phone || b.users?.phone || "+212 6 61 23 45 67",
                 clientInitials: initials,
                 spaceId: numId,
-                spaceName: b.spaces?.name || "Espace Coworking",
-                city: b.spaces?.city || "Casablanca",
+                spaceName: sName,
+                city: sCity,
                 date: b.booking_date,
                 timeSlot: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} – ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
                 hours: 4,
-                seats: 1,
+                seats: b.seats || 1,
                 totalPrice: b.total_price,
                 status: b.status || "confirmed",
                 createdAt: "Récemment",
@@ -5230,11 +5062,12 @@ const App = () => {
   };
   const reserve = item => { setCart(c => [...c, item]); nav({ name: "checkout" }); };
 
-  if (!ready) return (
+  if (!ready || (loadingSpaces && spacesList.length === 0)) return (
     <div className="grid min-h-screen place-items-center bg-mist">
       <div className="text-center">
         <span className="mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white"><Icon n="map-pin" size={22} /></span>
         <p className="mt-3 font-display font-bold">Spotwork PropTech Maroc</p>
+        <p className="mt-1 text-xs text-slate-500">Chargement des espaces en direct depuis la base de données...</p>
       </div>
     </div>
   );
