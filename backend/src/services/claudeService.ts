@@ -161,9 +161,9 @@ Réponds UNIQUEMENT avec un tableau JSON strict contenant 3 objets au format sui
     pastBookings: BookingEntity[]
   ): GeneratedRecommendation[] {
     const prefs = user.preferences || {};
-    const cityPref = (prefs.city || prefs.location_preference || user.city || 'Casablanca').toLowerCase();
-    const typePref = (prefs.type || '').toLowerCase();
-    const maxBudget = prefs.budget_max || 200;
+    const cityPref = String(prefs.city || prefs.location_preference || user.city || 'Casablanca').toLowerCase();
+    const typePref = String(prefs.type || '').toLowerCase();
+    const maxBudget = Number(prefs.budget_max) || 200;
     const neededAmenities = new Set(prefs.equipment_needed || ['wifi', 'coffee']);
 
     // Analyse des habitudes de réservation passées

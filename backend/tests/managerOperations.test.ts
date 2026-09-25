@@ -26,6 +26,32 @@ describe('API Manager Operations - Gestion des espaces & demandes', () => {
     expect(res.body.data.space.capacity).toBe(50);
   });
 
+  it('permet à un administrateur de modifier TOUTES les informations d’un espace (nom, localisation, photos, description, équipements, etc.)', async () => {
+    const spaceId = '10000000-0000-0000-0000-000000000001';
+    const res = await request(app)
+      .patch(`/api/spaces/${spaceId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: "L'Atelier Maarif Rénové",
+        location: 'Casablanca · Maarif Palmier',
+        photos: ['https://images.unsplash.com/photo-1524758631624-e2822e304c36'],
+        description: 'Superbe espace de coworking totalement rénové avec vue panoramique',
+        amenities: ['wifi', 'coffee', 'screen', 'terrace'],
+        price_per_hour: 60,
+        capacity: 25,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+    expect(res.body.data.space.name).toBe("L'Atelier Maarif Rénové");
+    expect(res.body.data.space.location).toBe('Casablanca · Maarif Palmier');
+    expect(res.body.data.space.photos[0]).toContain('photo-1524758631624-e2822e304c36');
+    expect(res.body.data.space.description).toContain('totalement rénové');
+    expect(res.body.data.space.amenities).toContain('terrace');
+    expect(res.body.data.space.price_per_hour).toBe(60);
+    expect(res.body.data.space.capacity).toBe(25);
+  });
+
   it('refuse la modification d’un espace à un simple client (403 Forbidden)', async () => {
     const spaceId = '10000000-0000-0000-0000-000000000001';
     const res = await request(app)

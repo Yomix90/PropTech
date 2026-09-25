@@ -59,7 +59,7 @@ export class SpacesController {
   }
 
   static async getSpaceById(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
     try {
       // Find in localStore: matches exact UUID, or numeric ID padded to 12 digits, or endsWith
@@ -165,7 +165,7 @@ export class SpacesController {
   }
 
   static async updateSpace(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
     try {
       if (!req.user) {
@@ -173,9 +173,20 @@ export class SpacesController {
         return;
       }
 
-      const index = localStore.spaces.findIndex(
+      let index = localStore.spaces.findIndex(
         (s) => s.id === id || s.id.endsWith(id.padStart(12, '0')) || s.id.endsWith(id)
       );
+
+      // Si l'espace n'est pas encore dans localStore mais que Supabase est actif, tenter de le récupérer
+      if (index === -1 && isLiveSupabase) {
+        try {
+          const sRes = await supabase.from('spaces').select('*').eq('id', id).single();
+          if (sRes.data) {
+            localStore.spaces.push(sRes.data);
+            index = localStore.spaces.length - 1;
+          }
+        } catch {}
+      }
 
       if (index === -1) {
         res.status(404).json({ status: 'error', message: 'Espace introuvable' });
@@ -188,24 +199,54 @@ export class SpacesController {
         return;
       }
 
-      const updated = {
+      const body = { ...req.body };
+      const newName = body.name !== undefined ? body.name : current.name;
+      const newDesc = body.description !== undefined ? body.description : (body.desc !== undefined ? body.desc : current.description);
+      const newLocation = body.location !== undefined ? body.location : (body.city && body.district ? `${body.city} · ${body.district}` : current.location);
+      const newPrice = body.price_per_hour !== undefined ? Number(body.price_per_hour) : (body.price !== undefined ? Number(body.price) : current.price_per_hour);
+      const newCap = body.capacity !== undefined ? Number(body.capacity) : (body.cap !== undefined ? Number(body.cap) : current.capacity);
+      const newAmenities = body.amenities !== undefined ? body.amenities : (body.am !== undefined ? body.am : current.amenities);
+      const newPhotos = body.photos !== undefined ? body.photos : (body.imgs !== undefined ? body.imgs : current.photos);
+      const newLat = body.latitude !== undefined ? Number(body.latitude) : current.latitude;
+      const newLng = body.longitude !== undefined ? Number(body.longitude) : current.longitude;
+
+      const updated: SpaceEntity = {
         ...current,
-        ...req.body,
+        name: newName,
+        description: newDesc,
+        location: newLocation,
+        price_per_hour: newPrice,
+        capacity: newCap,
+        amenities: newAmenities,
+        photos: newPhotos,
+        latitude: newLat,
+        longitude: newLng,
       };
       localStore.spaces[index] = updated;
 
-      // Attempt remote Supabase update if live
+      // Synchronisation Supabase Cloud
       if (isLiveSupabase) {
         try {
-          await supabase.from('spaces').update(req.body).eq('id', current.id);
+          const sbPayload: any = {
+            name: newName,
+            description: newDesc,
+            location: newLocation,
+            price_per_hour: newPrice,
+            capacity: newCap,
+            amenities: newAmenities,
+            photos: newPhotos,
+            latitude: newLat,
+            longitude: newLng,
+          };
+          await supabase.from('spaces').update(sbPayload).eq('id', current.id);
         } catch (sbErr) {
-          console.warn('⚠️ Supabase Cloud updateSpace notice (persisted locally):', sbErr);
+          console.warn('ℹ️ Supabase Cloud updateSpace notice (persisted in Spotwork store):', sbErr);
         }
       }
 
       res.status(200).json({
         status: 'success',
-        message: 'Espace et tarifs mis à jour avec succès',
+        message: 'Informations de l’espace mises à jour avec succès',
         data: { space: updated },
       });
     } catch (error) {
@@ -214,7 +255,7 @@ export class SpacesController {
   }
 
   static async deleteSpace(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
     try {
       if (!req.user) {

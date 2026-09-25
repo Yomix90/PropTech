@@ -1016,8 +1016,10 @@ const Explore = ({ params, nav, favs, toggleFav, spaces = [], bookings = [] }) =
     /* @__PURE__ */ React.createElement("span", null, "Places libres uniquement")
   ), /* @__PURE__ */ React.createElement("button", { onClick: () => setOpen(!open), className: "flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold lg:hidden" }, /* @__PURE__ */ React.createElement(Icon, { n: "sliders-horizontal", size: 13 }), "Filtres"), /* @__PURE__ */ React.createElement("select", { value: sort, onChange: (e) => setSort(e.target.value), className: "rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold outline-none focus:border-brand-500" }, /* @__PURE__ */ React.createElement("option", { value: "reco" }, "Recommand\xE9s"), /* @__PURE__ */ React.createElement("option", { value: "note" }, "Mieux not\xE9s"), /* @__PURE__ */ React.createElement("option", { value: "asc" }, "Prix croissant"), /* @__PURE__ */ React.createElement("option", { value: "desc" }, "Prix d\xE9croissant")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8 grid gap-8 lg:grid-cols-[260px_1fr]" }, /* @__PURE__ */ React.createElement("aside", { className: `${open ? "block" : "hidden"} lg:block` }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-card lg:sticky lg:top-24" }, /* @__PURE__ */ React.createElement(FilterPanel, { f, setF }))), /* @__PURE__ */ React.createElement("div", null, results.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "grid place-items-center rounded-2xl border-2 border-dashed border-slate-200 py-24 text-center" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-14 w-14 place-items-center rounded-full bg-mist text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "search-x", size: 24 })), /* @__PURE__ */ React.createElement("p", { className: "mt-4 font-display font-bold" }, "Aucun espace ne correspond"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-500" }, f.onlyAvailable ? "Tous les espaces sont complets pour cette date ou vos filtres sont trop stricts." : "Essayez d'\xE9largir vos crit\xE8res."), /* @__PURE__ */ React.createElement("button", { onClick: () => setF({ city: "", types: [], max: 150, am: [], date: "2026-10-01", onlyAvailable: false }), className: "mt-4 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white" }, "Effacer les filtres"))) : /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" }, results.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i % 3 * 60}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav, date: f.date, bookings })))))));
 };
-const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings = [] }) => {
+const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings = [], currentUser = null, onUpdateSpace = null }) => {
   const s = spaces.find((x) => x.id === id || String(x.id) === String(id) || x.dbId && String(x.dbId) === String(id));
+  const [editingSpace, setEditingSpace] = useState(null);
+  const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
   const [img, setImg] = useState(0);
   const [date, setDate] = useState(() => {
     return todayISO();
@@ -1135,7 +1137,15 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
     });
   };
   const similar = spaces.filter((x) => x.id !== s.id && (x.city === s.city || x.type === s.type)).slice(0, 3);
-  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type).label)), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-slate-300 bg-slate-100/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-slate-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-slate-500 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 13 })), availability.isPast ? `Date pass\xE9e (${fmtDate(date)}) \u2014 R\xE9servations impossibles` : `Journ\xE9e termin\xE9e pour le ${fmtDate(date)} \u2014 Tous les cr\xE9neaux horaires sont \xE9coul\xE9s`), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-600 leading-relaxed" }, "Il n'est plus possible de r\xE9server pour cette date car les horaires sont d\xE9j\xE0 pass\xE9s. Veuillez s\xE9lectionner une date ult\xE9rieure dans le planning ci-dessous.")) : availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.minFreeSeats === availability.availableSeats ? `${availability.availableSeats} place${availability.availableSeats > 1 ? "s" : ""} disponible${availability.availableSeats > 1 ? "s" : ""} sur ${availability.totalCapacity} pour le ${fmtDate(date)}` : `De ${availability.minFreeSeats} \xE0 ${availability.availableSeats} places libres selon les heures (capacit\xE9 : ${availability.totalCapacity} places) pour le ${fmtDate(date)}`)), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type)?.label || s.type)), isManagerOrAdmin && onUpdateSpace && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setEditingSpace(s),
+      className: "inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-4 py-1.5 text-xs font-bold text-amber-900 shadow-sm hover:bg-amber-100 transition"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "pencil", size: 13 }),
+    /* @__PURE__ */ React.createElement("span", null, "Modifier cet espace (Admin)")
+  )), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-slate-300 bg-slate-100/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-slate-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-slate-500 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 13 })), availability.isPast ? `Date pass\xE9e (${fmtDate(date)}) \u2014 R\xE9servations impossibles` : `Journ\xE9e termin\xE9e pour le ${fmtDate(date)} \u2014 Tous les cr\xE9neaux horaires sont \xE9coul\xE9s`), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-600 leading-relaxed" }, "Il n'est plus possible de r\xE9server pour cette date car les horaires sont d\xE9j\xE0 pass\xE9s. Veuillez s\xE9lectionner une date ult\xE9rieure dans le planning ci-dessous.")) : availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.minFreeSeats === availability.availableSeats ? `${availability.availableSeats} place${availability.availableSeats > 1 ? "s" : ""} disponible${availability.availableSeats > 1 ? "s" : ""} sur ${availability.totalCapacity} pour le ${fmtDate(date)}` : `De ${availability.minFreeSeats} \xE0 ${availability.availableSeats} places libres selon les heures (capacit\xE9 : ${availability.totalCapacity} places) pour le ${fmtDate(date)}`)), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: i,
@@ -1255,7 +1265,15 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
     },
     /* @__PURE__ */ React.createElement(Icon, { n: availability.isPast || availability.allHoursPast ? "clock" : availability.isSoldOut ? "slash" : "zap", size: 16 }),
     availability.isPast || availability.allHoursPast ? "Journ\xE9e pass\xE9e / ferm\xE9e" : availability.isSoldOut ? "Complet pour cette date" : `R\xE9server ${seatsCount > 1 ? `${seatsCount} places` : "cet espace"}`
-  ), availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-slate-500 font-semibold" }, "Cette date ou ses horaires sont \xE9coul\xE9s. Choisissez une autre date ci-dessus.") : availability.isSoldOut ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-rose-600 font-semibold" }, "S\xE9lectionnez une autre date ci-dessus pour r\xE9server.") : /* @__PURE__ */ React.createElement("p", { className: "mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-emerald-500" }), "Confirmation imm\xE9diate \xB7 Paiement CMI s\xE9curis\xE9")))), /* @__PURE__ */ React.createElement("div", { className: "mt-14" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Continuez l'exploration", title: "Espaces similaires" }), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, similar.map((x) => /* @__PURE__ */ React.createElement(SpaceCard, { key: x.id, s: x, nav, favs, toggleFav, date, bookings })))));
+  ), availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-slate-500 font-semibold" }, "Cette date ou ses horaires sont \xE9coul\xE9s. Choisissez une autre date ci-dessus.") : availability.isSoldOut ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-rose-600 font-semibold" }, "S\xE9lectionnez une autre date ci-dessus pour r\xE9server.") : /* @__PURE__ */ React.createElement("p", { className: "mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-emerald-500" }), "Confirmation imm\xE9diate \xB7 Paiement CMI s\xE9curis\xE9")))), /* @__PURE__ */ React.createElement("div", { className: "mt-14" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Continuez l'exploration", title: "Espaces similaires" }), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, similar.map((x) => /* @__PURE__ */ React.createElement(SpaceCard, { key: x.id, s: x, nav, favs, toggleFav, date, bookings })))), isManagerOrAdmin && onUpdateSpace && /* @__PURE__ */ React.createElement(
+    EditSpaceModal,
+    {
+      space: editingSpace,
+      isOpen: Boolean(editingSpace),
+      onClose: () => setEditingSpace(null),
+      onUpdateSpace
+    }
+  ));
 };
 const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
   const [promo, setPromo] = useState("");
@@ -1972,66 +1990,253 @@ const CreateSpaceModal = ({ isOpen, onClose, onCreateSpace }) => {
     "Publier l'espace"
   )))));
 };
-const EditSpacePriceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
+const EditSpaceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
   const [name, setName] = useState("");
+  const [city, setCity] = useState("Casablanca");
+  const [district, setDistrict] = useState("");
+  const [address, setAddress] = useState("");
+  const [type, setType] = useState("open");
   const [price, setPrice] = useState("");
   const [cap, setCap] = useState("");
+  const [surface, setSurface] = useState("");
   const [desc, setDesc] = useState("");
+  const [selectedAm, setSelectedAm] = useState([]);
+  const [imgs, setImgs] = useState([]);
+  const [newImgInput, setNewImgInput] = useState("");
   const [err, setErr] = useState("");
   useEffect(() => {
     if (space) {
       setName(space.name || "");
-      setPrice(String(space.price || 45));
-      setCap(String(space.cap || 10));
-      setDesc(space.desc || "");
+      setCity(space.city || (space.location ? space.location.split("\xB7")[0].trim() : "Casablanca"));
+      setDistrict(space.district || (space.location && space.location.includes("\xB7") ? space.location.split("\xB7")[1].trim() : ""));
+      setAddress(space.address || "");
+      setType(space.type || "open");
+      setPrice(String(space.price !== void 0 ? space.price : space.price_per_hour || 45));
+      setCap(String(space.cap !== void 0 ? space.cap : space.capacity || 10));
+      setSurface(space.surface || `${(space.cap || 10) * 6} m\xB2`);
+      setDesc(space.desc || space.description || "");
+      setSelectedAm(Array.isArray(space.am) ? [...space.am] : Array.isArray(space.amenities) ? [...space.amenities] : ["wifi", "coffee", "screen"]);
+      const currentImgs = Array.isArray(space.imgs) && space.imgs.length > 0 ? [...space.imgs] : Array.isArray(space.photos) && space.photos.length > 0 ? [...space.photos] : [IMG.a, IMG.b];
+      setImgs(currentImgs);
+      setNewImgInput("");
       setErr("");
     }
   }, [space]);
   if (!isOpen || !space) return null;
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const numPrice = Number(price);
-    if (!numPrice || numPrice <= 0) {
-      setErr("Veuillez saisir un tarif valide en DH");
+  const toggleAmenity = (id) => {
+    setSelectedAm((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+  const handleAddPhoto = () => {
+    const trimmed = newImgInput.trim();
+    if (!trimmed) return;
+    setImgs((prev) => [...prev, trimmed]);
+    setNewImgInput("");
+    setErr("");
+  };
+  const handleRemovePhoto = (idx) => {
+    if (imgs.length <= 1) {
+      setErr("L'espace doit comporter au moins une photo.");
       return;
     }
+    setImgs((prev) => prev.filter((_, i) => i !== idx));
+    setErr("");
+  };
+  const handleSetMainPhoto = (idx) => {
+    if (idx === 0) return;
+    setImgs((prev) => {
+      const copy = [...prev];
+      const [chosen] = copy.splice(idx, 1);
+      return [chosen, ...copy];
+    });
+    setErr("");
+  };
+  const handleAddPresetPhoto = (url) => {
+    if (!imgs.includes(url)) {
+      setImgs((prev) => [...prev, url]);
+      setErr("");
+    }
+  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setErr("Le nom de l'espace est obligatoire");
+      return;
+    }
+    const numPrice = Number(price);
+    if (!numPrice || numPrice <= 0) {
+      setErr("Veuillez saisir un tarif horaire valide en DH");
+      return;
+    }
+    const numCap = Number(cap);
+    if (!numCap || numCap <= 0) {
+      setErr("Veuillez saisir une capacit\xE9 valide (minimum 1 personne)");
+      return;
+    }
+    const cleanImgs = imgs.filter(Boolean);
+    if (cleanImgs.length === 0) {
+      setErr("Au moins une photo est requise pour l'espace");
+      return;
+    }
+    const finalDistrict = district.trim() || `${city} Centre`;
+    const finalLocation = `${city} \xB7 ${finalDistrict}`;
     onUpdateSpace(space.id, {
-      name: name.trim() || space.name,
+      name: name.trim(),
+      city,
+      district: finalDistrict,
+      location: finalLocation,
+      address: address.trim() || `${finalDistrict}, ${city}, Maroc`,
+      type,
       price: numPrice,
-      capacity: Number(cap) || space.cap,
-      desc: desc.trim() || space.desc
+      price_per_hour: numPrice,
+      capacity: numCap,
+      cap: numCap,
+      surface: surface.trim() || `${numCap * 6} m\xB2`,
+      desc: desc.trim() || `Espace de travail tout \xE9quip\xE9 situ\xE9 \xE0 ${city}, ${finalDistrict}.`,
+      description: desc.trim() || `Espace de travail tout \xE9quip\xE9 situ\xE9 \xE0 ${city}, ${finalDistrict}.`,
+      am: selectedAm,
+      amenities: selectedAm,
+      imgs: cleanImgs,
+      photos: cleanImgs
     });
     onClose();
   };
-  return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/60 p-4 backdrop-blur-sm" }, /* @__PURE__ */ React.createElement("div", { className: "relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-4 mb-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-600" }, /* @__PURE__ */ React.createElement(Icon, { n: "pencil", size: 18 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold text-ink" }, "Modifier le tarif & l'espace"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, space.city, " \xB7 ", space.district))), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "x", size: 18 }))), err && /* @__PURE__ */ React.createElement("div", { className: "mb-4 flex items-center gap-2 rounded-xl bg-rose-50 p-2.5 text-xs font-semibold text-rose-700 border border-rose-200" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-circle", size: 14 }), err), /* @__PURE__ */ React.createElement("form", { onSubmit: handleSubmit, className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 rounded-2xl bg-mist p-3" }, /* @__PURE__ */ React.createElement("img", { src: U(space.imgs[0], 120), alt: "", className: "h-12 w-16 rounded-lg object-cover" }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink" }, space.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400" }, "Tarif actuel : ", /* @__PURE__ */ React.createElement("b", { className: "text-brand-600" }, EUR.format(space.price)), "/", space.unit))), /* @__PURE__ */ React.createElement(Field, { label: "Nom de l'espace" }, /* @__PURE__ */ React.createElement("input", { value: name, onChange: (e) => setName(e.target.value), className: inp })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-4" }, /* @__PURE__ */ React.createElement(Field, { label: "Nouveau tarif horaire (DH) *" }, /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement(
+  const PRESETS = [
+    { label: "Open Space Loft", url: IMG.a },
+    { label: "Salle R\xE9union Verre", url: IMG.b },
+    { label: "Bureau Priv\xE9 Bois", url: IMG.c },
+    { label: "Espace Tech Moderne", url: IMG.d },
+    { label: "Bureau Lumineux", url: IMG.e },
+    { label: "Lounge & Caf\xE9", url: IMG.f },
+    { label: "Cabine Focus", url: IMG.i },
+    { label: "Terrasse & Rooftop", url: IMG.g }
+  ];
+  return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/60 p-4 backdrop-blur-sm" }, /* @__PURE__ */ React.createElement("div", { className: "relative w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl my-6 max-h-[92vh] overflow-y-auto" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-4 mb-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 shadow-xs" }, /* @__PURE__ */ React.createElement(Icon, { n: "pencil", size: 20 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-xl font-bold text-ink" }, "Modifier l'espace de travail"), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800" }, "Mode Admin")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "Mettez \xE0 jour le nom, la localisation, les images, tarifs et caract\xE9ristiques"))), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition" }, /* @__PURE__ */ React.createElement(Icon, { n: "x", size: 18 }))), err && /* @__PURE__ */ React.createElement("div", { className: "mb-4 flex items-center gap-2 rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700 border border-rose-200" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-circle", size: 15 }), err), /* @__PURE__ */ React.createElement("form", { onSubmit: handleSubmit, className: "space-y-6" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement(Icon, { n: "image", size: 14, className: "text-brand-600" }), "Galerie Photos & Image de couverture"), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-500" }, "La 1\xE8re image est la photo principale affich\xE9e sur la carte et la recherche")), /* @__PURE__ */ React.createElement("span", { className: "text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200" }, imgs.length, " photo", imgs.length > 1 ? "s" : "")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" }, imgs.map((photoUrl, idx) => /* @__PURE__ */ React.createElement("div", { key: idx, className: `group relative rounded-xl overflow-hidden border-2 transition ${idx === 0 ? "border-brand-600 ring-2 ring-brand-500/30" : "border-slate-200 hover:border-slate-400"}` }, /* @__PURE__ */ React.createElement("img", { src: U(photoUrl, 300), alt: "", className: "h-24 w-full object-cover" }), idx === 0 ? /* @__PURE__ */ React.createElement("span", { className: "absolute top-1.5 left-1.5 rounded-md bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs" }, "\u2605 Couverture") : /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleSetMainPhoto(idx),
+      title: "D\xE9finir comme photo principale",
+      className: "absolute top-1.5 left-1.5 rounded-md bg-ink/70 px-1.5 py-0.5 text-[9px] font-bold text-white opacity-0 group-hover:opacity-100 hover:bg-brand-600 transition shadow-xs"
+    },
+    "\u2605 Mettre en 1er"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleRemovePhoto(idx),
+      title: "Supprimer cette photo",
+      className: "absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-md bg-rose-600 text-white opacity-0 group-hover:opacity-100 hover:bg-rose-700 transition shadow-xs"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "trash-2", size: 12 })
+  )))), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "text",
+      value: newImgInput,
+      onChange: (e) => setNewImgInput(e.target.value),
+      placeholder: "Ajouter une photo (collez une URL Unsplash, Cloudinary, Web...)",
+      className: "flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-500"
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: handleAddPhoto,
+      className: "inline-flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition"
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 13 }),
+    "Ajouter"
+  )), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-semibold text-slate-500 mb-1.5" }, "Ou cliquez pour ajouter une photo mod\xE8le haute d\xE9finition :"), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2" }, PRESETS.map((p, i) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      key: i,
+      onClick: () => handleAddPresetPhoto(p.url),
+      className: "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 transition"
+    },
+    /* @__PURE__ */ React.createElement("img", { src: U(p.url, 40), alt: "", className: "h-4 w-4 rounded-sm object-cover" }),
+    /* @__PURE__ */ React.createElement("span", null, "+ ", p.label)
+  ))))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement(Field, { label: "Nom de l'espace *" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      value: name,
+      onChange: (e) => {
+        setName(e.target.value);
+        setErr("");
+      },
+      placeholder: "Ex: L'Atelier Coworking Maarif",
+      className: inp,
+      required: true
+    }
+  )), /* @__PURE__ */ React.createElement(Field, { label: "Type d'espace *" }, /* @__PURE__ */ React.createElement("select", { value: type, onChange: (e) => setType(e.target.value), className: inp }, TYPES.map((t) => /* @__PURE__ */ React.createElement("option", { key: t.id, value: t.id }, t.label))))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 sm:grid-cols-3" }, /* @__PURE__ */ React.createElement(Field, { label: "Ville au Maroc *" }, /* @__PURE__ */ React.createElement("select", { value: city, onChange: (e) => setCity(e.target.value), className: inp }, CITIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c, value: c }, c)))), /* @__PURE__ */ React.createElement(Field, { label: "Quartier / District *" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      value: district,
+      onChange: (e) => setDistrict(e.target.value),
+      placeholder: "Ex: Maarif, Gu\xE9liz, Agdal...",
+      className: inp,
+      required: true
+    }
+  )), /* @__PURE__ */ React.createElement(Field, { label: "Adresse physique pr\xE9cise" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      value: address,
+      onChange: (e) => setAddress(e.target.value),
+      placeholder: "Ex: 28 Boulevard Zerktouni",
+      className: inp
+    }
+  ))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 sm:grid-cols-3" }, /* @__PURE__ */ React.createElement(Field, { label: "Tarif par heure (DH) *" }, /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "number",
-      min: "10",
+      min: "5",
       step: "5",
       value: price,
       onChange: (e) => setPrice(e.target.value),
       className: `${inp} pr-12 font-bold text-brand-700 text-base`,
       required: true
     }
-  ), /* @__PURE__ */ React.createElement("span", { className: "absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400" }, "DH/h"))), /* @__PURE__ */ React.createElement(Field, { label: "Capacit\xE9 d'accueil" }, /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("span", { className: "absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400" }, "DH/h"))), /* @__PURE__ */ React.createElement(Field, { label: "Capacit\xE9 d'accueil (places) *" }, /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "number",
       min: "1",
       value: cap,
       onChange: (e) => setCap(e.target.value),
+      className: inp,
+      required: true
+    }
+  ), /* @__PURE__ */ React.createElement("span", { className: "absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400" }, "pers."))), /* @__PURE__ */ React.createElement(Field, { label: "Surface" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      value: surface,
+      onChange: (e) => setSurface(e.target.value),
+      placeholder: "Ex: 85 m\xB2",
       className: inp
     }
-  ), /* @__PURE__ */ React.createElement("span", { className: "absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400" }, "pers.")))), /* @__PURE__ */ React.createElement(Field, { label: "Description" }, /* @__PURE__ */ React.createElement(
+  ))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-slate-700 mb-2" }, "\xC9quipements & Commodit\xE9s inclus"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 gap-2" }, AMENITIES.map((am) => {
+    const checked = selectedAm.includes(am.id);
+    return /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        key: am.id,
+        onClick: () => toggleAmenity(am.id),
+        className: `flex items-center gap-2 rounded-xl border p-2 text-xs font-medium transition text-left ${checked ? "border-brand-500 bg-brand-50/60 text-brand-700 font-semibold" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`
+      },
+      /* @__PURE__ */ React.createElement("span", { className: `grid h-5 w-5 shrink-0 place-items-center rounded-md ${checked ? "bg-brand-600 text-white" : "border border-slate-300"}` }, checked && /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 11 })),
+      /* @__PURE__ */ React.createElement("span", { className: "truncate" }, am.label)
+    );
+  }))), /* @__PURE__ */ React.createElement(Field, { label: "Description d\xE9taill\xE9e de l'espace" }, /* @__PURE__ */ React.createElement(
     "textarea",
     {
       rows: 3,
       value: desc,
       onChange: (e) => setDesc(e.target.value),
+      placeholder: "Pr\xE9sentez l'espace, son ambiance, sa luminosit\xE9, les services exclusifs et facilit\xE9s d'acc\xE8s...",
       className: inp
     }
-  )), /* @__PURE__ */ React.createElement("div", { className: "mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-4" }, /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between border-t border-slate-100 pt-4" }, /* @__PURE__ */ React.createElement("div", { className: "text-xs text-slate-400" }, "Modifications imm\xE9diatement synchronis\xE9es avec PostgreSQL & Supabase"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement(
     "button",
     {
       type: "button",
@@ -2046,9 +2251,10 @@ const EditSpacePriceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
       className: "inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition"
     },
     /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 14 }),
-    "Enregistrer le nouveau tarif"
-  )))));
+    "Enregistrer toutes les modifications"
+  ))))));
 };
+const EditSpacePriceModal = EditSpaceModal;
 const AdminDash = ({
   nav,
   toast,
@@ -2254,11 +2460,11 @@ const AdminDash = ({
       "button",
       {
         onClick: () => setEditingSpace(s),
-        title: "Modifier le prix et les caract\xE9ristiques",
-        className: "inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700 transition"
+        title: "Modifier toutes les informations de cet espace (nom, photos, emplacement, tarifs, capacit\xE9)",
+        className: "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700 transition shadow-2xs"
       },
       /* @__PURE__ */ React.createElement(Icon, { n: "pencil", size: 13 }),
-      /* @__PURE__ */ React.createElement("span", null, "Modifier prix")
+      /* @__PURE__ */ React.createElement("span", null, "Modifier")
     ), /* @__PURE__ */ React.createElement(
       "button",
       {
@@ -2634,19 +2840,68 @@ const App = () => {
     toast(`Espace \xAB ${created.name} \xBB cr\xE9\xE9 avec succ\xE8s \xE0 ${created.city} (${created.price} DH/h) !`, "check-circle");
   };
   const handleUpdateSpace = (spaceId, updatedFields) => {
+    let spaceName = "";
     setSpacesList((prev) => prev.map((s) => {
-      if (s.id === spaceId) {
+      if (s.id === spaceId || String(s.id) === String(spaceId) || s.dbId && String(s.dbId) === String(spaceId)) {
+        spaceName = updatedFields.name || s.name;
+        const newCity = updatedFields.city || s.city;
+        const newDistrict = updatedFields.district || s.district;
+        const newLocation = updatedFields.location || `${newCity} \xB7 ${newDistrict}`;
+        const newPrice = updatedFields.price !== void 0 ? Number(updatedFields.price) : updatedFields.price_per_hour !== void 0 ? Number(updatedFields.price_per_hour) : s.price;
+        const newCap = updatedFields.capacity !== void 0 ? Number(updatedFields.capacity) : updatedFields.cap !== void 0 ? Number(updatedFields.cap) : s.cap;
+        const newImgs = updatedFields.imgs || updatedFields.photos || s.imgs;
+        const newAm = updatedFields.am || updatedFields.amenities || s.am;
+        const newDesc = updatedFields.desc !== void 0 ? updatedFields.desc : updatedFields.description !== void 0 ? updatedFields.description : s.desc;
+        const newName = updatedFields.name || s.name;
+        const newType = updatedFields.type || s.type;
+        const newSurface = updatedFields.surface || s.surface;
+        const newAddress = updatedFields.address || s.address;
         return {
           ...s,
           ...updatedFields,
-          price: updatedFields.price !== void 0 ? Number(updatedFields.price) : s.price,
-          cap: updatedFields.capacity !== void 0 ? Number(updatedFields.capacity) : s.cap
+          name: newName,
+          city: newCity,
+          district: newDistrict,
+          location: newLocation,
+          address: newAddress,
+          price: newPrice,
+          price_per_hour: newPrice,
+          cap: newCap,
+          capacity: newCap,
+          imgs: newImgs,
+          photos: newImgs,
+          am: newAm,
+          amenities: newAm,
+          desc: newDesc,
+          description: newDesc,
+          type: newType,
+          surface: newSurface
         };
       }
       return s;
     }));
-    SpotworkAPI.updateSpace(spaceId, updatedFields);
-    toast(`Tarif et espace mis \xE0 jour (${updatedFields.price || ""} DH/h) !`, "check");
+    const currentSpace = spacesList.find((s) => s.id === spaceId || String(s.id) === String(spaceId) || s.dbId && String(s.dbId) === String(spaceId));
+    const targetId = currentSpace?.dbId || currentSpace?.id || spaceId;
+    const payloadForApi = {
+      name: updatedFields.name,
+      location: updatedFields.location || (updatedFields.city && updatedFields.district ? `${updatedFields.city} \xB7 ${updatedFields.district}` : void 0),
+      price_per_hour: updatedFields.price !== void 0 ? Number(updatedFields.price) : updatedFields.price_per_hour !== void 0 ? Number(updatedFields.price_per_hour) : void 0,
+      price: updatedFields.price !== void 0 ? Number(updatedFields.price) : void 0,
+      capacity: updatedFields.capacity !== void 0 ? Number(updatedFields.capacity) : updatedFields.cap !== void 0 ? Number(updatedFields.cap) : void 0,
+      description: updatedFields.description !== void 0 ? updatedFields.description : updatedFields.desc,
+      desc: updatedFields.desc !== void 0 ? updatedFields.desc : updatedFields.description,
+      amenities: updatedFields.amenities || updatedFields.am,
+      photos: updatedFields.photos || updatedFields.imgs,
+      imgs: updatedFields.imgs || updatedFields.photos,
+      type: updatedFields.type,
+      surface: updatedFields.surface,
+      city: updatedFields.city,
+      district: updatedFields.district,
+      address: updatedFields.address
+    };
+    Object.keys(payloadForApi).forEach((k) => payloadForApi[k] === void 0 && delete payloadForApi[k]);
+    SpotworkAPI.updateSpace(targetId, payloadForApi);
+    toast(`Espace \xAB ${updatedFields.name || spaceName || currentSpace?.name || ""} \xBB mis \xE0 jour avec succ\xE8s !`, "check-circle");
   };
   const handleDeleteSpace = (spaceId) => {
     const deleted = spacesList.find((s) => s.id === spaceId);
@@ -2894,7 +3149,7 @@ const App = () => {
   };
   if (!ready || loadingSpaces && spacesList.length === 0) return /* @__PURE__ */ React.createElement("div", { className: "grid min-h-screen place-items-center bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 22 })), /* @__PURE__ */ React.createElement("p", { className: "mt-3 font-display font-bold" }, "Spotwork PropTech Maroc"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Chargement des espaces en direct depuis la base de donn\xE9es...")));
   const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
-  return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList, bookings: allBookings, currentUser, userBookings }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList, bookings: allBookings }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && (isManagerOrAdmin ? /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList, bookings: allBookings, currentUser, userBookings }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList, bookings: allBookings, currentUser, onUpdateSpace: handleUpdateSpace }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && (isManagerOrAdmin ? /* @__PURE__ */ React.createElement(
     AdminDash,
     {
       nav,

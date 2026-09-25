@@ -8,6 +8,7 @@ export interface UserEntity {
   full_name: string;
   phone?: string;
   role: 'client' | 'manager' | 'admin';
+  city?: string;
   preferences: {
     budget_min?: number;
     budget_max?: number;
@@ -24,6 +25,8 @@ export interface SpaceEntity {
   name: string;
   description: string;
   location: string;
+  city?: string;
+  type?: string;
   latitude: number;
   longitude: number;
   owner_id: string;

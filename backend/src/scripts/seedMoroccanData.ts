@@ -206,14 +206,14 @@ async function seed() {
   
   // 1. Users
   for (const u of MOROCCAN_USERS) {
-    const { error } = await supabase.from('users').upsert(u);
+    const { error } = await supabase.from('users').upsert(u as any);
     if (error) console.warn('User upsert notice:', u.full_name, error.message);
     else console.log('✅ Utilisateur synchronisé:', u.full_name);
   }
 
   // 2. Spaces
   for (const s of MOROCCAN_SPACES) {
-    const { error } = await supabase.from('spaces').upsert(s);
+    const { error } = await supabase.from('spaces').upsert(s as any);
     if (error) console.warn('Space upsert notice:', s.name, error.message);
     else console.log('✅ Espace synchronisé:', s.name);
   }

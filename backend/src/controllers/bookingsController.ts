@@ -189,7 +189,7 @@ export class BookingsController {
   }
 
   static async cancelBooking(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
     try {
       if (!req.user) {
@@ -240,7 +240,7 @@ export class BookingsController {
   }
 
   static async updateBookingStatus(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const { status } = req.body;
 
     try {

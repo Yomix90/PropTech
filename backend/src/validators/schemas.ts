@@ -59,14 +59,24 @@ export const createSpaceSchema = z.object({
 
 export const updateSpaceSchema = z.object({
   name: z.string().min(2, 'Le nom de l’espace est obligatoire').optional(),
-  description: z.string().min(10, 'La description doit comporter au moins 10 caractères').optional(),
+  description: z.string().min(5, 'La description doit comporter au moins 5 caractères').optional(),
+  desc: z.string().optional(),
   location: z.string().min(3, 'La localisation est obligatoire').optional(),
+  city: z.string().optional(),
+  district: z.string().optional(),
+  address: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   price_per_hour: z.number().min(1, 'Le tarif horaire doit être positif').optional(),
+  price: z.number().min(1).optional(),
   capacity: z.number().int().min(1, 'La capacité minimale est de 1 personne').optional(),
+  cap: z.number().int().min(1).optional(),
   amenities: z.array(z.string()).optional(),
-  photos: z.array(z.string().url()).optional(),
+  am: z.array(z.string()).optional(),
+  photos: z.array(z.string().min(1)).optional(),
+  imgs: z.array(z.string().min(1)).optional(),
+  type: z.string().optional(),
+  surface: z.string().optional(),
 });
 
 export const updateBookingStatusSchema = z.object({

@@ -1740,8 +1740,10 @@ const Explore = ({ params, nav, favs, toggleFav, spaces = [], bookings = [] }) =
 };
 
 /* ================= DÉTAIL ESPACE AVEC SYNCHRONISATION DES PLACES ET DU PLANNING ================= */
-const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings = [] }) => {
+const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings = [], currentUser = null, onUpdateSpace = null }) => {
   const s = spaces.find(x => x.id === id || String(x.id) === String(id) || (x.dbId && String(x.dbId) === String(id)));
+  const [editingSpace, setEditingSpace] = useState(null);
+  const isManagerOrAdmin = currentUser && (currentUser.role === 'manager' || currentUser.role === 'admin');
   const [img, setImg] = useState(0);
   const [date, setDate] = useState(() => {
     return todayISO();
@@ -1885,9 +1887,19 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
       </button>
       <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_400px]">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge label={s.badge} />
-            <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">{TYPES.find(t => t.id === s.type).label}</span>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge label={s.badge} />
+              <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">{TYPES.find(t => t.id === s.type)?.label || s.type}</span>
+            </div>
+            {isManagerOrAdmin && onUpdateSpace && (
+              <button
+                onClick={() => setEditingSpace(s)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-4 py-1.5 text-xs font-bold text-amber-900 shadow-sm hover:bg-amber-100 transition">
+                <Icon n="pencil" size={13} />
+                <span>Modifier cet espace (Admin)</span>
+              </button>
+            )}
           </div>
           <h1 className="mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl">{s.name}</h1>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
@@ -2332,6 +2344,15 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
           {similar.map(x => <SpaceCard key={x.id} s={x} nav={nav} favs={favs} toggleFav={toggleFav} date={date} bookings={bookings} />)}
         </div>
       </div>
+
+      {isManagerOrAdmin && onUpdateSpace && (
+        <EditSpaceModal
+          space={editingSpace}
+          isOpen={Boolean(editingSpace)}
+          onClose={() => setEditingSpace(null)}
+          onUpdateSpace={onUpdateSpace}
+        />
+      )}
     </main>
   );
 };
@@ -3589,53 +3610,156 @@ const CreateSpaceModal = ({ isOpen, onClose, onCreateSpace }) => {
   );
 };
 
-/* ================= MODAL MODIFICATION DU TARIF & ESPACE ================= */
-const EditSpacePriceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
+/* ================= MODAL ÉDITION COMPLÈTE DE L'ESPACE (ADMIN & GESTIONNAIRE) ================= */
+const EditSpaceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
   const [name, setName] = useState("");
+  const [city, setCity] = useState("Casablanca");
+  const [district, setDistrict] = useState("");
+  const [address, setAddress] = useState("");
+  const [type, setType] = useState("open");
   const [price, setPrice] = useState("");
   const [cap, setCap] = useState("");
+  const [surface, setSurface] = useState("");
   const [desc, setDesc] = useState("");
+  const [selectedAm, setSelectedAm] = useState([]);
+  const [imgs, setImgs] = useState([]);
+  const [newImgInput, setNewImgInput] = useState("");
   const [err, setErr] = useState("");
 
   useEffect(() => {
     if (space) {
       setName(space.name || "");
-      setPrice(String(space.price || 45));
-      setCap(String(space.cap || 10));
-      setDesc(space.desc || "");
+      setCity(space.city || (space.location ? space.location.split('·')[0].trim() : "Casablanca"));
+      setDistrict(space.district || (space.location && space.location.includes('·') ? space.location.split('·')[1].trim() : ""));
+      setAddress(space.address || "");
+      setType(space.type || "open");
+      setPrice(String(space.price !== undefined ? space.price : (space.price_per_hour || 45)));
+      setCap(String(space.cap !== undefined ? space.cap : (space.capacity || 10)));
+      setSurface(space.surface || `${(space.cap || 10) * 6} m²`);
+      setDesc(space.desc || space.description || "");
+      setSelectedAm(Array.isArray(space.am) ? [...space.am] : (Array.isArray(space.amenities) ? [...space.amenities] : ["wifi", "coffee", "screen"]));
+
+      const currentImgs = Array.isArray(space.imgs) && space.imgs.length > 0
+        ? [...space.imgs]
+        : (Array.isArray(space.photos) && space.photos.length > 0 ? [...space.photos] : [IMG.a, IMG.b]);
+      setImgs(currentImgs);
+      setNewImgInput("");
       setErr("");
     }
   }, [space]);
 
   if (!isOpen || !space) return null;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const numPrice = Number(price);
-    if (!numPrice || numPrice <= 0) {
-      setErr("Veuillez saisir un tarif valide en DH");
+  const toggleAmenity = (id) => {
+    setSelectedAm(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleAddPhoto = () => {
+    const trimmed = newImgInput.trim();
+    if (!trimmed) return;
+    setImgs(prev => [...prev, trimmed]);
+    setNewImgInput("");
+    setErr("");
+  };
+
+  const handleRemovePhoto = (idx) => {
+    if (imgs.length <= 1) {
+      setErr("L'espace doit comporter au moins une photo.");
       return;
     }
+    setImgs(prev => prev.filter((_, i) => i !== idx));
+    setErr("");
+  };
+
+  const handleSetMainPhoto = (idx) => {
+    if (idx === 0) return;
+    setImgs(prev => {
+      const copy = [...prev];
+      const [chosen] = copy.splice(idx, 1);
+      return [chosen, ...copy];
+    });
+    setErr("");
+  };
+
+  const handleAddPresetPhoto = (url) => {
+    if (!imgs.includes(url)) {
+      setImgs(prev => [...prev, url]);
+      setErr("");
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setErr("Le nom de l'espace est obligatoire");
+      return;
+    }
+    const numPrice = Number(price);
+    if (!numPrice || numPrice <= 0) {
+      setErr("Veuillez saisir un tarif horaire valide en DH");
+      return;
+    }
+    const numCap = Number(cap);
+    if (!numCap || numCap <= 0) {
+      setErr("Veuillez saisir une capacité valide (minimum 1 personne)");
+      return;
+    }
+    const cleanImgs = imgs.filter(Boolean);
+    if (cleanImgs.length === 0) {
+      setErr("Au moins une photo est requise pour l'espace");
+      return;
+    }
+
+    const finalDistrict = district.trim() || `${city} Centre`;
+    const finalLocation = `${city} · ${finalDistrict}`;
+
     onUpdateSpace(space.id, {
-      name: name.trim() || space.name,
+      name: name.trim(),
+      city,
+      district: finalDistrict,
+      location: finalLocation,
+      address: address.trim() || `${finalDistrict}, ${city}, Maroc`,
+      type,
       price: numPrice,
-      capacity: Number(cap) || space.cap,
-      desc: desc.trim() || space.desc
+      price_per_hour: numPrice,
+      capacity: numCap,
+      cap: numCap,
+      surface: surface.trim() || `${numCap * 6} m²`,
+      desc: desc.trim() || `Espace de travail tout équipé situé à ${city}, ${finalDistrict}.`,
+      description: desc.trim() || `Espace de travail tout équipé situé à ${city}, ${finalDistrict}.`,
+      am: selectedAm,
+      amenities: selectedAm,
+      imgs: cleanImgs,
+      photos: cleanImgs
     });
     onClose();
   };
 
+  const PRESETS = [
+    { label: "Open Space Loft", url: IMG.a },
+    { label: "Salle Réunion Verre", url: IMG.b },
+    { label: "Bureau Privé Bois", url: IMG.c },
+    { label: "Espace Tech Moderne", url: IMG.d },
+    { label: "Bureau Lumineux", url: IMG.e },
+    { label: "Lounge & Café", url: IMG.f },
+    { label: "Cabine Focus", url: IMG.i },
+    { label: "Terrasse & Rooftop", url: IMG.g }
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/60 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-600">
-              <Icon n="pencil" size={18} />
+      <div className="relative w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl my-6 max-h-[92vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 shadow-xs">
+              <Icon n="pencil" size={20} />
             </span>
             <div>
-              <h2 className="font-display text-lg font-bold text-ink">Modifier le tarif & l'espace</h2>
-              <p className="text-xs text-slate-500">{space.city} · {space.district}</p>
+              <div className="flex items-center gap-2">
+                <h2 className="font-display text-xl font-bold text-ink">Modifier l'espace de travail</h2>
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">Mode Admin</span>
+              </div>
+              <p className="text-xs text-slate-500">Mettez à jour le nom, la localisation, les images, tarifs et caractéristiques</p>
             </div>
           </div>
           <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
@@ -3644,30 +3768,142 @@ const EditSpacePriceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
         </div>
 
         {err && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl bg-rose-50 p-2.5 text-xs font-semibold text-rose-700 border border-rose-200">
-            <Icon n="alert-circle" size={14} />{err}
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700 border border-rose-200">
+            <Icon n="alert-circle" size={15} />{err}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-mist p-3">
-            <img src={U(space.imgs[0], 120)} alt="" className="h-12 w-16 rounded-lg object-cover" />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 1. SECTION PHOTOS & GALERIE */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <Icon n="image" size={14} className="text-brand-600" />
+                  Galerie Photos & Image de couverture
+                </h3>
+                <p className="text-[11px] text-slate-500">La 1ère image est la photo principale affichée sur la carte et la recherche</p>
+              </div>
+              <span className="text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200">
+                {imgs.length} photo{imgs.length > 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {/* Grille des photos actuelles */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {imgs.map((photoUrl, idx) => (
+                <div key={idx} className={`group relative rounded-xl overflow-hidden border-2 transition ${idx === 0 ? "border-brand-600 ring-2 ring-brand-500/30" : "border-slate-200 hover:border-slate-400"}`}>
+                  <img src={U(photoUrl, 300)} alt="" className="h-24 w-full object-cover" />
+                  {idx === 0 ? (
+                    <span className="absolute top-1.5 left-1.5 rounded-md bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
+                      ★ Couverture
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSetMainPhoto(idx)}
+                      title="Définir comme photo principale"
+                      className="absolute top-1.5 left-1.5 rounded-md bg-ink/70 px-1.5 py-0.5 text-[9px] font-bold text-white opacity-0 group-hover:opacity-100 hover:bg-brand-600 transition shadow-xs">
+                      ★ Mettre en 1er
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(idx)}
+                    title="Supprimer cette photo"
+                    className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-md bg-rose-600 text-white opacity-0 group-hover:opacity-100 hover:bg-rose-700 transition shadow-xs">
+                    <Icon n="trash-2" size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Ajouter une nouvelle photo par URL */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newImgInput}
+                onChange={e => setNewImgInput(e.target.value)}
+                placeholder="Ajouter une photo (collez une URL Unsplash, Cloudinary, Web...)"
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-500"
+              />
+              <button
+                type="button"
+                onClick={handleAddPhoto}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition">
+                <Icon n="plus" size={13} />Ajouter
+              </button>
+            </div>
+
+            {/* Bibliothèque de suggestions de photos */}
             <div>
-              <p className="font-bold text-sm text-ink">{space.name}</p>
-              <p className="text-xs text-slate-400">Tarif actuel : <b className="text-brand-600">{EUR.format(space.price)}</b>/{space.unit}</p>
+              <p className="text-[11px] font-semibold text-slate-500 mb-1.5">Ou cliquez pour ajouter une photo modèle haute définition :</p>
+              <div className="flex flex-wrap gap-2">
+                {PRESETS.map((p, i) => (
+                  <button
+                    type="button"
+                    key={i}
+                    onClick={() => handleAddPresetPhoto(p.url)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 transition">
+                    <img src={U(p.url, 40)} alt="" className="h-4 w-4 rounded-sm object-cover" />
+                    <span>+ {p.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <Field label="Nom de l'espace">
-            <input value={name} onChange={e => setName(e.target.value)} className={inp} />
-          </Field>
+          {/* 2. NOM ET TYPE */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Nom de l'espace *">
+              <input
+                value={name}
+                onChange={e => { setName(e.target.value); setErr(""); }}
+                placeholder="Ex: L'Atelier Coworking Maarif"
+                className={inp}
+                required
+              />
+            </Field>
+            <Field label="Type d'espace *">
+              <select value={type} onChange={e => setType(e.target.value)} className={inp}>
+                {TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+              </select>
+            </Field>
+          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Nouveau tarif horaire (DH) *">
+          {/* 3. LOCALISATION */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Ville au Maroc *">
+              <select value={city} onChange={e => setCity(e.target.value)} className={inp}>
+                {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
+            <Field label="Quartier / District *">
+              <input
+                value={district}
+                onChange={e => setDistrict(e.target.value)}
+                placeholder="Ex: Maarif, Guéliz, Agdal..."
+                className={inp}
+                required
+              />
+            </Field>
+            <Field label="Adresse physique précise">
+              <input
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                placeholder="Ex: 28 Boulevard Zerktouni"
+                className={inp}
+              />
+            </Field>
+          </div>
+
+          {/* 4. TARIF, CAPACITÉ & SURFACE */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Tarif par heure (DH) *">
               <div className="relative">
                 <input
                   type="number"
-                  min="10"
+                  min="5"
                   step="5"
                   value={price}
                   onChange={e => setPrice(e.target.value)}
@@ -3677,7 +3913,7 @@ const EditSpacePriceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
                 <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">DH/h</span>
               </div>
             </Field>
-            <Field label="Capacité d'accueil">
+            <Field label="Capacité d'accueil (places) *">
               <div className="relative">
                 <input
                   type="number"
@@ -3685,39 +3921,79 @@ const EditSpacePriceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
                   value={cap}
                   onChange={e => setCap(e.target.value)}
                   className={inp}
+                  required
                 />
                 <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">pers.</span>
               </div>
             </Field>
+            <Field label="Surface">
+              <input
+                value={surface}
+                onChange={e => setSurface(e.target.value)}
+                placeholder="Ex: 85 m²"
+                className={inp}
+              />
+            </Field>
           </div>
 
-          <Field label="Description">
+          {/* 5. ÉQUIPEMENTS & SERVICES */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-2">Équipements & Commodités inclus</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {AMENITIES.map(am => {
+                const checked = selectedAm.includes(am.id);
+                return (
+                  <button
+                    type="button"
+                    key={am.id}
+                    onClick={() => toggleAmenity(am.id)}
+                    className={`flex items-center gap-2 rounded-xl border p-2 text-xs font-medium transition text-left ${checked ? "border-brand-500 bg-brand-50/60 text-brand-700 font-semibold" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                    <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-md ${checked ? "bg-brand-600 text-white" : "border border-slate-300"}`}>
+                      {checked && <Icon n="check" size={11} />}
+                    </span>
+                    <span className="truncate">{am.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 6. DESCRIPTION */}
+          <Field label="Description détaillée de l'espace">
             <textarea
               rows={3}
               value={desc}
               onChange={e => setDesc(e.target.value)}
+              placeholder="Présentez l'espace, son ambiance, sa luminosité, les services exclusifs et facilités d'accès..."
               className={inp}
             />
           </Field>
 
-          <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
-              Annuler
-            </button>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition">
-              <Icon n="check" size={14} />Enregistrer le nouveau tarif
-            </button>
+          {/* 7. FOOTER ACTIONS */}
+          <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+            <div className="text-xs text-slate-400">
+              Modifications immédiatement synchronisées avec PostgreSQL & Supabase
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 transition">
+                <Icon n="check" size={14} />Enregistrer toutes les modifications
+              </button>
+            </div>
           </div>
         </form>
       </div>
     </div>
   );
 };
+const EditSpacePriceModal = EditSpaceModal;
 
 /* ================= DASHBOARD GESTIONNAIRE & ADMIN ================= */
 const AdminDash = ({
@@ -4081,9 +4357,9 @@ const AdminDash = ({
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => setEditingSpace(s)}
-                                title="Modifier le prix et les caractéristiques"
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700 transition">
-                                <Icon n="pencil" size={13} /><span>Modifier prix</span>
+                                title="Modifier toutes les informations de cet espace (nom, photos, emplacement, tarifs, capacité)"
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700 transition shadow-2xs">
+                                <Icon n="pencil" size={13} /><span>Modifier</span>
                               </button>
                               <button
                                 onClick={() => nav({ name: "space", params: { id: s.id } })}
@@ -4804,19 +5080,73 @@ const App = () => {
   };
 
   const handleUpdateSpace = (spaceId, updatedFields) => {
+    let spaceName = "";
     setSpacesList(prev => prev.map(s => {
-      if (s.id === spaceId) {
+      if (s.id === spaceId || String(s.id) === String(spaceId) || (s.dbId && String(s.dbId) === String(spaceId))) {
+        spaceName = updatedFields.name || s.name;
+        const newCity = updatedFields.city || s.city;
+        const newDistrict = updatedFields.district || s.district;
+        const newLocation = updatedFields.location || `${newCity} · ${newDistrict}`;
+        const newPrice = updatedFields.price !== undefined ? Number(updatedFields.price) : (updatedFields.price_per_hour !== undefined ? Number(updatedFields.price_per_hour) : s.price);
+        const newCap = updatedFields.capacity !== undefined ? Number(updatedFields.capacity) : (updatedFields.cap !== undefined ? Number(updatedFields.cap) : s.cap);
+        const newImgs = updatedFields.imgs || updatedFields.photos || s.imgs;
+        const newAm = updatedFields.am || updatedFields.amenities || s.am;
+        const newDesc = updatedFields.desc !== undefined ? updatedFields.desc : (updatedFields.description !== undefined ? updatedFields.description : s.desc);
+        const newName = updatedFields.name || s.name;
+        const newType = updatedFields.type || s.type;
+        const newSurface = updatedFields.surface || s.surface;
+        const newAddress = updatedFields.address || s.address;
+
         return {
           ...s,
           ...updatedFields,
-          price: updatedFields.price !== undefined ? Number(updatedFields.price) : s.price,
-          cap: updatedFields.capacity !== undefined ? Number(updatedFields.capacity) : s.cap
+          name: newName,
+          city: newCity,
+          district: newDistrict,
+          location: newLocation,
+          address: newAddress,
+          price: newPrice,
+          price_per_hour: newPrice,
+          cap: newCap,
+          capacity: newCap,
+          imgs: newImgs,
+          photos: newImgs,
+          am: newAm,
+          amenities: newAm,
+          desc: newDesc,
+          description: newDesc,
+          type: newType,
+          surface: newSurface
         };
       }
       return s;
     }));
-    SpotworkAPI.updateSpace(spaceId, updatedFields);
-    toast(`Tarif et espace mis à jour (${updatedFields.price || ""} DH/h) !`, "check");
+
+    const currentSpace = spacesList.find(s => s.id === spaceId || String(s.id) === String(spaceId) || (s.dbId && String(s.dbId) === String(spaceId)));
+    const targetId = currentSpace?.dbId || currentSpace?.id || spaceId;
+
+    const payloadForApi = {
+      name: updatedFields.name,
+      location: updatedFields.location || (updatedFields.city && updatedFields.district ? `${updatedFields.city} · ${updatedFields.district}` : undefined),
+      price_per_hour: updatedFields.price !== undefined ? Number(updatedFields.price) : (updatedFields.price_per_hour !== undefined ? Number(updatedFields.price_per_hour) : undefined),
+      price: updatedFields.price !== undefined ? Number(updatedFields.price) : undefined,
+      capacity: updatedFields.capacity !== undefined ? Number(updatedFields.capacity) : (updatedFields.cap !== undefined ? Number(updatedFields.cap) : undefined),
+      description: updatedFields.description !== undefined ? updatedFields.description : updatedFields.desc,
+      desc: updatedFields.desc !== undefined ? updatedFields.desc : updatedFields.description,
+      amenities: updatedFields.amenities || updatedFields.am,
+      photos: updatedFields.photos || updatedFields.imgs,
+      imgs: updatedFields.imgs || updatedFields.photos,
+      type: updatedFields.type,
+      surface: updatedFields.surface,
+      city: updatedFields.city,
+      district: updatedFields.district,
+      address: updatedFields.address
+    };
+
+    Object.keys(payloadForApi).forEach(k => payloadForApi[k] === undefined && delete payloadForApi[k]);
+
+    SpotworkAPI.updateSpace(targetId, payloadForApi);
+    toast(`Espace « ${updatedFields.name || spaceName || currentSpace?.name || ""} » mis à jour avec succès !`, "check-circle");
   };
 
   const handleDeleteSpace = (spaceId) => {
@@ -5079,7 +5409,7 @@ const App = () => {
       <Navbar view={view} nav={nav} cartCount={cart.length} menuOpen={menuOpen} setMenuOpen={setMenuOpen} currentUser={currentUser} onSelectUser={onLogin} onLogout={onLogout} toast={toast} />
       {view.name === "home" && <Home nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList} bookings={allBookings} currentUser={currentUser} userBookings={userBookings} />}
       {view.name === "explore" && <Explore params={view.params} nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList} bookings={allBookings} />}
-      {view.name === "space" && <SpaceDetail id={view.params.id} nav={nav} favs={favs} toggleFav={toggleFav} reserve={reserve} spaces={spacesList} bookings={allBookings} />}
+      {view.name === "space" && <SpaceDetail id={view.params.id} nav={nav} favs={favs} toggleFav={toggleFav} reserve={reserve} spaces={spacesList} bookings={allBookings} currentUser={currentUser} onUpdateSpace={handleUpdateSpace} />}
       {view.name === "checkout" && <Checkout cart={cart} setCart={setCart} nav={nav} onDone={onDone} toast={toast} currentUser={currentUser} />}
       {view.name === "user" && <UserDash initTab={view.params?.tab} bookings={userBookings} setBookings={setUserBookings} favs={favs} toggleFav={toggleFav} nav={nav} toast={toast} currentUser={currentUser} spaces={spacesList} />}
       {view.name === "admin" && (

@@ -55,7 +55,7 @@ export class BookingService {
     const { space_id, booking_date, start_time, end_time, exclude_booking_id, seats = 1 } = params;
     const space = await this.getSpace(space_id);
     const cap = space ? (space.capacity || 1) : 1;
-    const isExclusiveRoom = !space || ['office', 'booth'].includes(space.type) || cap <= 1;
+    const isExclusiveRoom = !space || ['office', 'booth'].includes(space.type || '') || cap <= 1;
 
     if (isLiveSupabase) {
       // Requête Supabase PostgreSQL
