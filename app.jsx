@@ -665,11 +665,38 @@ const INITIAL_TRANSACTIONS = [
 
 /* ================= MOTEUR DE GESTION DU PLANNING & DES DISPONIBILITÉS ================= */
 const getSpaceAvailability = (space, dateStr, bookings = []) => {
-  if (!space) return { availableSeats: 0, totalCapacity: 0, isSoldOut: false, isFullDay: false, bookedHours: [] };
+  if (!space) {
+    return {
+      availableSeats: 0,
+      totalCapacity: 0,
+      isSoldOut: false,
+      isFullDay: false,
+      bookedHours: [],
+      hourlyFreeSeats: {},
+      hourlyBookedSeats: {},
+      minFreeSeats: 0,
+      maxFreeSeats: 0
+    };
+  }
+
   const cap = space.cap || 1;
+  const hourlyBookedSeats = {};
+  const hourlyFreeSeats = {};
+  HOURS.forEach(h => { hourlyBookedSeats[h] = 0; });
 
   if (!dateStr) {
-    return { availableSeats: cap, totalCapacity: cap, isSoldOut: false, isFullDay: false, bookedHours: [] };
+    HOURS.forEach(h => { hourlyFreeSeats[h] = cap; });
+    return {
+      availableSeats: cap,
+      totalCapacity: cap,
+      isSoldOut: false,
+      isFullDay: false,
+      bookedHours: [],
+      hourlyFreeSeats,
+      hourlyBookedSeats,
+      minFreeSeats: cap,
+      maxFreeSeats: cap
+    };
   }
 
   // Active bookings on this space and date
@@ -679,18 +706,27 @@ const getSpaceAvailability = (space, dateStr, bookings = []) => {
     b.status !== "cancelled"
   );
 
-  let bookedSeats = 0;
-  const bookedHoursSet = new Set();
-  let isFullDay = false;
+  // Pour les espaces fermés/privatifs (ex: bureau fermé ou cabine solo), 1 réservation prend toute la pièce
+  const isExclusiveRoom = ["office", "booth"].includes(space.type);
 
   for (const b of dayBookings) {
-    const isExclusiveRoom = ["office", "meeting", "booth", "studio"].includes(space.type);
-    const isJournee = (b.timeSlot && b.timeSlot.includes("Journée")) || (b.meta && b.meta.includes("Journée")) || (b.hours && b.hours >= 8);
+    const isJournee = (b.timeSlot && b.timeSlot.includes("Journée")) ||
+      (b.meta && b.meta.includes("Journée")) ||
+      (b.hours && b.hours >= 8);
+
+    // Nombre de places réservées par cette demande (1 par défaut)
+    const seatsTaken = isExclusiveRoom ? cap : (b.seats !== undefined ? Math.max(1, Number(b.seats)) : 1);
 
     if (isJournee) {
-      isFullDay = true;
-      bookedSeats = cap;
-      HOURS.forEach(h => bookedHoursSet.add(h));
+      HOURS.forEach(h => {
+        hourlyBookedSeats[h] = Math.min(cap, (hourlyBookedSeats[h] || 0) + seatsTaken);
+      });
+    } else if (Array.isArray(b.slots) && b.slots.length > 0) {
+      b.slots.forEach(h => {
+        if (hourlyBookedSeats[h] !== undefined) {
+          hourlyBookedSeats[h] = Math.min(cap, hourlyBookedSeats[h] + seatsTaken);
+        }
+      });
     } else {
       const slotText = b.timeSlot || b.meta || "";
       const match = slotText.match(/(\d{2}:\d{2})\s*–\s*(\d{2}:\d{2})/);
@@ -701,27 +737,38 @@ const getSpaceAvailability = (space, dateStr, bookings = []) => {
         const endIdx = HOURS.indexOf(end);
         if (startIdx !== -1 && endIdx !== -1) {
           for (let i = startIdx; i < endIdx; i++) {
-            bookedHoursSet.add(HOURS[i]);
+            const h = HOURS[i];
+            hourlyBookedSeats[h] = Math.min(cap, hourlyBookedSeats[h] + seatsTaken);
           }
         }
-      }
-      if (isExclusiveRoom) {
-        bookedSeats = cap;
-      } else {
-        bookedSeats += (b.seats || 1);
       }
     }
   }
 
-  const availableSeats = Math.max(0, cap - bookedSeats);
-  const isSoldOut = isFullDay || availableSeats === 0 || (bookedHoursSet.size >= HOURS.length);
+  const soldOutHoursList = [];
+  HOURS.forEach(h => {
+    const free = Math.max(0, cap - (hourlyBookedSeats[h] || 0));
+    hourlyFreeSeats[h] = free;
+    if (free === 0) {
+      soldOutHoursList.push(h);
+    }
+  });
+
+  const freeValues = Object.values(hourlyFreeSeats);
+  const maxFreeSeats = Math.max(...freeValues);
+  const minFreeSeats = Math.min(...freeValues);
+  const isSoldOut = freeValues.every(f => f === 0);
+  const isFullDay = isSoldOut;
 
   return {
-    availableSeats,
+    availableSeats: maxFreeSeats,
+    minFreeSeats,
     totalCapacity: cap,
     isSoldOut,
     isFullDay,
-    bookedHours: Array.from(bookedHoursSet)
+    bookedHours: soldOutHoursList,
+    hourlyFreeSeats,
+    hourlyBookedSeats
   };
 };
 
@@ -736,6 +783,7 @@ const getNextAvailableDates = (space, bookings = [], daysAhead = 7) => {
     dates.push({
       date: dateStr,
       availableSeats: avail.availableSeats,
+      minFreeSeats: avail.minFreeSeats,
       totalCapacity: avail.totalCapacity,
       isSoldOut: avail.isSoldOut,
       label: d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -1906,21 +1954,51 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
   });
   const [days, setDays] = useState(1);
   const [slots, setSlots] = useState([]);
+  const [seatsCount, setSeatsCount] = useState(1);
   const [err, setErr] = useState("");
 
   if (!s) return <main className="py-24 text-center">Espace introuvable.</main>;
   const liked = favs.has(s.id);
   const isHour = s.unit === "heure";
-  const base = isHour ? slots.length * s.price : days * s.price;
+  const base = isHour ? slots.length * s.price * seatsCount : days * s.price * seatsCount;
   const fees = Math.round(base * 0.08 * 100) / 100;
 
   // Calcul dynamique des places et disponibilités selon les réservations enregistrées
   const availability = useMemo(() => getSpaceAvailability(s, date, bookings), [s, date, bookings]);
   const upcomingDates = useMemo(() => getNextAvailableDates(s, bookings, 7), [s, bookings]);
-  const bookedHoursSet = useMemo(() => new Set(availability.bookedHours || []), [availability]);
+
+  // Réajuster les créneaux si l'utilisateur augmente le nombre de places demandées
+  const updateSeatsCount = newCount => {
+    const clamped = Math.max(1, Math.min(s.cap || 1, newCount));
+    setSeatsCount(clamped);
+    if (isHour && slots.length > 0) {
+      const validSlots = slots.filter(h => {
+        const free = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (s.cap || 1);
+        return free >= clamped;
+      });
+      if (validSlots.length < slots.length) {
+        setSlots(validSlots);
+        setErr(`Certains créneaux ont été désélectionnés car ils comptent moins de ${clamped} place(s) libre(s).`);
+      } else {
+        setErr("");
+      }
+    }
+  };
 
   const flipSlot = h => {
     if (availability.isSoldOut) return;
+    const freeSeats = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (s.cap || 1);
+    if (!slots.includes(h)) {
+      if (freeSeats <= 0) {
+        setErr(`Le créneau ${h} est complet (0 place disponible).`);
+        return;
+      }
+      if (freeSeats < seatsCount) {
+        setErr(`Le créneau ${h} ne dispose que de ${freeSeats} place${freeSeats > 1 ? "s" : ""} disponible${freeSeats > 1 ? "s" : ""} (vous avez sélectionné ${seatsCount} place${seatsCount > 1 ? "s" : ""}).`);
+        return;
+      }
+    }
+    setErr("");
     setSlots(p => p.includes(h) ? p.filter(x => x !== h) : [...p, h].sort());
   };
 
@@ -1929,7 +2007,24 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       setErr(`Cet espace est complet pour le ${fmtDate(date)}. Choisissez une autre date disponible.`);
       return;
     }
-    if (isHour && slots.length === 0) { setErr("Sélectionnez au moins un créneau horaire."); return; }
+    if (isHour) {
+      if (slots.length === 0) {
+        setErr("Sélectionnez au moins un créneau horaire.");
+        return;
+      }
+      for (const h of slots) {
+        const freeSeats = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (s.cap || 1);
+        if (freeSeats < seatsCount) {
+          setErr(`Le créneau ${h} ne dispose que de ${freeSeats} place(s) libre(s) pour votre demande de ${seatsCount} place(s).`);
+          return;
+        }
+      }
+    } else {
+      if (availability.availableSeats < seatsCount) {
+        setErr(`Cet espace ne dispose que de ${availability.availableSeats} place(s) libre(s) pour le ${fmtDate(date)}.`);
+        return;
+      }
+    }
     setErr("");
     reserve({
       key: Date.now(),
@@ -1938,10 +2033,12 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       img: s.imgs[0],
       city: s.city,
       date,
-      seats: 1,
+      seats: seatsCount,
       slots: slots,
       isHour: isHour,
-      meta: isHour ? `${fmtDate(date)} · ${slots.length} h (${slots.join(', ')})` : `${fmtDate(date)} · ${days} jour${days > 1 ? "s" : ""}`,
+      meta: isHour
+        ? `${fmtDate(date)} · ${slots.length} h (${slots.join(', ')}) · ${seatsCount} place${seatsCount > 1 ? "s" : ""}`
+        : `${fmtDate(date)} · ${days} jour${days > 1 ? "s" : ""} · ${seatsCount} place${seatsCount > 1 ? "s" : ""}`,
       total: base + fees
     });
   };
@@ -1982,7 +2079,11 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
                 <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white">
                   <Icon n="check" size={13} />
                 </span>
-                <span>{availability.availableSeats} place{availability.availableSeats > 1 ? "s" : ""} disponible{availability.availableSeats > 1 ? "s" : ""} sur {availability.totalCapacity} pour le {fmtDate(date)}</span>
+                <span>
+                  {availability.minFreeSeats === availability.availableSeats
+                    ? `${availability.availableSeats} place${availability.availableSeats > 1 ? "s" : ""} disponible${availability.availableSeats > 1 ? "s" : ""} sur ${availability.totalCapacity} pour le ${fmtDate(date)}`
+                    : `De ${availability.minFreeSeats} à ${availability.availableSeats} places libres selon les heures (capacité : ${availability.totalCapacity} places) pour le ${fmtDate(date)}`}
+                </span>
               </div>
               <span className="text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full">
                 Réservation ouverte
@@ -2191,6 +2292,40 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
                 </div>
               </div>
 
+              {/* Sélecteur du nombre de places souhaité */}
+              <Field label={`Nombre de places (${seatsCount} personne${seatsCount > 1 ? "s" : ""})`}>
+                <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 bg-slate-50/70">
+                  <button
+                    type="button"
+                    onClick={() => updateSeatsCount(seatsCount - 1)}
+                    disabled={seatsCount <= 1}
+                    className={`grid h-8 w-8 place-items-center rounded-full transition ${
+                      seatsCount <= 1
+                        ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                        : "bg-white text-ink shadow-2xs hover:bg-brand-50"
+                    }`}
+                  >
+                    <Icon n="minus" size={14} />
+                  </button>
+                  <div className="text-center">
+                    <span className="text-sm font-bold text-ink">{seatsCount} place{seatsCount > 1 ? "s" : ""}</span>
+                    <span className="block text-[10px] text-slate-500 font-medium">sur {s.cap} au total</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateSeatsCount(seatsCount + 1)}
+                    disabled={seatsCount >= (s.cap || 1)}
+                    className={`grid h-8 w-8 place-items-center rounded-full transition ${
+                      seatsCount >= (s.cap || 1)
+                        ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                        : "bg-white text-ink shadow-2xs hover:bg-brand-50"
+                    }`}
+                  >
+                    <Icon n="plus" size={14} />
+                  </button>
+                </div>
+              </Field>
+
               {isHour ? (
                 <Field label={`Créneaux horaires (${slots.length} sélectionné${slots.length > 1 ? "s" : ""})`} err={err}>
                   {availability.isSoldOut ? (
@@ -2199,24 +2334,49 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
                     </div>
                   ) : (
                     <div className="grid grid-cols-4 gap-1.5">
-                      {HOURS.map((h, i) => {
-                        const busyByDefault = s.busy.includes(i);
-                        const busyByBooking = bookedHoursSet.has(h);
-                        const busy = busyByDefault || busyByBooking || availability.isFullDay;
+                      {HOURS.map((h) => {
+                        const freeSeats = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (s.cap || 1);
+                        const isSlotSoldOut = freeSeats <= 0;
+                        const notEnoughSeats = freeSeats < seatsCount;
+                        const disabled = isSlotSoldOut || notEnoughSeats;
                         const on = slots.includes(h);
                         return (
                           <button
                             key={h}
-                            disabled={busy}
+                            type="button"
+                            disabled={disabled}
                             onClick={() => flipSlot(h)}
-                            title={busy ? "Créneau déjà réservé" : "Disponible"}
-                            className={`rounded-lg border px-1 py-2 text-[11px] font-bold transition ${busy
-                              ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300 line-through"
-                              : on
-                                ? "border-brand-600 bg-brand-600 text-white shadow-sm"
-                                : "border-slate-200 text-slate-600 hover:border-brand-400 bg-white"
-                              }`}>
-                            {h}
+                            title={
+                              isSlotSoldOut
+                                ? "Créneau complet (0 place disponible)"
+                                : notEnoughSeats
+                                  ? `Seulement ${freeSeats} place(s) disponible(s) (vous en demandez ${seatsCount})`
+                                  : `${freeSeats} place(s) disponible(s) sur ${s.cap}`
+                            }
+                            className={`flex flex-col items-center justify-center rounded-xl border py-2 px-1 text-center transition ${
+                              disabled
+                                ? "cursor-not-allowed border-slate-100 bg-slate-50/80 opacity-60"
+                                : on
+                                  ? "border-brand-600 bg-brand-600 text-white shadow-sm ring-2 ring-brand-600/30"
+                                  : "border-slate-200 bg-white text-slate-700 hover:border-brand-400 hover:shadow-2xs"
+                            }`}
+                          >
+                            <span className={`text-xs font-bold leading-tight ${on ? "text-white" : disabled ? "text-slate-400 line-through" : "text-ink"}`}>
+                              {h}
+                            </span>
+                            <span
+                              className={`text-[10px] font-extrabold leading-tight mt-0.5 ${
+                                on
+                                  ? "text-brand-100"
+                                  : isSlotSoldOut
+                                    ? "text-rose-600"
+                                    : notEnoughSeats
+                                      ? "text-amber-600"
+                                      : "text-emerald-700"
+                              }`}
+                            >
+                              {isSlotSoldOut ? "Complet" : `${freeSeats} libre${freeSeats > 1 ? "s" : ""}`}
+                            </span>
                           </button>
                         );
                       })}
@@ -2235,7 +2395,14 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
             </div>
 
             <div className="mt-5 space-y-2 border-t border-dashed border-slate-200 pt-4 text-sm">
-              <div className="flex justify-between text-slate-500"><span>{isHour ? `${slots.length} × ${EUR.format(s.price)}` : `${days} × ${EUR.format(s.price)}`}</span><span>{EUR.format(base)}</span></div>
+              <div className="flex justify-between text-slate-500">
+                <span>
+                  {isHour
+                    ? `${slots.length} h × ${seatsCount} place${seatsCount > 1 ? "s" : ""} × ${EUR.format(s.price)}`
+                    : `${days} j × ${seatsCount} place${seatsCount > 1 ? "s" : ""} × ${EUR.format(s.price)}`}
+                </span>
+                <span>{EUR.format(base)}</span>
+              </div>
               <div className="flex justify-between text-slate-500"><span>Frais de service (8 %)</span><span>{EUR.format(fees)}</span></div>
               <div className="flex justify-between pt-1 font-display text-base font-bold"><span>Total TTC</span><span>{EUR.format(base + fees)}</span></div>
             </div>
@@ -2244,13 +2411,14 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
             <button
               onClick={book}
               disabled={availability.isSoldOut}
-              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold shadow-lg transition ${availability.isSoldOut
-                ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
-                : "bg-brand-600 text-white shadow-brand-600/30 hover:bg-brand-700 active:scale-[.98]"
-                }`}
+              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold shadow-lg transition ${
+                availability.isSoldOut
+                  ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
+                  : "bg-brand-600 text-white shadow-brand-600/30 hover:bg-brand-700 active:scale-[.98]"
+              }`}
             >
               <Icon n={availability.isSoldOut ? "slash" : "zap"} size={16} />
-              {availability.isSoldOut ? "Complet pour cette date" : "Réserver cet espace"}
+              {availability.isSoldOut ? "Complet pour cette date" : `Réserver ${seatsCount > 1 ? `${seatsCount} places` : "cet espace"}`}
             </button>
 
             {availability.isSoldOut ? (
@@ -2369,6 +2537,8 @@ const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
           phone: form.phone,
           total: total,
           slots: cart[0].slots,
+          seats: cart[0].seats || 1,
+          isHour: cart[0].isHour,
           paymentMethod: methodLabel,
           invoiceRef: invoiceRef
         });
@@ -4766,7 +4936,8 @@ const App = () => {
       booking_date: b.date || new Date().toISOString().slice(0, 10),
       start_time: startTime,
       end_time: endTime,
-      total_price: totalPrice
+      total_price: totalPrice,
+      seats: b.seats || 1
     }).then(res => {
       if (res && res.status === "success") {
         toast("Réservation enregistrée et synchronisée avec la base de données !", "check-circle");
@@ -4785,6 +4956,8 @@ const App = () => {
       meta: b.meta,
       status: "Confirmée",
       totalPrice: totalPrice,
+      seats: b.seats || 1,
+      slots: b.slots || [],
       invoiceRef: `FACT-2026-${String(tempBookingId).slice(-6)}`
     }, ...p]);
 
@@ -4800,6 +4973,8 @@ const App = () => {
       date: b.date,
       timeSlot: b.meta,
       hours: Array.isArray(b.slots) ? b.slots.length : 4,
+      seats: b.seats || 1,
+      slots: b.slots || [],
       totalPrice: totalPrice,
       status: "confirmed",
       createdAt: "À l'instant",

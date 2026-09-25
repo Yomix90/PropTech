@@ -87,6 +87,8 @@ export const createBookingSchema = z
     end_time: z
       .string()
       .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Format d’heure de fin invalide (HH:MM ou HH:MM:SS)'),
+    seats: z.number().int().min(1).optional(),
+    total_price: z.number().positive().optional(),
   })
   .refine(
     (data) => {

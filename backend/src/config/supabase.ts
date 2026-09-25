@@ -44,6 +44,7 @@ export interface BookingEntity {
   start_time: string; // HH:MM:SS
   end_time: string; // HH:MM:SS
   total_price: number;
+  seats?: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   created_at: string;
 }

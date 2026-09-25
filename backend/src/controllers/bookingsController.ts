@@ -26,18 +26,22 @@ export class BookingsController {
       }
 
       // 2. Vérifier la disponibilité (anti-chevauchement strict)
+      const requestedSeats = req.body.seats ? Number(req.body.seats) : 1;
       const overlapCheck = await BookingService.checkOverlap({
         space_id,
         booking_date,
         start_time,
         end_time,
+        seats: requestedSeats,
       });
 
       if (overlapCheck.hasOverlap) {
         res.status(409).json({
           status: 'error',
           code: 'SLOT_UNAVAILABLE',
-          message: 'Ce créneau horaire est déjà réservé pour cet espace',
+          message: overlapCheck.availableSeats !== undefined
+            ? `Ce créneau horaire est déjà réservé pour cet espace (seulement ${overlapCheck.availableSeats} place(s) libre(s))`
+            : 'Ce créneau horaire est déjà réservé pour cet espace',
           conflict: {
             booking_date,
             occupied_start: overlapCheck.conflictingBooking?.start_time,
@@ -48,7 +52,8 @@ export class BookingsController {
       }
 
       // 3. Calculer le tarif total
-      const totalPrice = calculateTotalPrice(start_time, end_time, Number(space.price_per_hour));
+      const calculatedPrice = calculateTotalPrice(start_time, end_time, Number(space.price_per_hour), requestedSeats);
+      const totalPrice = req.body.total_price ? Number(req.body.total_price) : calculatedPrice;
 
       // 4. Créer la réservation
       const newBooking: BookingEntity = {
@@ -59,6 +64,7 @@ export class BookingsController {
         start_time,
         end_time,
         total_price: totalPrice,
+        seats: requestedSeats,
         status: 'confirmed',
         created_at: new Date().toISOString(),
       };

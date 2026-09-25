@@ -6,6 +6,7 @@ export interface OverlapCheckParams {
   start_time: string;
   end_time: string;
   exclude_booking_id?: string;
+  seats?: number;
 }
 
 export function parseTimeToMinutes(timeStr: string): number {
@@ -32,20 +33,29 @@ export function doTimesOverlap(
 export function calculateTotalPrice(
   start_time: string,
   end_time: string,
-  price_per_hour: number
+  price_per_hour: number,
+  seats: number = 1
 ): number {
   const startMin = parseTimeToMinutes(start_time);
   const endMin = parseTimeToMinutes(end_time);
   const durationHours = (endMin - startMin) / 60;
-  return Math.round(durationHours * price_per_hour * 100) / 100;
+  return Math.round(durationHours * price_per_hour * seats * 100) / 100;
 }
 
 export class BookingService {
   /**
-   * Vérifie si un créneau est déjà réservé (anti-chevauchement)
+   * Vérifie si un créneau est disponible compte tenu de la capacité de l'espace et des places demandées
    */
-  static async checkOverlap(params: OverlapCheckParams): Promise<{ hasOverlap: boolean; conflictingBooking?: BookingEntity }> {
-    const { space_id, booking_date, start_time, end_time, exclude_booking_id } = params;
+  static async checkOverlap(params: OverlapCheckParams): Promise<{
+    hasOverlap: boolean;
+    conflictingBooking?: BookingEntity;
+    availableSeats?: number;
+    totalCapacity?: number;
+  }> {
+    const { space_id, booking_date, start_time, end_time, exclude_booking_id, seats = 1 } = params;
+    const space = await this.getSpace(space_id);
+    const cap = space ? (space.capacity || 1) : 1;
+    const isExclusiveRoom = !space || ['office', 'booth'].includes(space.type) || cap <= 1;
 
     if (isLiveSupabase) {
       // Requête Supabase PostgreSQL
@@ -66,13 +76,24 @@ export class BookingService {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        return { hasOverlap: true, conflictingBooking: data[0] as BookingEntity };
+        if (isExclusiveRoom) {
+          return { hasOverlap: true, conflictingBooking: data[0] as BookingEntity, availableSeats: 0, totalCapacity: cap };
+        }
+        const bookedSeats = data.reduce((sum: number, b: any) => sum + (b.seats !== undefined ? Number(b.seats) : 1), 0);
+        if (bookedSeats + seats > cap) {
+          return {
+            hasOverlap: true,
+            conflictingBooking: data[0] as BookingEntity,
+            availableSeats: Math.max(0, cap - bookedSeats),
+            totalCapacity: cap
+          };
+        }
       }
-      return { hasOverlap: false };
+      return { hasOverlap: false, availableSeats: cap, totalCapacity: cap };
     }
 
     // Local in-memory check
-    const conflict = localStore.bookings.find((b) => {
+    const overlapping = localStore.bookings.filter((b) => {
       if (b.space_id !== space_id) return false;
       if (b.booking_date !== booking_date) return false;
       if (b.status === 'cancelled') return false;
@@ -81,9 +102,25 @@ export class BookingService {
       return doTimesOverlap(start_time, end_time, b.start_time, b.end_time);
     });
 
+    if (overlapping.length > 0) {
+      if (isExclusiveRoom) {
+        return { hasOverlap: true, conflictingBooking: overlapping[0], availableSeats: 0, totalCapacity: cap };
+      }
+      const bookedSeats = overlapping.reduce((sum, b) => sum + (b.seats !== undefined ? Number(b.seats) : 1), 0);
+      if (bookedSeats + seats > cap) {
+        return {
+          hasOverlap: true,
+          conflictingBooking: overlapping[0],
+          availableSeats: Math.max(0, cap - bookedSeats),
+          totalCapacity: cap
+        };
+      }
+    }
+
     return {
-      hasOverlap: Boolean(conflict),
-      conflictingBooking: conflict,
+      hasOverlap: false,
+      availableSeats: cap,
+      totalCapacity: cap
     };
   }
 

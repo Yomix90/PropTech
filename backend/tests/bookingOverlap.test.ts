@@ -125,4 +125,53 @@ describe('API Bookings - Tests d’intégration REST', () => {
     expect(Array.isArray(res.body.data.bookings)).toBe(true);
     expect(res.body.data.bookings.length).toBeGreaterThan(0);
   });
+
+  it('gère correctement les réservations multi-places selon la capacité de l’espace (ex: 12 places)', async () => {
+    const space12Id = '10000000-0000-0000-0000-000000000002'; // Studio Guéliz (capacité 12)
+    const testDate = '2026-12-01';
+
+    // 1. Première réservation d'1 place sur 12
+    const res1 = await request(app)
+      .post('/api/bookings')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        space_id: space12Id,
+        booking_date: testDate,
+        start_time: '10:00',
+        end_time: '12:00',
+        seats: 1,
+      });
+    expect(res1.status).toBe(201);
+    expect(res1.body.data.booking.seats).toBe(1);
+
+    // 2. Deuxième réservation de 3 places sur le même créneau (total 4 <= 12 => autorisé)
+    const res2 = await request(app)
+      .post('/api/bookings')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        space_id: space12Id,
+        booking_date: testDate,
+        start_time: '10:00',
+        end_time: '12:00',
+        seats: 3,
+      });
+    expect(res2.status).toBe(201);
+    expect(res2.body.data.booking.seats).toBe(3);
+
+    // 3. Troisième réservation demandant 10 places (4 + 10 = 14 > 12 => rejeté 409)
+    const res3 = await request(app)
+      .post('/api/bookings')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        space_id: space12Id,
+        booking_date: testDate,
+        start_time: '10:00',
+        end_time: '12:00',
+        seats: 10,
+      });
+    expect(res3.status).toBe(409);
+    expect(res3.body.code).toBe('SLOT_UNAVAILABLE');
+    expect(res3.body.message).toContain('8 place(s) libre(s)');
+  });
 });
+

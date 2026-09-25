@@ -675,24 +675,58 @@ const INITIAL_TRANSACTIONS = [
   }
 ];
 const getSpaceAvailability = (space, dateStr, bookings = []) => {
-  if (!space) return { availableSeats: 0, totalCapacity: 0, isSoldOut: false, isFullDay: false, bookedHours: [] };
+  if (!space) {
+    return {
+      availableSeats: 0,
+      totalCapacity: 0,
+      isSoldOut: false,
+      isFullDay: false,
+      bookedHours: [],
+      hourlyFreeSeats: {},
+      hourlyBookedSeats: {},
+      minFreeSeats: 0,
+      maxFreeSeats: 0
+    };
+  }
   const cap = space.cap || 1;
+  const hourlyBookedSeats = {};
+  const hourlyFreeSeats = {};
+  HOURS.forEach((h) => {
+    hourlyBookedSeats[h] = 0;
+  });
   if (!dateStr) {
-    return { availableSeats: cap, totalCapacity: cap, isSoldOut: false, isFullDay: false, bookedHours: [] };
+    HOURS.forEach((h) => {
+      hourlyFreeSeats[h] = cap;
+    });
+    return {
+      availableSeats: cap,
+      totalCapacity: cap,
+      isSoldOut: false,
+      isFullDay: false,
+      bookedHours: [],
+      hourlyFreeSeats,
+      hourlyBookedSeats,
+      minFreeSeats: cap,
+      maxFreeSeats: cap
+    };
   }
   const dayBookings = (bookings || []).filter(
     (b) => (b.spaceId === space.id || b.id === space.id) && b.date === dateStr && b.status !== "cancelled"
   );
-  let bookedSeats = 0;
-  const bookedHoursSet = /* @__PURE__ */ new Set();
-  let isFullDay = false;
+  const isExclusiveRoom = ["office", "booth"].includes(space.type);
   for (const b of dayBookings) {
-    const isExclusiveRoom = ["office", "meeting", "booth", "studio"].includes(space.type);
     const isJournee = b.timeSlot && b.timeSlot.includes("Journ\xE9e") || b.meta && b.meta.includes("Journ\xE9e") || b.hours && b.hours >= 8;
+    const seatsTaken = isExclusiveRoom ? cap : b.seats !== void 0 ? Math.max(1, Number(b.seats)) : 1;
     if (isJournee) {
-      isFullDay = true;
-      bookedSeats = cap;
-      HOURS.forEach((h) => bookedHoursSet.add(h));
+      HOURS.forEach((h) => {
+        hourlyBookedSeats[h] = Math.min(cap, (hourlyBookedSeats[h] || 0) + seatsTaken);
+      });
+    } else if (Array.isArray(b.slots) && b.slots.length > 0) {
+      b.slots.forEach((h) => {
+        if (hourlyBookedSeats[h] !== void 0) {
+          hourlyBookedSeats[h] = Math.min(cap, hourlyBookedSeats[h] + seatsTaken);
+        }
+      });
     } else {
       const slotText = b.timeSlot || b.meta || "";
       const match = slotText.match(/(\d{2}:\d{2})\s*–\s*(\d{2}:\d{2})/);
@@ -703,25 +737,35 @@ const getSpaceAvailability = (space, dateStr, bookings = []) => {
         const endIdx = HOURS.indexOf(end);
         if (startIdx !== -1 && endIdx !== -1) {
           for (let i = startIdx; i < endIdx; i++) {
-            bookedHoursSet.add(HOURS[i]);
+            const h = HOURS[i];
+            hourlyBookedSeats[h] = Math.min(cap, hourlyBookedSeats[h] + seatsTaken);
           }
         }
       }
-      if (isExclusiveRoom) {
-        bookedSeats = cap;
-      } else {
-        bookedSeats += b.seats || 1;
-      }
     }
   }
-  const availableSeats = Math.max(0, cap - bookedSeats);
-  const isSoldOut = isFullDay || availableSeats === 0 || bookedHoursSet.size >= HOURS.length;
+  const soldOutHoursList = [];
+  HOURS.forEach((h) => {
+    const free = Math.max(0, cap - (hourlyBookedSeats[h] || 0));
+    hourlyFreeSeats[h] = free;
+    if (free === 0) {
+      soldOutHoursList.push(h);
+    }
+  });
+  const freeValues = Object.values(hourlyFreeSeats);
+  const maxFreeSeats = Math.max(...freeValues);
+  const minFreeSeats = Math.min(...freeValues);
+  const isSoldOut = freeValues.every((f) => f === 0);
+  const isFullDay = isSoldOut;
   return {
-    availableSeats,
+    availableSeats: maxFreeSeats,
+    minFreeSeats,
     totalCapacity: cap,
     isSoldOut,
     isFullDay,
-    bookedHours: Array.from(bookedHoursSet)
+    bookedHours: soldOutHoursList,
+    hourlyFreeSeats,
+    hourlyBookedSeats
   };
 };
 const getNextAvailableDates = (space, bookings = [], daysAhead = 7) => {
@@ -735,6 +779,7 @@ const getNextAvailableDates = (space, bookings = [], daysAhead = 7) => {
     dates.push({
       date: dateStr,
       availableSeats: avail.availableSeats,
+      minFreeSeats: avail.minFreeSeats,
       totalCapacity: avail.totalCapacity,
       isSoldOut: avail.isSoldOut,
       label: d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })
@@ -1204,17 +1249,45 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
   });
   const [days, setDays] = useState(1);
   const [slots, setSlots] = useState([]);
+  const [seatsCount, setSeatsCount] = useState(1);
   const [err, setErr] = useState("");
   if (!s) return /* @__PURE__ */ React.createElement("main", { className: "py-24 text-center" }, "Espace introuvable.");
   const liked = favs.has(s.id);
   const isHour = s.unit === "heure";
-  const base = isHour ? slots.length * s.price : days * s.price;
+  const base = isHour ? slots.length * s.price * seatsCount : days * s.price * seatsCount;
   const fees = Math.round(base * 0.08 * 100) / 100;
   const availability = useMemo(() => getSpaceAvailability(s, date, bookings), [s, date, bookings]);
   const upcomingDates = useMemo(() => getNextAvailableDates(s, bookings, 7), [s, bookings]);
-  const bookedHoursSet = useMemo(() => new Set(availability.bookedHours || []), [availability]);
+  const updateSeatsCount = (newCount) => {
+    const clamped = Math.max(1, Math.min(s.cap || 1, newCount));
+    setSeatsCount(clamped);
+    if (isHour && slots.length > 0) {
+      const validSlots = slots.filter((h) => {
+        const free = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
+        return free >= clamped;
+      });
+      if (validSlots.length < slots.length) {
+        setSlots(validSlots);
+        setErr(`Certains cr\xE9neaux ont \xE9t\xE9 d\xE9s\xE9lectionn\xE9s car ils comptent moins de ${clamped} place(s) libre(s).`);
+      } else {
+        setErr("");
+      }
+    }
+  };
   const flipSlot = (h) => {
     if (availability.isSoldOut) return;
+    const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
+    if (!slots.includes(h)) {
+      if (freeSeats <= 0) {
+        setErr(`Le cr\xE9neau ${h} est complet (0 place disponible).`);
+        return;
+      }
+      if (freeSeats < seatsCount) {
+        setErr(`Le cr\xE9neau ${h} ne dispose que de ${freeSeats} place${freeSeats > 1 ? "s" : ""} disponible${freeSeats > 1 ? "s" : ""} (vous avez s\xE9lectionn\xE9 ${seatsCount} place${seatsCount > 1 ? "s" : ""}).`);
+        return;
+      }
+    }
+    setErr("");
     setSlots((p) => p.includes(h) ? p.filter((x) => x !== h) : [...p, h].sort());
   };
   const book = () => {
@@ -1222,9 +1295,23 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       setErr(`Cet espace est complet pour le ${fmtDate(date)}. Choisissez une autre date disponible.`);
       return;
     }
-    if (isHour && slots.length === 0) {
-      setErr("S\xE9lectionnez au moins un cr\xE9neau horaire.");
-      return;
+    if (isHour) {
+      if (slots.length === 0) {
+        setErr("S\xE9lectionnez au moins un cr\xE9neau horaire.");
+        return;
+      }
+      for (const h of slots) {
+        const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
+        if (freeSeats < seatsCount) {
+          setErr(`Le cr\xE9neau ${h} ne dispose que de ${freeSeats} place(s) libre(s) pour votre demande de ${seatsCount} place(s).`);
+          return;
+        }
+      }
+    } else {
+      if (availability.availableSeats < seatsCount) {
+        setErr(`Cet espace ne dispose que de ${availability.availableSeats} place(s) libre(s) pour le ${fmtDate(date)}.`);
+        return;
+      }
     }
     setErr("");
     reserve({
@@ -1234,15 +1321,15 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       img: s.imgs[0],
       city: s.city,
       date,
-      seats: 1,
+      seats: seatsCount,
       slots,
       isHour,
-      meta: isHour ? `${fmtDate(date)} \xB7 ${slots.length} h (${slots.join(", ")})` : `${fmtDate(date)} \xB7 ${days} jour${days > 1 ? "s" : ""}`,
+      meta: isHour ? `${fmtDate(date)} \xB7 ${slots.length} h (${slots.join(", ")}) \xB7 ${seatsCount} place${seatsCount > 1 ? "s" : ""}` : `${fmtDate(date)} \xB7 ${days} jour${days > 1 ? "s" : ""} \xB7 ${seatsCount} place${seatsCount > 1 ? "s" : ""}`,
       total: base + fees
     });
   };
   const similar = spaces.filter((x) => x.id !== s.id && (x.city === s.city || x.type === s.type)).slice(0, 3);
-  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type).label)), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.availableSeats, " place", availability.availableSeats > 1 ? "s" : "", " disponible", availability.availableSeats > 1 ? "s" : "", " sur ", availability.totalCapacity, " pour le ", fmtDate(date))), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type).label)), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.minFreeSeats === availability.availableSeats ? `${availability.availableSeats} place${availability.availableSeats > 1 ? "s" : ""} disponible${availability.availableSeats > 1 ? "s" : ""} sur ${availability.totalCapacity} pour le ${fmtDate(date)}` : `De ${availability.minFreeSeats} \xE0 ${availability.availableSeats} places libres selon les heures (capacit\xE9 : ${availability.totalCapacity} places) pour le ${fmtDate(date)}`)), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: i,
@@ -1302,23 +1389,50 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink truncate capitalize" }, item.label),
       /* @__PURE__ */ React.createElement("span", { className: `inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.2 rounded ${item.isSoldOut ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-800"}` }, item.isSoldOut ? "Complet (0)" : `${item.availableSeats} libre${item.availableSeats > 1 ? "s" : ""}`)
     );
-  }))), isHour ? /* @__PURE__ */ React.createElement(Field, { label: `Cr\xE9neaux horaires (${slots.length} s\xE9lectionn\xE9${slots.length > 1 ? "s" : ""})`, err }, availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-xs text-rose-700 font-semibold" }, "Tous les cr\xE9neaux sont r\xE9serv\xE9s pour cette journ\xE9e") : /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" }, HOURS.map((h, i) => {
-    const busyByDefault = s.busy.includes(i);
-    const busyByBooking = bookedHoursSet.has(h);
-    const busy = busyByDefault || busyByBooking || availability.isFullDay;
+  }))), /* @__PURE__ */ React.createElement(Field, { label: `Nombre de places (${seatsCount} personne${seatsCount > 1 ? "s" : ""})` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 bg-slate-50/70" }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => updateSeatsCount(seatsCount - 1),
+      disabled: seatsCount <= 1,
+      className: `grid h-8 w-8 place-items-center rounded-full transition ${seatsCount <= 1 ? "bg-slate-100 text-slate-300 cursor-not-allowed" : "bg-white text-ink shadow-2xs hover:bg-brand-50"}`
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "minus", size: 14 })
+  ), /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm font-bold text-ink" }, seatsCount, " place", seatsCount > 1 ? "s" : ""), /* @__PURE__ */ React.createElement("span", { className: "block text-[10px] text-slate-500 font-medium" }, "sur ", s.cap, " au total")), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => updateSeatsCount(seatsCount + 1),
+      disabled: seatsCount >= (s.cap || 1),
+      className: `grid h-8 w-8 place-items-center rounded-full transition ${seatsCount >= (s.cap || 1) ? "bg-slate-100 text-slate-300 cursor-not-allowed" : "bg-white text-ink shadow-2xs hover:bg-brand-50"}`
+    },
+    /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 14 })
+  ))), isHour ? /* @__PURE__ */ React.createElement(Field, { label: `Cr\xE9neaux horaires (${slots.length} s\xE9lectionn\xE9${slots.length > 1 ? "s" : ""})`, err }, availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-xs text-rose-700 font-semibold" }, "Tous les cr\xE9neaux sont r\xE9serv\xE9s pour cette journ\xE9e") : /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" }, HOURS.map((h) => {
+    const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
+    const isSlotSoldOut = freeSeats <= 0;
+    const notEnoughSeats = freeSeats < seatsCount;
+    const disabled = isSlotSoldOut || notEnoughSeats;
     const on = slots.includes(h);
     return /* @__PURE__ */ React.createElement(
       "button",
       {
         key: h,
-        disabled: busy,
+        type: "button",
+        disabled,
         onClick: () => flipSlot(h),
-        title: busy ? "Cr\xE9neau d\xE9j\xE0 r\xE9serv\xE9" : "Disponible",
-        className: `rounded-lg border px-1 py-2 text-[11px] font-bold transition ${busy ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300 line-through" : on ? "border-brand-600 bg-brand-600 text-white shadow-sm" : "border-slate-200 text-slate-600 hover:border-brand-400 bg-white"}`
+        title: isSlotSoldOut ? "Cr\xE9neau complet (0 place disponible)" : notEnoughSeats ? `Seulement ${freeSeats} place(s) disponible(s) (vous en demandez ${seatsCount})` : `${freeSeats} place(s) disponible(s) sur ${s.cap}`,
+        className: `flex flex-col items-center justify-center rounded-xl border py-2 px-1 text-center transition ${disabled ? "cursor-not-allowed border-slate-100 bg-slate-50/80 opacity-60" : on ? "border-brand-600 bg-brand-600 text-white shadow-sm ring-2 ring-brand-600/30" : "border-slate-200 bg-white text-slate-700 hover:border-brand-400 hover:shadow-2xs"}`
       },
-      h
+      /* @__PURE__ */ React.createElement("span", { className: `text-xs font-bold leading-tight ${on ? "text-white" : disabled ? "text-slate-400 line-through" : "text-ink"}` }, h),
+      /* @__PURE__ */ React.createElement(
+        "span",
+        {
+          className: `text-[10px] font-extrabold leading-tight mt-0.5 ${on ? "text-brand-100" : isSlotSoldOut ? "text-rose-600" : notEnoughSeats ? "text-amber-600" : "text-emerald-700"}`
+        },
+        isSlotSoldOut ? "Complet" : `${freeSeats} libre${freeSeats > 1 ? "s" : ""}`
+      )
     );
-  }))) : /* @__PURE__ */ React.createElement(Field, { label: "Dur\xE9e de location" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.max(1, days - 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "minus", size: 14 })), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-bold" }, days, " jour", days > 1 ? "s" : ""), /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.min(10, days + 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 14 }))))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 space-y-2 border-t border-dashed border-slate-200 pt-4 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, isHour ? `${slots.length} \xD7 ${EUR.format(s.price)}` : `${days} \xD7 ${EUR.format(s.price)}`), /* @__PURE__ */ React.createElement("span", null, EUR.format(base))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service (8 %)"), /* @__PURE__ */ React.createElement("span", null, EUR.format(fees))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between pt-1 font-display text-base font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total TTC"), /* @__PURE__ */ React.createElement("span", null, EUR.format(base + fees)))), /* @__PURE__ */ React.createElement(
+  }))) : /* @__PURE__ */ React.createElement(Field, { label: "Dur\xE9e de location" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.max(1, days - 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "minus", size: 14 })), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-bold" }, days, " jour", days > 1 ? "s" : ""), /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.min(10, days + 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 14 }))))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 space-y-2 border-t border-dashed border-slate-200 pt-4 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, isHour ? `${slots.length} h \xD7 ${seatsCount} place${seatsCount > 1 ? "s" : ""} \xD7 ${EUR.format(s.price)}` : `${days} j \xD7 ${seatsCount} place${seatsCount > 1 ? "s" : ""} \xD7 ${EUR.format(s.price)}`), /* @__PURE__ */ React.createElement("span", null, EUR.format(base))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service (8 %)"), /* @__PURE__ */ React.createElement("span", null, EUR.format(fees))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between pt-1 font-display text-base font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total TTC"), /* @__PURE__ */ React.createElement("span", null, EUR.format(base + fees)))), /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: book,
@@ -1326,7 +1440,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       className: `mt-5 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold shadow-lg transition ${availability.isSoldOut ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none" : "bg-brand-600 text-white shadow-brand-600/30 hover:bg-brand-700 active:scale-[.98]"}`
     },
     /* @__PURE__ */ React.createElement(Icon, { n: availability.isSoldOut ? "slash" : "zap", size: 16 }),
-    availability.isSoldOut ? "Complet pour cette date" : "R\xE9server cet espace"
+    availability.isSoldOut ? "Complet pour cette date" : `R\xE9server ${seatsCount > 1 ? `${seatsCount} places` : "cet espace"}`
   ), availability.isSoldOut ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-rose-600 font-semibold" }, "S\xE9lectionnez une autre date ci-dessus pour r\xE9server.") : /* @__PURE__ */ React.createElement("p", { className: "mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-emerald-500" }), "Confirmation imm\xE9diate \xB7 Paiement CMI s\xE9curis\xE9")))), /* @__PURE__ */ React.createElement("div", { className: "mt-14" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Continuez l'exploration", title: "Espaces similaires" }), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, similar.map((x) => /* @__PURE__ */ React.createElement(SpaceCard, { key: x.id, s: x, nav, favs, toggleFav, date, bookings })))));
 };
 const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
@@ -1421,6 +1535,8 @@ const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
           phone: form.phone,
           total,
           slots: cart[0].slots,
+          seats: cart[0].seats || 1,
+          isHour: cart[0].isHour,
           paymentMethod: methodLabel,
           invoiceRef
         });
@@ -2729,7 +2845,8 @@ const App = () => {
       booking_date: b.date || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
       start_time: startTime,
       end_time: endTime,
-      total_price: totalPrice
+      total_price: totalPrice,
+      seats: b.seats || 1
     }).then((res) => {
       if (res && res.status === "success") {
         toast("R\xE9servation enregistr\xE9e et synchronis\xE9e avec la base de donn\xE9es !", "check-circle");
@@ -2748,6 +2865,8 @@ const App = () => {
       meta: b.meta,
       status: "Confirm\xE9e",
       totalPrice,
+      seats: b.seats || 1,
+      slots: b.slots || [],
       invoiceRef: `FACT-2026-${String(tempBookingId).slice(-6)}`
     }, ...p]);
     setAllBookings((p) => [{
@@ -2762,6 +2881,8 @@ const App = () => {
       date: b.date,
       timeSlot: b.meta,
       hours: Array.isArray(b.slots) ? b.slots.length : 4,
+      seats: b.seats || 1,
+      slots: b.slots || [],
       totalPrice,
       status: "confirmed",
       createdAt: "\xC0 l'instant",
