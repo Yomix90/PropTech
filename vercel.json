@@ -1,12 +1,14 @@
 {
   "version": 2,
+  "buildCommand": "npm --prefix backend run build",
+  "outputDirectory": "public",
   "builds": [
     {
       "src": "backend/src/server.ts",
       "use": "@vercel/node"
     },
     {
-      "src": "Index.html",
+      "src": "public/**",
       "use": "@vercel/static"
     }
   ],
@@ -17,7 +19,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/Index.html"
+      "dest": "/public/$1"
     }
   ]
 }
