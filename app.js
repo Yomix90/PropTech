@@ -2,7 +2,26 @@ const { useState, useEffect, useMemo, useRef } = React;
 const MAD = { format: (v) => `${Math.round(Number(v) || 0).toLocaleString("fr-FR")} DH` };
 const EUR = MAD;
 const fmtDate = (v) => v ? (/* @__PURE__ */ new Date(v + "T12:00")).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) : "\u2014";
-const todayISO = () => (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+const todayISO = () => {
+  const d = /* @__PURE__ */ new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+const isSlotInPast = (dateStr, slotHourStr) => {
+  if (!dateStr) return false;
+  const today = todayISO();
+  if (dateStr < today) return true;
+  if (dateStr > today) return false;
+  const now = /* @__PURE__ */ new Date();
+  const currentHour = now.getHours();
+  const currentMin = now.getMinutes();
+  const [slotH] = (slotHourStr || "00:00").split(":").map(Number);
+  if (slotH < currentHour) return true;
+  if (slotH === currentHour && currentMin >= 0) return true;
+  return false;
+};
 const U = (id, w = 900) => !id ? "" : id.startsWith("http") ? id : `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
 const serializeNodes = (nodes) => {
   if (!Array.isArray(nodes)) return "";
@@ -681,7 +700,10 @@ const getSpaceAvailability = (space, dateStr, bookings = []) => {
       totalCapacity: 0,
       isSoldOut: false,
       isFullDay: false,
+      isPast: false,
+      allHoursPast: false,
       bookedHours: [],
+      pastHours: [],
       hourlyFreeSeats: {},
       hourlyBookedSeats: {},
       minFreeSeats: 0,
@@ -689,10 +711,17 @@ const getSpaceAvailability = (space, dateStr, bookings = []) => {
     };
   }
   const cap = space.cap || 1;
+  const today = todayISO();
+  const isPastDate = Boolean(dateStr && dateStr < today);
+  const isToday = Boolean(dateStr && dateStr === today);
   const hourlyBookedSeats = {};
   const hourlyFreeSeats = {};
+  const pastHours = [];
   HOURS.forEach((h) => {
     hourlyBookedSeats[h] = 0;
+    if (isPastDate || isToday && isSlotInPast(dateStr, h)) {
+      pastHours.push(h);
+    }
   });
   if (!dateStr) {
     HOURS.forEach((h) => {
@@ -703,11 +732,33 @@ const getSpaceAvailability = (space, dateStr, bookings = []) => {
       totalCapacity: cap,
       isSoldOut: false,
       isFullDay: false,
+      isPast: false,
+      allHoursPast: false,
       bookedHours: [],
+      pastHours: [],
       hourlyFreeSeats,
       hourlyBookedSeats,
       minFreeSeats: cap,
       maxFreeSeats: cap
+    };
+  }
+  if (isPastDate) {
+    HOURS.forEach((h) => {
+      hourlyFreeSeats[h] = 0;
+    });
+    return {
+      availableSeats: 0,
+      totalCapacity: cap,
+      isSoldOut: true,
+      isFullDay: true,
+      isPast: true,
+      allHoursPast: true,
+      bookedHours: [...HOURS],
+      pastHours: [...HOURS],
+      hourlyFreeSeats,
+      hourlyBookedSeats,
+      minFreeSeats: 0,
+      maxFreeSeats: 0
     };
   }
   const dayBookings = (bookings || []).filter(
@@ -746,16 +797,24 @@ const getSpaceAvailability = (space, dateStr, bookings = []) => {
   }
   const soldOutHoursList = [];
   HOURS.forEach((h) => {
-    const free = Math.max(0, cap - (hourlyBookedSeats[h] || 0));
-    hourlyFreeSeats[h] = free;
-    if (free === 0) {
+    if (pastHours.includes(h)) {
+      hourlyFreeSeats[h] = 0;
       soldOutHoursList.push(h);
+    } else {
+      const free = Math.max(0, cap - (hourlyBookedSeats[h] || 0));
+      hourlyFreeSeats[h] = free;
+      if (free === 0) {
+        soldOutHoursList.push(h);
+      }
     }
   });
-  const freeValues = Object.values(hourlyFreeSeats);
-  const maxFreeSeats = Math.max(...freeValues);
-  const minFreeSeats = Math.min(...freeValues);
-  const isSoldOut = freeValues.every((f) => f === 0);
+  const futureHours = HOURS.filter((h) => !pastHours.includes(h));
+  const futureFreeValues = futureHours.map((h) => hourlyFreeSeats[h]);
+  const maxFreeSeats = futureFreeValues.length > 0 ? Math.max(...futureFreeValues) : 0;
+  const minFreeSeats = futureFreeValues.length > 0 ? Math.min(...futureFreeValues) : 0;
+  const allFutureSoldOut = futureFreeValues.length === 0 || futureFreeValues.every((f) => f === 0);
+  const allHoursPast = pastHours.length === HOURS.length;
+  const isSoldOut = isPastDate || allHoursPast || allFutureSoldOut;
   const isFullDay = isSoldOut;
   return {
     availableSeats: maxFreeSeats,
@@ -763,7 +822,10 @@ const getSpaceAvailability = (space, dateStr, bookings = []) => {
     totalCapacity: cap,
     isSoldOut,
     isFullDay,
+    isPast: isPastDate,
+    allHoursPast,
     bookedHours: soldOutHoursList,
+    pastHours,
     hourlyFreeSeats,
     hourlyBookedSeats
   };
@@ -774,7 +836,10 @@ const getNextAvailableDates = (space, bookings = [], daysAhead = 7) => {
   for (let i = 0; i < daysAhead; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
-    const dateStr = d.toISOString().slice(0, 10);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const dateStr = `${year}-${month}-${day}`;
     const avail = getSpaceAvailability(space, dateStr, bookings);
     dates.push({
       date: dateStr,
@@ -782,7 +847,9 @@ const getNextAvailableDates = (space, bookings = [], daysAhead = 7) => {
       minFreeSeats: avail.minFreeSeats,
       totalCapacity: avail.totalCapacity,
       isSoldOut: avail.isSoldOut,
-      label: d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })
+      isPast: avail.isPast,
+      allHoursPast: avail.allHoursPast,
+      label: i === 0 ? "Aujourd'hui" : d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })
     });
   }
   return dates;
@@ -922,7 +989,7 @@ const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
         loading: "lazy",
         className: "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.07]"
       }
-    ), /* @__PURE__ */ React.createElement("div", { className: "absolute left-3 top-3 flex flex-col gap-1 items-start" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), date && (avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-rose-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white animate-pulse" }), "COMPLET (0 place)") : /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-emerald-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white" }), avail.availableSeats, " place", avail.availableSeats > 1 ? "s" : "", " libre", avail.availableSeats > 1 ? "s" : ""))), /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("div", { className: "absolute left-3 top-3 flex flex-col gap-1 items-start" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), date && (avail.isPast || avail.allHoursPast ? /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-slate-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white" }), "Journ\xE9e pass\xE9e") : avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-rose-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white animate-pulse" }), "COMPLET (0 place)") : /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-emerald-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white" }), avail.availableSeats, " place", avail.availableSeats > 1 ? "s" : "", " libre", avail.availableSeats > 1 ? "s" : ""))), /* @__PURE__ */ React.createElement(
       "button",
       {
         onClick: (e) => {
@@ -1225,6 +1292,7 @@ const Explore = ({ params, nav, favs, toggleFav, spaces = SPACES, bookings = [] 
     "input",
     {
       type: "date",
+      min: todayISO(),
       value: f.date,
       onChange: (e) => setF((prev) => ({ ...prev, date: e.target.value })),
       className: "border-none bg-transparent outline-none text-xs font-bold text-ink cursor-pointer"
@@ -1243,9 +1311,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
   const s = spaces.find((x) => x.id === id);
   const [img, setImg] = useState(0);
   const [date, setDate] = useState(() => {
-    const d = /* @__PURE__ */ new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
+    return todayISO();
   });
   const [days, setDays] = useState(1);
   const [slots, setSlots] = useState([]);
@@ -1275,7 +1341,11 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
     }
   };
   const flipSlot = (h) => {
-    if (availability.isSoldOut) return;
+    if (availability.isSoldOut || availability.isPast) return;
+    if (availability.pastHours.includes(h)) {
+      setErr(`Le cr\xE9neau horaire ${h} est d\xE9j\xE0 pass\xE9 et ne peut plus \xEAtre r\xE9serv\xE9.`);
+      return;
+    }
     const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
     if (!slots.includes(h)) {
       if (freeSeats <= 0) {
@@ -1291,6 +1361,10 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
     setSlots((p) => p.includes(h) ? p.filter((x) => x !== h) : [...p, h].sort());
   };
   const book = () => {
+    if (availability.isPast || availability.allHoursPast) {
+      setErr(`Cette date est pass\xE9e ou tous ses cr\xE9neaux horaires sont \xE9coul\xE9s. Veuillez choisir une date future.`);
+      return;
+    }
     if (availability.isSoldOut) {
       setErr(`Cet espace est complet pour le ${fmtDate(date)}. Choisissez une autre date disponible.`);
       return;
@@ -1301,6 +1375,10 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
         return;
       }
       for (const h of slots) {
+        if (availability.pastHours.includes(h)) {
+          setErr(`Le cr\xE9neau ${h} est d\xE9j\xE0 pass\xE9 et ne peut plus \xEAtre r\xE9serv\xE9.`);
+          return;
+        }
         const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
         if (freeSeats < seatsCount) {
           setErr(`Le cr\xE9neau ${h} ne dispose que de ${freeSeats} place(s) libre(s) pour votre demande de ${seatsCount} place(s).`);
@@ -1329,7 +1407,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
     });
   };
   const similar = spaces.filter((x) => x.id !== s.id && (x.city === s.city || x.type === s.type)).slice(0, 3);
-  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type).label)), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.minFreeSeats === availability.availableSeats ? `${availability.availableSeats} place${availability.availableSeats > 1 ? "s" : ""} disponible${availability.availableSeats > 1 ? "s" : ""} sur ${availability.totalCapacity} pour le ${fmtDate(date)}` : `De ${availability.minFreeSeats} \xE0 ${availability.availableSeats} places libres selon les heures (capacit\xE9 : ${availability.totalCapacity} places) pour le ${fmtDate(date)}`)), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type).label)), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-slate-300 bg-slate-100/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-slate-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-slate-500 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 13 })), availability.isPast ? `Date pass\xE9e (${fmtDate(date)}) \u2014 R\xE9servations impossibles` : `Journ\xE9e termin\xE9e pour le ${fmtDate(date)} \u2014 Tous les cr\xE9neaux horaires sont \xE9coul\xE9s`), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-600 leading-relaxed" }, "Il n'est plus possible de r\xE9server pour cette date car les horaires sont d\xE9j\xE0 pass\xE9s. Veuillez s\xE9lectionner une date ult\xE9rieure dans le planning ci-dessous.")) : availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.minFreeSeats === availability.availableSeats ? `${availability.availableSeats} place${availability.availableSeats > 1 ? "s" : ""} disponible${availability.availableSeats > 1 ? "s" : ""} sur ${availability.totalCapacity} pour le ${fmtDate(date)}` : `De ${availability.minFreeSeats} \xE0 ${availability.availableSeats} places libres selon les heures (capacit\xE9 : ${availability.totalCapacity} places) pour le ${fmtDate(date)}`)), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: i,
@@ -1364,9 +1442,15 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
     "input",
     {
       type: "date",
+      min: todayISO(),
       value: date,
       onChange: (e) => {
-        setDate(e.target.value);
+        const val = e.target.value;
+        if (val && val < todayISO()) {
+          setErr("Impossible de s\xE9lectionner une date d\xE9j\xE0 pass\xE9e.");
+          return;
+        }
+        setDate(val);
         setSlots([]);
         setErr("");
       },
@@ -1374,6 +1458,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
     }
   )), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-600 mb-1.5 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("span", null, "Disponibilit\xE9s des 7 prochains jours :")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-1.5 sm:grid-cols-3" }, upcomingDates.map((item) => {
     const isSelected = item.date === date;
+    const isPassed = item.isPast || item.allHoursPast;
     return /* @__PURE__ */ React.createElement(
       "button",
       {
@@ -1384,10 +1469,10 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
           setSlots([]);
           setErr("");
         },
-        className: `p-2 rounded-xl border text-left text-xs transition ${isSelected ? "border-brand-600 bg-brand-50/70 ring-2 ring-brand-600/30" : item.isSoldOut ? "border-rose-200 bg-rose-50/50 hover:bg-rose-50" : "border-slate-200 hover:border-brand-300 bg-white"}`
+        className: `p-2 rounded-xl border text-left text-xs transition ${isSelected ? "border-brand-600 bg-brand-50/70 ring-2 ring-brand-600/30" : isPassed ? "border-slate-200 bg-slate-100/70 opacity-80 hover:bg-slate-100" : item.isSoldOut ? "border-rose-200 bg-rose-50/50 hover:bg-rose-50" : "border-slate-200 hover:border-brand-300 bg-white"}`
       },
       /* @__PURE__ */ React.createElement("p", { className: "font-bold text-ink truncate capitalize" }, item.label),
-      /* @__PURE__ */ React.createElement("span", { className: `inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.2 rounded ${item.isSoldOut ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-800"}` }, item.isSoldOut ? "Complet (0)" : `${item.availableSeats} libre${item.availableSeats > 1 ? "s" : ""}`)
+      /* @__PURE__ */ React.createElement("span", { className: `inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.2 rounded ${isPassed ? "bg-slate-200 text-slate-600" : item.isSoldOut ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-800"}` }, isPassed ? "Termin\xE9" : item.isSoldOut ? "Complet (0)" : `${item.availableSeats} libre${item.availableSeats > 1 ? "s" : ""}`)
     );
   }))), /* @__PURE__ */ React.createElement(Field, { label: `Nombre de places (${seatsCount} personne${seatsCount > 1 ? "s" : ""})` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 bg-slate-50/70" }, /* @__PURE__ */ React.createElement(
     "button",
@@ -1407,11 +1492,12 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
       className: `grid h-8 w-8 place-items-center rounded-full transition ${seatsCount >= (s.cap || 1) ? "bg-slate-100 text-slate-300 cursor-not-allowed" : "bg-white text-ink shadow-2xs hover:bg-brand-50"}`
     },
     /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 14 })
-  ))), isHour ? /* @__PURE__ */ React.createElement(Field, { label: `Cr\xE9neaux horaires (${slots.length} s\xE9lectionn\xE9${slots.length > 1 ? "s" : ""})`, err }, availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-xs text-rose-700 font-semibold" }, "Tous les cr\xE9neaux sont r\xE9serv\xE9s pour cette journ\xE9e") : /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" }, HOURS.map((h) => {
+  ))), isHour ? /* @__PURE__ */ React.createElement(Field, { label: `Cr\xE9neaux horaires (${slots.length} s\xE9lectionn\xE9${slots.length > 1 ? "s" : ""})`, err }, availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-slate-200 bg-slate-100 p-3 text-center text-xs text-slate-600 font-semibold" }, "Tous les cr\xE9neaux horaires sont \xE9coul\xE9s pour cette journ\xE9e") : availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-xs text-rose-700 font-semibold" }, "Tous les cr\xE9neaux sont r\xE9serv\xE9s pour cette journ\xE9e") : /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" }, HOURS.map((h) => {
+    const isPast = availability.pastHours.includes(h);
     const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
     const isSlotSoldOut = freeSeats <= 0;
     const notEnoughSeats = freeSeats < seatsCount;
-    const disabled = isSlotSoldOut || notEnoughSeats;
+    const disabled = isPast || isSlotSoldOut || notEnoughSeats;
     const on = slots.includes(h);
     return /* @__PURE__ */ React.createElement(
       "button",
@@ -1420,28 +1506,28 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = SPACES, booki
         type: "button",
         disabled,
         onClick: () => flipSlot(h),
-        title: isSlotSoldOut ? "Cr\xE9neau complet (0 place disponible)" : notEnoughSeats ? `Seulement ${freeSeats} place(s) disponible(s) (vous en demandez ${seatsCount})` : `${freeSeats} place(s) disponible(s) sur ${s.cap}`,
-        className: `flex flex-col items-center justify-center rounded-xl border py-2 px-1 text-center transition ${disabled ? "cursor-not-allowed border-slate-100 bg-slate-50/80 opacity-60" : on ? "border-brand-600 bg-brand-600 text-white shadow-sm ring-2 ring-brand-600/30" : "border-slate-200 bg-white text-slate-700 hover:border-brand-400 hover:shadow-2xs"}`
+        title: isPast ? "Ce cr\xE9neau horaire est d\xE9j\xE0 pass\xE9" : isSlotSoldOut ? "Cr\xE9neau complet (0 place disponible)" : notEnoughSeats ? `Seulement ${freeSeats} place(s) disponible(s) (vous en demandez ${seatsCount})` : `${freeSeats} place(s) disponible(s) sur ${s.cap}`,
+        className: `flex flex-col items-center justify-center rounded-xl border py-2 px-1 text-center transition ${isPast ? "cursor-not-allowed border-slate-100 bg-slate-100/70 text-slate-400 opacity-50" : disabled ? "cursor-not-allowed border-slate-100 bg-slate-50/80 opacity-60" : on ? "border-brand-600 bg-brand-600 text-white shadow-sm ring-2 ring-brand-600/30" : "border-slate-200 bg-white text-slate-700 hover:border-brand-400 hover:shadow-2xs"}`
       },
-      /* @__PURE__ */ React.createElement("span", { className: `text-xs font-bold leading-tight ${on ? "text-white" : disabled ? "text-slate-400 line-through" : "text-ink"}` }, h),
+      /* @__PURE__ */ React.createElement("span", { className: `text-xs font-bold leading-tight ${on ? "text-white" : isPast ? "text-slate-400 line-through" : disabled ? "text-slate-400" : "text-ink"}` }, h),
       /* @__PURE__ */ React.createElement(
         "span",
         {
-          className: `text-[10px] font-extrabold leading-tight mt-0.5 ${on ? "text-brand-100" : isSlotSoldOut ? "text-rose-600" : notEnoughSeats ? "text-amber-600" : "text-emerald-700"}`
+          className: `text-[10px] font-extrabold leading-tight mt-0.5 ${on ? "text-brand-100" : isPast ? "text-slate-400 font-normal italic" : isSlotSoldOut ? "text-rose-600" : notEnoughSeats ? "text-amber-600" : "text-emerald-700"}`
         },
-        isSlotSoldOut ? "Complet" : `${freeSeats} libre${freeSeats > 1 ? "s" : ""}`
+        isPast ? "Pass\xE9" : isSlotSoldOut ? "Complet" : `${freeSeats} libre${freeSeats > 1 ? "s" : ""}`
       )
     );
   }))) : /* @__PURE__ */ React.createElement(Field, { label: "Dur\xE9e de location" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.max(1, days - 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "minus", size: 14 })), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-bold" }, days, " jour", days > 1 ? "s" : ""), /* @__PURE__ */ React.createElement("button", { onClick: () => setDays(Math.min(10, days + 1)), className: "grid h-8 w-8 place-items-center rounded-full bg-mist transition hover:bg-brand-50" }, /* @__PURE__ */ React.createElement(Icon, { n: "plus", size: 14 }))))), /* @__PURE__ */ React.createElement("div", { className: "mt-5 space-y-2 border-t border-dashed border-slate-200 pt-4 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, isHour ? `${slots.length} h \xD7 ${seatsCount} place${seatsCount > 1 ? "s" : ""} \xD7 ${EUR.format(s.price)}` : `${days} j \xD7 ${seatsCount} place${seatsCount > 1 ? "s" : ""} \xD7 ${EUR.format(s.price)}`), /* @__PURE__ */ React.createElement("span", null, EUR.format(base))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-slate-500" }, /* @__PURE__ */ React.createElement("span", null, "Frais de service (8 %)"), /* @__PURE__ */ React.createElement("span", null, EUR.format(fees))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between pt-1 font-display text-base font-bold" }, /* @__PURE__ */ React.createElement("span", null, "Total TTC"), /* @__PURE__ */ React.createElement("span", null, EUR.format(base + fees)))), /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: book,
-      disabled: availability.isSoldOut,
-      className: `mt-5 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold shadow-lg transition ${availability.isSoldOut ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none" : "bg-brand-600 text-white shadow-brand-600/30 hover:bg-brand-700 active:scale-[.98]"}`
+      disabled: availability.isSoldOut || availability.isPast || availability.allHoursPast,
+      className: `mt-5 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold shadow-lg transition ${availability.isPast || availability.allHoursPast ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none" : availability.isSoldOut ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none" : "bg-brand-600 text-white shadow-brand-600/30 hover:bg-brand-700 active:scale-[.98]"}`
     },
-    /* @__PURE__ */ React.createElement(Icon, { n: availability.isSoldOut ? "slash" : "zap", size: 16 }),
-    availability.isSoldOut ? "Complet pour cette date" : `R\xE9server ${seatsCount > 1 ? `${seatsCount} places` : "cet espace"}`
-  ), availability.isSoldOut ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-rose-600 font-semibold" }, "S\xE9lectionnez une autre date ci-dessus pour r\xE9server.") : /* @__PURE__ */ React.createElement("p", { className: "mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-emerald-500" }), "Confirmation imm\xE9diate \xB7 Paiement CMI s\xE9curis\xE9")))), /* @__PURE__ */ React.createElement("div", { className: "mt-14" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Continuez l'exploration", title: "Espaces similaires" }), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, similar.map((x) => /* @__PURE__ */ React.createElement(SpaceCard, { key: x.id, s: x, nav, favs, toggleFav, date, bookings })))));
+    /* @__PURE__ */ React.createElement(Icon, { n: availability.isPast || availability.allHoursPast ? "clock" : availability.isSoldOut ? "slash" : "zap", size: 16 }),
+    availability.isPast || availability.allHoursPast ? "Journ\xE9e pass\xE9e / ferm\xE9e" : availability.isSoldOut ? "Complet pour cette date" : `R\xE9server ${seatsCount > 1 ? `${seatsCount} places` : "cet espace"}`
+  ), availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-slate-500 font-semibold" }, "Cette date ou ses horaires sont \xE9coul\xE9s. Choisissez une autre date ci-dessus.") : availability.isSoldOut ? /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-center text-xs text-rose-600 font-semibold" }, "S\xE9lectionnez une autre date ci-dessus pour r\xE9server.") : /* @__PURE__ */ React.createElement("p", { className: "mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-emerald-500" }), "Confirmation imm\xE9diate \xB7 Paiement CMI s\xE9curis\xE9")))), /* @__PURE__ */ React.createElement("div", { className: "mt-14" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Continuez l'exploration", title: "Espaces similaires" }), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, similar.map((x) => /* @__PURE__ */ React.createElement(SpaceCard, { key: x.id, s: x, nav, favs, toggleFav, date, bookings })))));
 };
 const Checkout = ({ cart, setCart, nav, onDone, toast, currentUser }) => {
   const [promo, setPromo] = useState("");

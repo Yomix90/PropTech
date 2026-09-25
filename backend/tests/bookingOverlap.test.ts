@@ -173,5 +173,46 @@ describe('API Bookings - Tests d’intégration REST', () => {
     expect(res3.body.code).toBe('SLOT_UNAVAILABLE');
     expect(res3.body.message).toContain('8 place(s) libre(s)');
   });
+
+  it('rejette une réservation si la date est déjà passée', async () => {
+    const res = await request(app)
+      .post('/api/bookings')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        space_id: spaceId,
+        booking_date: '2020-01-01',
+        start_time: '10:00',
+        end_time: '12:00',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('PAST_DATE_ERROR');
+    expect(res.body.message).toContain('déjà passée');
+  });
+
+  it('rejette une réservation si l’horaire est déjà passé pour aujourd’hui', async () => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const pastHour = Math.max(0, now.getHours() - 2);
+    const pastHourStr = `${String(pastHour).padStart(2, '0')}:00`;
+    const pastEndStr = `${String(pastHour + 1).padStart(2, '0')}:00`;
+
+    if (now.getHours() >= 2) {
+      const res = await request(app)
+        .post('/api/bookings')
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({
+          space_id: spaceId,
+          booking_date: todayStr,
+          start_time: pastHourStr,
+          end_time: pastEndStr,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('PAST_SLOT_ERROR');
+      expect(res.body.message).toContain('déjà passé');
+    }
+  });
 });
+
 

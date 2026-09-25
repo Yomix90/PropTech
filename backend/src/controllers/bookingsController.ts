@@ -25,6 +25,29 @@ export class BookingsController {
         return;
       }
 
+      // 1.5 Vérifier que la date et l'heure ne sont pas déjà passées
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      if (booking_date < todayStr) {
+        res.status(400).json({
+          status: 'error',
+          code: 'PAST_DATE_ERROR',
+          message: 'Impossible de réserver une date déjà passée',
+        });
+        return;
+      }
+
+      if (booking_date === todayStr && start_time.slice(0, 5) <= currentTimeStr) {
+        res.status(400).json({
+          status: 'error',
+          code: 'PAST_SLOT_ERROR',
+          message: 'Impossible de réserver un créneau horaire déjà passé pour aujourd’hui',
+        });
+        return;
+      }
+
       // 2. Vérifier la disponibilité (anti-chevauchement strict)
       const requestedSeats = req.body.seats ? Number(req.body.seats) : 1;
       const overlapCheck = await BookingService.checkOverlap({
