@@ -17,6 +17,15 @@ const server = app.listen(env.PORT, async () => {
   console.log(`====================================================`);
 });
 
+server.on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.warn(`Le port ${env.PORT} est déjà utilisé. Le serveur existant est conservé.`);
+    return;
+  }
+
+  throw error;
+});
+
 const handleShutdown = (signal: string) => {
   console.log(`\nReception du signal ${signal}. Arrêt gracieux du serveur HTTP...`);
   server.close(() => {
