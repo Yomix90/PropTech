@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport de Projet PropTech — Spotwork Coworking Maroc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#0A1B33",
+            navy: "#0D2C5A",
+            mist: "#F6F8FC",
+            brand: {
+              50: "#F0F5FF",
+              100: "#DBE7FF",
+              200: "#BCD2FF",
+              500: "#2E6BEA",
+              600: "#1F56D6",
+              700: "#183FA8",
+              900: "#102557"
+            }
+          },
+          fontFamily: {
+            display: ["Space Grotesk", "sans-serif"],
+            body: ["Instrument Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @media print {
+      body { background: white !important; color: #0A1B33 !important; font-size: 11pt; line-height: 1.5; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      .card, table, pre { break-inside: avoid; }
+      @page { size: A4; margin: 15mm 12mm 15mm 12mm; }
+    }
+    body { font-family: "Instrument Sans", sans-serif; }
+    h1, h2, h3, h4 { font-family: "Space Grotesk", sans-serif; }
+    code, pre { font-family: "JetBrains Mono", monospace; }
+  </style>
+</head>
+<body class="bg-slate-100 text-ink antialiased p-4 md:p-8">
+
+  <!-- Bouton d'exportation PDF flottant (masqué à l'impression) -->
+  <div class="no-print fixed top-5 right-5 z-50 flex items-center gap-3">
+    <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-xl hover:bg-brand-700 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+      Imprimer / Enregistrer en PDF (A4)
+    </button>
+  </div>
+
+  <!-- Conteneur principal du rapport -->
+  <div id="report-content" class="mx-auto max-w-4xl bg-white shadow-xl border border-slate-200 rounded-3xl p-8 md:p-14 space-y-12">
+
+    <!-- ================= PAGE DE GARDE / EN-TÊTE ================= -->
+    <header class="border-b border-slate-200 pb-10">
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-3">
+          <span class="grid h-12 w-12 place-items-center rounded-2xl bg-brand-600 text-white font-bold text-xl shadow-md">SW</span>
+          <div>
+            <p class="font-display font-bold text-xl tracking-tight text-ink">Spotwork PropTech</p>
+            <p class="text-xs text-slate-500">Plateforme Intelligente de Gestion d'Espaces de Coworking</p>
+          </div>
+        </div>
+        <span class="rounded-full bg-brand-50 border border-brand-200 px-3.5 py-1 text-xs font-bold text-brand-700">
+          Rapport de Projet 2026
+        </span>
+      </div>
+
+      <div class="space-y-4">
+        <span class="inline-block rounded-lg bg-navy text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1">
+          Domaine : PropTech & Intelligence Artificielle
+        </span>
+        <h1 class="text-3xl md:text-5xl font-bold tracking-tight text-ink leading-tight">
+          Système de Réservation & Recommandation IA d'Espaces de Travail
+        </h1>
+        <p class="text-base text-slate-600 leading-relaxed max-w-3xl">
+          Étude détaillée du Use Case, de l'architecture technique 3-tiers, des prompts de conception d'interface sur V0.dev, du modèle de données PostgreSQL sous Supabase et des solutions aux défis d'ingénierie.
+        </p>
+      </div>
+
+      <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-slate-100 pt-6 text-xs">
+        <div>
+          <p class="text-slate-400 font-semibold uppercase">Projet</p>
+          <p class="font-bold text-ink mt-0.5">Spotwork Maroc</p>
+        </div>
+        <div>
+          <p class="text-slate-400 font-semibold uppercase">Stack Principale</p>
+          <p class="font-bold text-ink mt-0.5">React · Node · Supabase</p>
+        </div>
+        <div>
+          <p class="text-slate-400 font-semibold uppercase">Moteur d'IA</p>
+          <p class="font-bold text-ink mt-0.5">Claude 3.5 Sonnet</p>
+        </div>
+        <div>
+          <p class="text-slate-400 font-semibold uppercase">Date d'évaluation</p>
+          <p class="font-bold text-ink mt-0.5">Septembre 2026</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= 1. VISION DU PROJET & PROBLÈME RÉSOLU ================= -->
+    <section class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="h-6 w-1.5 rounded-full bg-brand-600"></span>
+        <h2 class="text-2xl font-bold text-ink">1. Vision du Projet et Problème Résolu</h2>
+      </div>
+
+      <div class="grid gap-5 md:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 space-y-2.5">
+          <h3 class="font-bold text-base text-ink flex items-center gap-2 text-rose-600">
+            <span>⚠️</span> Le Problème Identifié
+          </h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Le marché des espaces de travail au Maroc (Casablanca, Rabat, Marrakech) subit une forte friction opérationnelle :
+          </p>
+          <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4">
+            <li><strong>Opacité des disponibilités :</strong> Impossibilité de connaître le nombre exact de places libres heure par heure.</li>
+            <li><strong>Réservations manuelles :</strong> Recours à WhatsApp ou aux appels, source d'erreurs et de surréservations.</li>
+            <li><strong>Zéro personnalisation :</strong> Catalogues statiques ignorant les habitudes, le budget et le matériel requis.</li>
+            <li><strong>Lourdeur administrative :</strong> Absence de suivi financier automatisé et de facturation en Dirhams (MAD).</li>
+          </ul>
+        </div>
+
+        <div class="rounded-2xl border border-brand-200 bg-brand-50/30 p-5 space-y-2.5">
+          <h3 class="font-bold text-base text-brand-700 flex items-center gap-2">
+            <span>💡</span> La Vision Spotwork
+          </h3>
+          <p class="text-xs text-slate-700 leading-relaxed">
+            Créer la première plateforme PropTech marocaine unifiée alliant flexibilité horaire et intelligence prédictive :
+          </p>
+          <ul class="text-xs text-slate-700 space-y-1.5 list-disc pl-4">
+            <li><strong>Gestion de capacité dynamique :</strong> Réservation de 1 à N places avec calcul en direct des places résiduelles (ex: 11 libres sur 12).</li>
+            <li><strong>Conseiller IA sur-mesure :</strong> Recommandations automatiques basées sur l'historique et les affinités de chaque client.</li>
+            <li><strong>Pilotage 360° pour les gérants :</strong> Gestion des prix, des photos, des demandes et des encaissements CMI certifiés.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 2. USE CASE & PERSONAS ================= -->
+    <section class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="h-6 w-1.5 rounded-full bg-brand-600"></span>
+        <h2 class="text-2xl font-bold text-ink">2. Définition du Use Case et Utilisateurs</h2>
+      </div>
+
+      <div class="overflow-x-auto rounded-2xl border border-slate-200">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+            <tr>
+              <th class="p-3.5">Profil / Persona</th>
+              <th class="p-3.5">Rôle Système</th>
+              <th class="p-3.5">Scénario d'Usage (Use Case)</th>
+              <th class="p-3.5">Valeur Ajoutée</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr>
+              <td class="p-3.5 font-bold text-ink">Freelance / Nomade (Youssef)</td>
+              <td class="p-3.5"><span class="rounded bg-blue-100 px-2 py-0.5 font-bold text-blue-800 text-[10px]">client</span></td>
+              <td class="p-3.5 text-slate-600">Réserve 3 heures de coworking à Maarif avec wifi fibre pour une session de travail urgente.</td>
+              <td class="p-3.5 text-slate-700 font-semibold">Gain de temps, réservation garantie sans appel, suggestion d'espaces calmes.</td>
+            </tr>
+            <tr>
+              <td class="p-3.5 font-bold text-ink">Équipe Startup (Tech Agency)</td>
+              <td class="p-3.5"><span class="rounded bg-indigo-100 px-2 py-0.5 font-bold text-indigo-800 text-[10px]">client</span></td>
+              <td class="p-3.5 text-slate-600">Réserve une salle de réunion de 6 places pour un après-midi avec écran 4K et café inclus.</td>
+              <td class="p-3.5 text-slate-700 font-semibold">Facturation consolidée en Dirhams, calcul transparent du tarif multi-personnes.</td>
+            </tr>
+            <tr>
+              <td class="p-3.5 font-bold text-ink">Gestionnaire d'Espace (Mehdi)</td>
+              <td class="p-3.5"><span class="rounded bg-amber-100 px-2 py-0.5 font-bold text-amber-800 text-[10px]">manager</span></td>
+              <td class="p-3.5 text-slate-600">Reçoit des demandes de réservation, valide les paiements, ajuste les tarifs et photos de ses espaces.</td>
+              <td class="p-3.5 text-slate-700 font-semibold">Optimisation du taux d'occupation, zéro chevauchement de plannings.</td>
+            </tr>
+            <tr>
+              <td class="p-3.5 font-bold text-ink">Administrateur (Fatima-Zahra)</td>
+              <td class="p-3.5"><span class="rounded bg-purple-100 px-2 py-0.5 font-bold text-purple-800 text-[10px]">admin</span></td>
+              <td class="p-3.5 text-slate-600">Supervise l'ensemble du parc au Maroc, édite toutes les fiches d'espaces, audite les revenus.</td>
+              <td class="p-3.5 text-slate-700 font-semibold">Gouvernance centralisée, sécurité RBAC et conformité financière.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-700 space-y-1.5">
+        <p class="font-bold text-ink flex items-center gap-1.5">
+          <span>🤖</span> Rôle Clé de l'Intelligence Artificielle :
+        </p>
+        <p class="leading-relaxed">
+          L'IA analyse le profil utilisateur, ses favoris et l'historique de ses réservations pour déduire ses contraintes implicites (villes fréquentes, budget horaire optimal, équipements indispensables comme les cabines focus). Elle classe les espaces en temps réel et génère une explication transparente rédigée en langage naturel.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= 3. ARCHITECTURE TECHNIQUE ================= -->
+    <section class="space-y-4 page-break">
+      <div class="flex items-center gap-2">
+        <span class="h-6 w-1.5 rounded-full bg-brand-600"></span>
+        <h2 class="text-2xl font-bold text-ink">3. Architecture Technique du Système</h2>
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed">
+        L'application adopte une architecture 3-tiers modulaire, découplée et hautement résiliente :
+      </p>
+
+      <!-- Schéma visuel Architecture -->
+      <div class="rounded-2xl border border-slate-200 bg-slate-900 text-white p-6 shadow-inner space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center text-xs">
+          <div class="rounded-xl border border-slate-700 bg-slate-800/80 p-4 space-y-2">
+            <span class="inline-block rounded-md bg-blue-500/20 text-blue-300 font-bold px-2 py-0.5 text-[10px]">FRONTEND</span>
+            <p class="font-bold text-sm text-white">React 18 & Tailwind</p>
+            <p class="text-slate-400 text-[11px]">SPA réactive, Lucide Icons, html2pdf.js pour génération vectorielle de factures</p>
+          </div>
+          <div class="rounded-xl border border-slate-700 bg-slate-800/80 p-4 space-y-2">
+            <span class="inline-block rounded-md bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 text-[10px]">BACKEND API</span>
+            <p class="font-bold text-sm text-white">Node.js · Express · TypeScript</p>
+            <p class="text-slate-400 text-[11px]">Architecture RESTful, validation Zod, Auth RBAC, moteur d'anti-chevauchement</p>
+          </div>
+          <div class="rounded-xl border border-slate-700 bg-slate-800/80 p-4 space-y-2">
+            <span class="inline-block rounded-md bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 text-[10px]">CLOUD & IA</span>
+            <p class="font-bold text-sm text-white">Supabase & Claude API</p>
+            <p class="text-slate-400 text-[11px]">PostgreSQL managé, Row Level Security, Anthropic Claude 3.5 pour recommandations</p>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-800 pt-3 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2">
+          <span>✓ Architecture sécurisée CORS, Helmet et Rate-limiting</span>
+          <span>✓ Synchronisation hybride : Supabase Cloud + LocalStore résilient</span>
+          <span>✓ 34/34 tests unitaires et d'intégration validés (Vitest)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 4. PROMPTS CLÉS V0.DEV ================= -->
+    <section class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="h-6 w-1.5 rounded-full bg-brand-600"></span>
+        <h2 class="text-2xl font-bold text-ink">4. Prompts Clés Utilisés sur V0.dev</h2>
+      </div>
+
+      <p class="text-xs text-slate-600">
+        Les interfaces ont été prototypées à l'aide de prompts structurés et modulaires sur V0.dev :
+      </p>
+
+      <div class="space-y-3">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div class="flex items-center justify-between mb-1.5">
+            <h3 class="font-bold text-xs text-brand-700">Prompt 1 : Catalogue d'espaces & Système de filtres</h3>
+            <span class="text-[10px] font-mono text-slate-400">V0.dev Prompt #1</span>
+          </div>
+          <pre class="bg-white border border-slate-200 rounded-xl p-3 text-[11px] text-slate-700 overflow-x-auto whitespace-pre-wrap">Génère une interface de réservation d'espaces de coworking moderne et épurée (style Linear/Airbnb) pour le marché marocain, nommée "Spotwork PropTech". Palette : Mist (#F6F8FC), texte Ink (#0A1B33), bleu Brand (#1F56D6). Composants : En-tête avec sélection de villes marocaines (Casablanca, Rabat, Marrakech), barre de filtres par budget en DH/h, type d'espace (bureau privé, open space, réunion), et grille de cartes d'espaces avec photos HD, note moyenne et badge de popularité.</pre>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div class="flex items-center justify-between mb-1.5">
+            <h3 class="font-bold text-xs text-brand-700">Prompt 2 : Fiche Détaillée & Sélecteur Dynamique de Places</h3>
+            <span class="text-[10px] font-mono text-slate-400">V0.dev Prompt #2</span>
+          </div>
+          <pre class="bg-white border border-slate-200 rounded-xl p-3 text-[11px] text-slate-700 overflow-x-auto whitespace-pre-wrap">Crée un composant de détail d'espace de coworking avec galerie photo, description, liste d'équipements avec icônes (wifi, écran, café), et un module de réservation : sélecteur de date avec blocage des heures passées, sélecteur de créneaux horaires affichant le nombre de places restantes (ex: 11 places libres sur 12), compteur du nombre de places demandées et calcul en direct du prix total en Dirhams (MAD).</pre>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div class="flex items-center justify-between mb-1.5">
+            <h3 class="font-bold text-xs text-brand-700">Prompt 3 : Tableau de Bord Admin & Gestionnaire</h3>
+            <span class="text-[10px] font-mono text-slate-400">V0.dev Prompt #3</span>
+          </div>
+          <pre class="bg-white border border-slate-200 rounded-xl p-3 text-[11px] text-slate-700 overflow-x-auto whitespace-pre-wrap">Conçois un tableau de bord SaaS pour gestionnaires : cartes KPI de chiffre d'affaires et taux d'occupation, onglet de validation des demandes de réservation en attente, onglet des espaces avec bouton "Modifier" ouvrant un modal complet (édition nom, ville, quartier, adresse, galerie photos avec choix de couverture, tarif, capacité, surface, description et équipements), et historique des règlements CMI avec factures PDF.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 5. BASE DE DONNÉES SUPABASE ================= -->
+    <section class="space-y-4 page-break">
+      <div class="flex items-center gap-2">
+        <span class="h-6 w-1.5 rounded-full bg-brand-600"></span>
+        <h2 class="text-2xl font-bold text-ink">5. Structure de la Base de Données Supabase</h2>
+      </div>
+
+      <p class="text-xs text-slate-600">
+        Le schéma PostgreSQL relationnel est normalisé en 3FN et déployé sur Supabase Cloud :
+      </p>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 p-4 bg-white shadow-2xs space-y-2">
+          <div class="flex items-center justify-between">
+            <p class="font-bold text-xs text-ink font-mono">public.users</p>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Table</span>
+          </div>
+          <p class="text-[11px] text-slate-500">Comptes utilisateurs, rôles (client, manager, admin) et préférences de recherche.</p>
+          <div class="text-[11px] font-mono text-slate-700 bg-slate-50 p-2.5 rounded-lg space-y-1">
+            <div>id <span class="text-slate-400">UUID PRIMARY KEY</span></div>
+            <div>email <span class="text-slate-400">VARCHAR UNIQUE</span></div>
+            <div>full_name, phone <span class="text-slate-400">VARCHAR</span></div>
+            <div>role <span class="text-slate-400">user_role (ENUM)</span></div>
+            <div>city <span class="text-slate-400">VARCHAR</span></div>
+            <div>preferences <span class="text-slate-400">JSONB</span></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 p-4 bg-white shadow-2xs space-y-2">
+          <div class="flex items-center justify-between">
+            <p class="font-bold text-xs text-ink font-mono">public.spaces</p>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Table</span>
+          </div>
+          <p class="text-[11px] text-slate-500">Catalogue des espaces de coworking avec géolocalisation et caractéristiques.</p>
+          <div class="text-[11px] font-mono text-slate-700 bg-slate-50 p-2.5 rounded-lg space-y-1">
+            <div>id <span class="text-slate-400">UUID PRIMARY KEY</span></div>
+            <div>name, location <span class="text-slate-400">VARCHAR</span></div>
+            <div>owner_id <span class="text-slate-400">UUID REFERENCES users(id)</span></div>
+            <div>price_per_hour <span class="text-slate-400">NUMERIC(10,2)</span></div>
+            <div>capacity <span class="text-slate-400">INTEGER</span></div>
+            <div>amenities, photos <span class="text-slate-400">JSONB</span></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 p-4 bg-white shadow-2xs space-y-2">
+          <div class="flex items-center justify-between">
+            <p class="font-bold text-xs text-ink font-mono">public.bookings</p>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Table</span>
+          </div>
+          <p class="text-[11px] text-slate-500">Réservations effectuées avec gestion horaire et places réservées.</p>
+          <div class="text-[11px] font-mono text-slate-700 bg-slate-50 p-2.5 rounded-lg space-y-1">
+            <div>id <span class="text-slate-400">UUID PRIMARY KEY</span></div>
+            <div>user_id, space_id <span class="text-slate-400">UUID FK</span></div>
+            <div>booking_date <span class="text-slate-400">DATE</span></div>
+            <div>start_time, end_time <span class="text-slate-400">TIME</span></div>
+            <div>seats <span class="text-slate-400">INTEGER NOT NULL DEFAULT 1</span></div>
+            <div>status <span class="text-slate-400">booking_status (ENUM)</span></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 p-4 bg-white shadow-2xs space-y-2">
+          <div class="flex items-center justify-between">
+            <p class="font-bold text-xs text-ink font-mono">public.reviews</p>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Table</span>
+          </div>
+          <p class="text-[11px] text-slate-500">Évaluations et avis clients vérifiés après réservation.</p>
+          <div class="text-[11px] font-mono text-slate-700 bg-slate-50 p-2.5 rounded-lg space-y-1">
+            <div>id <span class="text-slate-400">UUID PRIMARY KEY</span></div>
+            <div>booking_id, user_id, space_id <span class="text-slate-400">UUID FK</span></div>
+            <div>rating <span class="text-slate-400">INTEGER CHECK(1..5)</span></div>
+            <div>comment <span class="text-slate-400">TEXT</span></div>
+            <div>created_at <span class="text-slate-400">TIMESTAMPTZ</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 6. DÉFIS & RÉPARTITION ================= -->
+    <section class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="h-6 w-1.5 rounded-full bg-brand-600"></span>
+        <h2 class="text-2xl font-bold text-ink">6. Défis Techniques Rencontrés & Solutions</h2>
+      </div>
+
+      <div class="space-y-2.5 text-xs">
+        <div class="rounded-xl border border-slate-200 p-3.5 bg-slate-50">
+          <p class="font-bold text-ink">1. Calcul anti-chevauchement et décompte de places en temps réel :</p>
+          <p class="text-slate-600 mt-1">
+            <strong>Défi :</strong> Ne pas bloquer un open space de 12 places lorsqu'un utilisateur ne réserve que 2 places.<br>
+            <strong>Solution :</strong> Algorithme d'agrégation sommant les places occupées créneau par créneau pour recalculer les places libres instantanées (<code class="bg-white px-1 rounded border">freeSeats = capacity - bookedSeats</code>).
+          </p>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 p-3.5 bg-slate-50">
+          <p class="font-bold text-ink">2. Synchronisation hybride Supabase Cloud & cache PostgREST :</p>
+          <p class="text-slate-600 mt-1">
+            <strong>Défi :</strong> Erreur de cache de schéma PostgREST lors de l'ajout de nouvelles colonnes comme <code class="bg-white px-1 rounded border">seats</code>.<br>
+            <strong>Solution :</strong> Mécanisme de repli automatique dans le backend Express avec payload adaptatif et persistance locale garantie, éliminant tout blocage utilisateur.
+          </p>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 p-3.5 bg-slate-50">
+          <p class="font-bold text-ink">3. Administration complète des espaces à la volée :</p>
+          <p class="text-slate-600 mt-1">
+            <strong>Défi :</strong> L'administrateur devait pouvoir modifier non seulement le tarif, mais aussi l'ensemble des métadonnées (nom, ville, quartier, adresse, galerie de photos, photo de couverture, capacité, description et équipements).<br>
+            <strong>Solution :</strong> Développement du modal réactif <code class="bg-white px-1 rounded border">EditSpaceModal</code> et synchronisation en direct avec la base de données.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 7. RÉPARTITION DES TÂCHES ================= -->
+    <section class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="h-6 w-1.5 rounded-full bg-brand-600"></span>
+        <h2 class="text-2xl font-bold text-ink">7. Répartition des Tâches au Sein de l'Équipe</h2>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 text-xs">
+        <div class="rounded-2xl border border-slate-200 p-4 bg-white">
+          <p class="font-bold text-brand-700 text-sm">Pôle Backend & Intégration IA</p>
+          <ul class="mt-2 space-y-1 text-slate-600 list-disc pl-4">
+            <li>Architecture Node.js / Express en TypeScript.</li>
+            <li>Intégration de l'API Claude (Anthropic) et prompts stricts JSON.</li>
+            <li>Moteur d'anti-chevauchement des créneaux et calcul de capacité.</li>
+            <li>Suite de tests unitaires Vitest (34 tests au vert).</li>
+          </ul>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 p-4 bg-white">
+          <p class="font-bold text-navy text-sm">Pôle Frontend & Prototypage V0.dev</p>
+          <ul class="mt-2 space-y-1 text-slate-600 list-disc pl-4">
+            <li>Conception des interfaces sous V0.dev et intégration Tailwind.</li>
+            <li>Développement du sélecteur dynamique de créneaux et places libres.</li>
+            <li>Tableau de bord de gestion, KPIs financiers et transactions CMI.</li>
+            <li>Modal d'administration complète des espaces et génération PDF.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PIED DE PAGE DU RAPPORT ================= -->
+    <footer class="border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
+      <p>Spotwork PropTech Maroc — Projet Académique & Professionnel de Coworking Intelligent</p>
+      <p class="mt-1">Document généré automatiquement · Format A4 prêt pour impression & archivage PDF</p>
+    </footer>
+
+  </div>
+
+</body>
+</html>
