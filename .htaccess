@@ -10,11 +10,20 @@ AddDefaultCharset UTF-8
     AddOutputFilterByType DEFLATE text/html text/plain text/css application/json application/javascript
 </IfModule>
 
-# Cache des fichiers statiques
+# Désactiver le cache pour JS et HTML pendant le développement et les tests
+<FilesMatch "\.(html|js)$">
+    <IfModule mod_headers.c>
+        Header unset ETag
+        Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+    </IfModule>
+</FilesMatch>
+
+# Cache des styles statiques
 <IfModule mod_expires.c>
     ExpiresActive On
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/css "access plus 1 week"
 </IfModule>
 
 # Sécurité HTTP Headers
