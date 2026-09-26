@@ -228,6 +228,10 @@ CREATE POLICY "Allow space update" ON public.spaces FOR UPDATE USING (true) WITH
 DROP POLICY IF EXISTS "Allow space insert" ON public.spaces;
 CREATE POLICY "Allow space insert" ON public.spaces FOR INSERT WITH CHECK (true);
 
+-- Permet la suppression d'espaces (admin web)
+DROP POLICY IF EXISTS "Allow space delete" ON public.spaces;
+CREATE POLICY "Allow space delete" ON public.spaces FOR DELETE USING (true);
+
 -- Permet la lecture et l'insertion directe de réservations depuis le site web
 DROP POLICY IF EXISTS "Public can view bookings" ON public.bookings;
 CREATE POLICY "Public can view bookings" ON public.bookings FOR SELECT USING (true);

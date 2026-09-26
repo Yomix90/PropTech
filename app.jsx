@@ -289,6 +289,19 @@ const DEFAULT_MOROCCAN_SPACES = [
   }
 ];
 
+const toValidUUID = (id) => {
+  if (!id) return null;
+  const str = String(id).trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
+    return str;
+  }
+  const num = parseInt(str, 10);
+  if (!isNaN(num) && num > 0 && num < 10000) {
+    return `10000000-0000-0000-0000-${String(num).padStart(12, '0')}`;
+  }
+  return null;
+};
+
 const SpotworkAPI = {
   token: "mock-token-client",
   managerToken: "mock-token-manager",
@@ -475,10 +488,35 @@ const SpotworkAPI = {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` },
           body: JSON.stringify(spaceData)
         });
-        return await res.json();
+        if (res.ok) return await res.json();
       } catch (e) { }
     }
     try {
+      const generatedUuid = spaceData.id && toValidUUID(spaceData.id)
+        ? toValidUUID(spaceData.id)
+        : (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `10000000-0000-0000-0000-${String(Date.now()).slice(-12).padStart(12, '0')}`);
+
+      const sbPayload = {
+        id: generatedUuid,
+        name: spaceData.name || "Nouvel Espace Coworking",
+        description: spaceData.description || spaceData.desc || "Espace de travail tout équipé.",
+        location: spaceData.location || (spaceData.city && spaceData.district ? `${spaceData.city} · ${spaceData.district}` : "Casablanca · Centre"),
+        latitude: spaceData.latitude !== undefined ? Number(spaceData.latitude) : (spaceData.lat !== undefined ? Number(spaceData.lat) : 33.5855),
+        longitude: spaceData.longitude !== undefined ? Number(spaceData.longitude) : (spaceData.lng !== undefined ? Number(spaceData.lng) : -7.6322),
+        owner_id: spaceData.owner_id || "00000000-0000-0000-0000-000000000002",
+        price_per_hour: Number(spaceData.price_per_hour || spaceData.price || 45),
+        capacity: Number(spaceData.capacity || spaceData.cap || 10),
+        amenities: Array.isArray(spaceData.amenities) ? spaceData.amenities : (Array.isArray(spaceData.am) ? spaceData.am : ["wifi", "coffee", "screen"]),
+        photos: Array.isArray(spaceData.photos) && spaceData.photos.length > 0
+          ? spaceData.photos
+          : (Array.isArray(spaceData.imgs) && spaceData.imgs.length > 0
+              ? spaceData.imgs
+              : ["https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=70"]),
+        rating: Number(spaceData.rating || 5.0)
+      };
+
       const res = await fetch(`${SUPABASE_URL}/rest/v1/spaces`, {
         method: "POST",
         headers: {
@@ -487,10 +525,15 @@ const SpotworkAPI = {
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
           "Prefer": "return=representation"
         },
-        body: JSON.stringify(spaceData)
+        body: JSON.stringify(sbPayload)
       });
-      if (res.ok) return { status: "success", data: { space: (await res.json())[0] } };
-    } catch { }
+      if (res.ok) {
+        const data = await res.json();
+        return { status: "success", data: { space: data[0] } };
+      }
+    } catch (e) {
+      console.error("SpotworkAPI.createSpace error:", e);
+    }
     return { status: "success", data: { space: spaceData } };
   },
   async updateSpace(id, updates) {
@@ -501,32 +544,71 @@ const SpotworkAPI = {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` },
           body: JSON.stringify(updates)
         });
-        return await res.json();
+        if (res.ok) return await res.json();
       } catch (e) { }
     }
     try {
-      const sbPayload = {
-        name: updates.name,
-        location: updates.location || (updates.city && updates.district ? `${updates.city} · ${updates.district}` : undefined),
-        price_per_hour: updates.price_per_hour !== undefined ? Number(updates.price_per_hour) : (updates.price !== undefined ? Number(updates.price) : undefined),
-        capacity: updates.capacity !== undefined ? Number(updates.capacity) : (updates.cap !== undefined ? Number(updates.cap) : undefined),
-        description: updates.description || updates.desc,
-        amenities: updates.amenities || updates.am,
-        photos: updates.photos || updates.imgs
-      };
-      Object.keys(sbPayload).forEach(k => sbPayload[k] === undefined && delete sbPayload[k]);
+      const targetUuid = toValidUUID(id);
+      if (!targetUuid) {
+        console.warn("Invalid UUID for updateSpace:", id);
+        return { status: "success" };
+      }
 
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${id}`, {
+      const sbPayload = {};
+      if (updates.name !== undefined) sbPayload.name = updates.name;
+      if (updates.location !== undefined) {
+        sbPayload.location = updates.location;
+      } else if (updates.city && updates.district) {
+        sbPayload.location = `${updates.city} · ${updates.district}`;
+      }
+      if (updates.price_per_hour !== undefined) {
+        sbPayload.price_per_hour = Number(updates.price_per_hour);
+      } else if (updates.price !== undefined) {
+        sbPayload.price_per_hour = Number(updates.price);
+      }
+      if (updates.capacity !== undefined) {
+        sbPayload.capacity = Number(updates.capacity);
+      } else if (updates.cap !== undefined) {
+        sbPayload.capacity = Number(updates.cap);
+      }
+      if (updates.description !== undefined) {
+        sbPayload.description = updates.description;
+      } else if (updates.desc !== undefined) {
+        sbPayload.description = updates.desc;
+      }
+      if (updates.amenities !== undefined) {
+        sbPayload.amenities = updates.amenities;
+      } else if (updates.am !== undefined) {
+        sbPayload.amenities = updates.am;
+      }
+      if (updates.photos !== undefined) {
+        sbPayload.photos = updates.photos;
+      } else if (updates.imgs !== undefined) {
+        sbPayload.photos = updates.imgs;
+      }
+      if (updates.rating !== undefined) sbPayload.rating = Number(updates.rating);
+      if (updates.latitude !== undefined) sbPayload.latitude = Number(updates.latitude);
+      else if (updates.lat !== undefined) sbPayload.latitude = Number(updates.lat);
+      if (updates.longitude !== undefined) sbPayload.longitude = Number(updates.longitude);
+      else if (updates.lng !== undefined) sbPayload.longitude = Number(updates.lng);
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${targetUuid}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Prefer": "return=representation"
         },
         body: JSON.stringify(sbPayload)
       });
-      if (res.ok) return { status: "success" };
-    } catch { }
+      if (res.ok) {
+        const data = await res.json();
+        return { status: "success", data: { space: data[0] } };
+      }
+    } catch (e) {
+      console.error("SpotworkAPI.updateSpace error:", e);
+    }
     return { status: "success" };
   },
   async deleteSpace(id) {
@@ -536,17 +618,20 @@ const SpotworkAPI = {
           method: "DELETE",
           headers: { "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` }
         });
-        return await res.json();
+        if (res.ok) return await res.json();
       } catch (e) { }
     }
     try {
-      await fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${id}`, {
-        method: "DELETE",
-        headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      });
+      const targetUuid = toValidUUID(id);
+      if (targetUuid) {
+        await fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${targetUuid}`, {
+          method: "DELETE",
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+      }
     } catch { }
     return { status: "success" };
   },
@@ -729,24 +814,68 @@ const normalizeSpaceFromDB = (s) => {
     canonicalId = s.id;
   } else if (typeof s.id === 'string' && /^[0-9]+$/.test(s.id)) {
     canonicalId = parseInt(s.id, 10);
-  } else if (typeof s.id === 'string' && s.id.startsWith("10000000-0000-0000-0000-0000000000")) {
-    canonicalId = parseInt(s.id.split('-').pop(), 10);
+  } else if (typeof s.id === 'string' && /^10000000-0000-0000-0000-0*([1-9][0-9]*)$/i.test(s.id)) {
+    const match = s.id.match(/^10000000-0000-0000-0000-0*([1-9][0-9]*)$/i);
+    canonicalId = parseInt(match[1], 10);
   }
 
   const rawLoc = s.location || "";
   const parts = rawLoc.includes('·') ? rawLoc.split('·') : rawLoc.includes('-') ? rawLoc.split('-') : [rawLoc];
   const city = s.city || (parts[0] ? parts[0].trim() : "Casablanca");
   const district = s.district || (parts[1] ? parts[1].trim() : (s.city ? `${s.city} Centre` : "Centre-ville"));
-  const imgs = Array.isArray(s.imgs) && s.imgs.length > 0 
-    ? s.imgs 
-    : (Array.isArray(s.photos) && s.photos.length > 0 
-        ? s.photos 
-        : [s.photos || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=70"]);
-  const am = Array.isArray(s.am) && s.am.length > 0 
-    ? s.am 
-    : (Array.isArray(s.amenities) && s.amenities.length > 0 
-        ? s.amenities 
-        : (typeof s.amenities === 'string' ? s.amenities.split(/[\s,]+/) : ["wifi", "coffee", "screen"]));
+
+  let photosArr = [];
+  if (Array.isArray(s.imgs) && s.imgs.length > 0) {
+    photosArr = s.imgs;
+  } else if (Array.isArray(s.photos) && s.photos.length > 0) {
+    photosArr = s.photos;
+  } else if (typeof s.photos === 'string') {
+    try {
+      const parsed = JSON.parse(s.photos);
+      if (Array.isArray(parsed) && parsed.length > 0) photosArr = parsed;
+      else if (s.photos.startsWith('http')) photosArr = [s.photos];
+    } catch {
+      if (s.photos.startsWith('http')) photosArr = [s.photos];
+    }
+  } else if (typeof s.imgs === 'string') {
+    try {
+      const parsed = JSON.parse(s.imgs);
+      if (Array.isArray(parsed) && parsed.length > 0) photosArr = parsed;
+      else if (s.imgs.startsWith('http')) photosArr = [s.imgs];
+    } catch {
+      if (s.imgs.startsWith('http')) photosArr = [s.imgs];
+    }
+  }
+  if (!photosArr.length) {
+    photosArr = ["https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=70"];
+  }
+
+  let amArr = [];
+  if (Array.isArray(s.am) && s.am.length > 0) {
+    amArr = s.am;
+  } else if (Array.isArray(s.amenities) && s.amenities.length > 0) {
+    amArr = s.amenities;
+  } else if (typeof s.amenities === 'string') {
+    try {
+      const parsed = JSON.parse(s.amenities);
+      if (Array.isArray(parsed) && parsed.length > 0) amArr = parsed;
+      else amArr = s.amenities.split(/[\s,]+/);
+    } catch {
+      amArr = s.amenities.split(/[\s,]+/);
+    }
+  } else if (typeof s.am === 'string') {
+    try {
+      const parsed = JSON.parse(s.am);
+      if (Array.isArray(parsed) && parsed.length > 0) amArr = parsed;
+      else amArr = s.am.split(/[\s,]+/);
+    } catch {
+      amArr = s.am.split(/[\s,]+/);
+    }
+  }
+  if (!amArr.length) {
+    amArr = ["wifi", "coffee", "screen"];
+  }
+
   const price = Number(s.price !== undefined ? s.price : s.price_per_hour) || 45;
   const cap = Number(s.cap !== undefined ? s.cap : s.capacity) || 10;
   
@@ -771,10 +900,10 @@ const normalizeSpaceFromDB = (s) => {
     cap,
     capacity: cap,
     surface: s.surface || `${cap * 6} m²`,
-    imgs,
-    photos: imgs,
-    am,
-    amenities: am,
+    imgs: photosArr,
+    photos: photosArr,
+    am: amArr,
+    amenities: amArr,
     badge: s.badge || (Number(s.rating) >= 4.9 ? "Coup de cœur" : Number(s.rating) >= 4.8 ? "Populaire" : "Recommandé"),
     featured: s.featured !== undefined ? s.featured : (typeof canonicalId === 'number' ? canonicalId <= 3 : true),
     host: s.host || (s.users?.full_name || "Mehdi El Fassi"),
@@ -5492,6 +5621,17 @@ const App = () => {
           const ov = stored[String(s.id)] || (s.dbId && stored[String(s.dbId)]);
           return ov ? { ...s, ...ov } : s;
         });
+        Object.values(stored).forEach(customSp => {
+          if (customSp && customSp.name) {
+            const alreadyExists = initial.some(sp =>
+              sp.id === customSp.id || String(sp.id) === String(customSp.id) ||
+              (sp.dbId && customSp.dbId && String(sp.dbId) === String(customSp.dbId))
+            );
+            if (!alreadyExists && !deletedIds.includes(String(customSp.id)) && (!customSp.dbId || !deletedIds.includes(String(customSp.dbId)))) {
+              initial.unshift(customSp);
+            }
+          }
+        });
       }
       return initial;
     } catch {
@@ -5539,26 +5679,36 @@ const App = () => {
     nav({ name: "home" });
   };
 
-  const handleCreateSpace = (newSpace) => {
+  const handleCreateSpace = async (newSpace) => {
     const newId = Math.max(...spacesList.map(s => typeof s.id === 'number' ? s.id : 0), 10) + 1;
+    const newUuid = `10000000-0000-0000-0000-${String(newId).padStart(12, '0')}`;
+    const cleanImgs = newSpace.imgs && newSpace.imgs.length ? newSpace.imgs : [IMG.a, IMG.b, IMG.c];
+    const cleanAm = newSpace.am && newSpace.am.length ? newSpace.am : ["wifi", "coffee", "screen"];
+    const numPrice = Number(newSpace.price) || 45;
+    const numCap = Number(newSpace.capacity) || 10;
+    const loc = newSpace.location || `${newSpace.city} · ${newSpace.district}`;
+
     const created = {
       id: newId,
+      dbId: newUuid,
       name: newSpace.name,
       city: newSpace.city,
       district: newSpace.district,
-      type: newSpace.type,
-      price: Number(newSpace.price),
-      price_per_hour: Number(newSpace.price),
+      location: loc,
+      address: newSpace.address || `${newSpace.district}, ${newSpace.city}, Maroc`,
+      type: newSpace.type || "open",
+      price: numPrice,
+      price_per_hour: numPrice,
       unit: newSpace.unit || "heure",
       rating: 5.0,
       rev: 1,
-      cap: Number(newSpace.capacity) || 10,
-      capacity: Number(newSpace.capacity) || 10,
-      surface: newSpace.surface || "50 m²",
-      imgs: newSpace.imgs && newSpace.imgs.length ? newSpace.imgs : [IMG.a, IMG.b, IMG.c],
-      photos: newSpace.imgs && newSpace.imgs.length ? newSpace.imgs : [IMG.a, IMG.b, IMG.c],
-      am: newSpace.am || ["wifi", "coffee", "screen"],
-      amenities: newSpace.am || ["wifi", "coffee", "screen"],
+      cap: numCap,
+      capacity: numCap,
+      surface: newSpace.surface || `${numCap * 6} m²`,
+      imgs: cleanImgs,
+      photos: cleanImgs,
+      am: cleanAm,
+      amenities: cleanAm,
       badge: "Nouveau",
       featured: true,
       host: currentUser?.name || "Mehdi El Fassi",
@@ -5566,26 +5716,41 @@ const App = () => {
       description: newSpace.desc || `Espace de travail tout équipé à ${newSpace.city}.`,
       busy: []
     };
+
     setSpacesList(prev => [created, ...prev]);
+
     try {
       const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
       stored[String(created.id)] = created;
+      stored[String(created.dbId)] = created;
       localStorage.setItem("spotwork_custom_overrides", JSON.stringify(stored));
     } catch { }
 
-    SpotworkAPI.createSpace({
-      name: created.name,
-      location: `${created.city} · ${created.district}`,
-      price_per_hour: created.price,
-      capacity: created.cap,
-      amenities: created.am,
-      description: created.desc,
-      photos: created.imgs
-    });
     toast(`Espace « ${created.name} » créé avec succès à ${created.city} (${created.price} DH/h) !`, "check-circle");
+
+    try {
+      const res = await SpotworkAPI.createSpace({
+        id: newUuid,
+        name: created.name,
+        location: created.location,
+        price_per_hour: created.price,
+        capacity: created.cap,
+        amenities: created.am,
+        description: created.desc,
+        photos: created.imgs,
+        rating: 5.0,
+        owner_id: "00000000-0000-0000-0000-000000000002"
+      });
+      if (res && res.data?.space) {
+        const savedFromDB = normalizeSpaceFromDB(res.data.space);
+        setSpacesList(prev => prev.map(s => s.id === newId ? { ...s, ...savedFromDB, id: newId, dbId: savedFromDB.dbId || newUuid } : s));
+      }
+    } catch (e) {
+      console.error("Error creating space:", e);
+    }
   };
 
-  const handleUpdateSpace = (spaceId, updatedFields) => {
+  const handleUpdateSpace = async (spaceId, updatedFields) => {
     let spaceName = "";
     let savedSpace = null;
 
@@ -5609,8 +5774,8 @@ const App = () => {
           savedSpace = {
             ...s,
             ...updatedFields,
-            id: s.id, // Preserver l'ID canonique exact
-            dbId: s.dbId || s.id,
+            id: s.id, // Toujours preserver l'ID canonique exact
+            dbId: s.dbId || toValidUUID(s.id) || s.id,
             host: updatedFields.host || s.host || "Mehdi El Fassi",
             rating: s.rating || 4.8,
             rev: s.rev || 48,
@@ -5654,7 +5819,7 @@ const App = () => {
     });
 
     const currentSpace = spacesList.find(s => s.id === spaceId || String(s.id) === String(spaceId) || (s.dbId && String(s.dbId) === String(spaceId)));
-    const targetId = currentSpace?.dbId || currentSpace?.id || spaceId;
+    const targetId = currentSpace?.dbId || toValidUUID(spaceId) || spaceId;
 
     const payloadForApi = {
       name: updatedFields.name,
@@ -5673,19 +5838,22 @@ const App = () => {
   };
 
   const handleDeleteSpace = (spaceId) => {
-    const deleted = spacesList.find(s => s.id === spaceId || String(s.id) === String(spaceId));
-    setSpacesList(prev => prev.filter(s => s.id !== spaceId && String(s.id) !== String(spaceId)));
+    const deleted = spacesList.find(s => s.id === spaceId || String(s.id) === String(spaceId) || (s.dbId && String(s.dbId) === String(spaceId)));
+    const targetUuid = deleted?.dbId || toValidUUID(spaceId) || spaceId;
+    setSpacesList(prev => prev.filter(s => s.id !== spaceId && String(s.id) !== String(spaceId) && (!s.dbId || String(s.dbId) !== String(spaceId))));
     try {
       const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
       delete stored[String(spaceId)];
+      if (deleted?.dbId) delete stored[String(deleted.dbId)];
+      if (deleted?.id) delete stored[String(deleted.id)];
       const deletedIds = JSON.parse(localStorage.getItem("spotwork_deleted_spaces") || "[]");
-      if (!deletedIds.includes(String(spaceId))) {
-        deletedIds.push(String(spaceId));
-        localStorage.setItem("spotwork_deleted_spaces", JSON.stringify(deletedIds));
-      }
+      if (!deletedIds.includes(String(spaceId))) deletedIds.push(String(spaceId));
+      if (deleted?.id && !deletedIds.includes(String(deleted.id))) deletedIds.push(String(deleted.id));
+      if (deleted?.dbId && !deletedIds.includes(String(deleted.dbId))) deletedIds.push(String(deleted.dbId));
+      localStorage.setItem("spotwork_deleted_spaces", JSON.stringify(deletedIds));
       localStorage.setItem("spotwork_custom_overrides", JSON.stringify(stored));
     } catch { }
-    SpotworkAPI.deleteSpace(spaceId);
+    SpotworkAPI.deleteSpace(targetUuid);
     toast(`Espace « ${deleted?.name || ""} » supprimé du catalogue.`, "trash");
   };
 
@@ -5822,6 +5990,17 @@ const App = () => {
           finalSpaces = finalSpaces.map(sp => {
             const override = stored[String(sp.id)] || (sp.dbId && stored[String(sp.dbId)]);
             return override ? { ...sp, ...override } : sp;
+          });
+          Object.values(stored).forEach(customSp => {
+            if (customSp && customSp.name) {
+              const alreadyExists = finalSpaces.some(sp =>
+                sp.id === customSp.id || String(sp.id) === String(customSp.id) ||
+                (sp.dbId && customSp.dbId && String(sp.dbId) === String(customSp.dbId))
+              );
+              if (!alreadyExists && !deletedIds.includes(String(customSp.id)) && (!customSp.dbId || !deletedIds.includes(String(customSp.dbId)))) {
+                finalSpaces.unshift(customSp);
+              }
+            }
           });
         }
       } catch { }
