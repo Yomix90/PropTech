@@ -72,8 +72,11 @@ const smoothPath = pts => {
 };
 
 /* ================= SPOTWORK BACKEND CLIENT (API EXPRESS + SUPABASE + CLAUDE) ================= */
-const isHttpsHosted = typeof window !== 'undefined' && window.location.protocol === 'https:' && !window.location.hostname.includes('localhost');
-const API_BASE = isHttpsHosted ? "" : "http://localhost:5000/api";
+const isStaticOrCloud = typeof window !== 'undefined' && (
+  window.location.protocol === 'file:' || 
+  (window.location.protocol === 'https:' && !window.location.hostname.includes('localhost'))
+);
+const API_BASE = isStaticOrCloud ? "" : "http://localhost:5000/api";
 const SUPABASE_URL = "https://yhtgqugdsfwgqvmpulcy.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Ju2xF0_S1YInzEMXECbL5A_XuKfXubO";
 
