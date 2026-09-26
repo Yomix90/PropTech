@@ -356,7 +356,8 @@ const SpotworkAPI = {
       } catch { }
     }
     try {
-      const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${id}&select=*`, {
+      const targetUuid = toValidUUID(id) || id;
+      const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${targetUuid}&select=*`, {
         headers: {
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
@@ -365,7 +366,20 @@ const SpotworkAPI = {
       });
       if (sbRes.ok) {
         const data = await sbRes.json();
-        if (data && data[0]) return { space: data[0], reviews: [] };
+        if (data && data[0]) {
+          let reviews = [];
+          try {
+            const revRes = await fetch(`${SUPABASE_URL}/rest/v1/reviews?space_id=eq.${targetUuid}&select=*`, {
+              headers: {
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+              },
+              signal: AbortSignal.timeout(2000)
+            });
+            if (revRes.ok) reviews = await revRes.json();
+          } catch { }
+          return { space: data[0], reviews };
+        }
       }
     } catch { }
     const local = DEFAULT_MOROCCAN_SPACES.find(s => s.id === id || String(s.id) === String(id));
@@ -383,9 +397,22 @@ const SpotworkAPI = {
         if (res.ok) return await res.json();
       } catch { }
     }
-    // Insertion directe dans Supabase Cloud si hébergé sur GitHub Pages
+    // Synchronisation directe avec Supabase Cloud PostgREST
     try {
-      const { seats, ...sbPayload } = booking;
+      const resolvedSpaceId = toValidUUID(booking.space_id) || booking.space_id || "10000000-0000-0000-0000-000000000001";
+      const resolvedUserId = (booking.user_id && toValidUUID(booking.user_id)) || booking.user_id || "00000000-0000-0000-0000-000000000001";
+
+      const sbPayload = {
+        user_id: resolvedUserId,
+        space_id: resolvedSpaceId,
+        booking_date: booking.booking_date || booking.date || new Date().toISOString().slice(0, 10),
+        start_time: booking.start_time || "09:00:00",
+        end_time: booking.end_time || "18:00:00",
+        total_price: Number(booking.total_price || booking.total || 180),
+        status: booking.status || "confirmed",
+        seats: Number(booking.seats || 1)
+      };
+
       const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
         method: "POST",
         headers: {
@@ -398,13 +425,18 @@ const SpotworkAPI = {
       });
       if (res.ok) {
         const data = await res.json();
-        return { status: "success", message: "Réservation synchronisée", data: { booking: { ...data[0], seats: booking.seats || 1 } } };
+        return { status: "success", message: "Réservation synchronisée avec Supabase", data: { booking: data[0] } };
+      } else {
+        const errTxt = await res.text();
+        console.warn("Supabase createBooking error:", res.status, errTxt);
       }
-    } catch { }
+    } catch (e) {
+      console.error("SpotworkAPI.createBooking error:", e);
+    }
 
     return { status: "success", message: "Réservation enregistrée", data: { booking } };
   },
-  async getUserBookings() {
+  async getUserBookings(userId) {
     if (API_BASE) {
       try {
         const res = await fetch(`${API_BASE}/bookings/user`, {
@@ -418,7 +450,11 @@ const SpotworkAPI = {
       } catch { }
     }
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?select=*,spaces(*)&order=booking_date.desc&limit=10`, {
+      const uId = userId && toValidUUID(userId) ? toValidUUID(userId) : null;
+      const url = uId 
+        ? `${SUPABASE_URL}/rest/v1/bookings?user_id=eq.${uId}&select=*,spaces(*)&order=booking_date.desc&limit=30`
+        : `${SUPABASE_URL}/rest/v1/bookings?select=*,spaces(*)&order=booking_date.desc&limit=30`;
+      const res = await fetch(url, {
         headers: {
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
@@ -649,7 +685,7 @@ const SpotworkAPI = {
       } catch { }
     }
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?select=*,spaces(*),users(*)&order=created_at.desc`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?select=*,spaces(*)&order=created_at.desc`, {
         headers: {
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
@@ -671,15 +707,20 @@ const SpotworkAPI = {
       } catch (e) { }
     }
     try {
-      await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Prefer": "return=representation"
         },
         body: JSON.stringify({ status })
       });
+      if (res.ok) {
+        const data = await res.json();
+        return { status: "success", data };
+      }
     } catch { }
     return { status: "success" };
   },
@@ -694,6 +735,45 @@ const SpotworkAPI = {
           return json.data;
         }
       } catch { }
+    }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?select=*,spaces(*)&order=created_at.desc`, {
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const payments = data.map(b => {
+            const knownUser = PRESET_ACCOUNTS.find(a => a.id === b.user_id) || { name: "Client PropTech", email: "client@proptech.ma", city: "Casablanca" };
+            const gross = Number(b.total_price || 0);
+            return {
+              id: b.id,
+              bookingId: b.id,
+              clientName: knownUser.name,
+              clientEmail: knownUser.email,
+              clientPhone: "+212 6 61 23 45 67",
+              clientCity: knownUser.city || "Casablanca",
+              spaceId: b.space_id,
+              spaceName: b.spaces?.name || "Espace Coworking",
+              city: b.spaces?.location ? b.spaces.location.split('·')[0].trim() : "Casablanca",
+              date: b.booking_date,
+              timeSlot: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} – ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
+              grossAmount: gross,
+              platformFee: Math.round(gross * 0.08 * 100) / 100,
+              netAmount: Math.round(gross * 0.92 * 100) / 100,
+              paymentMethod: "Carte Bancaire Maroc CMI (3D Secure)",
+              status: b.status === "cancelled" ? "pending" : "paid",
+              invoiceRef: `FACT-2026-${String(b.id).slice(-4)}`
+            };
+          });
+          return { payments };
+        }
+      }
+    } catch (e) {
+      console.error("SpotworkAPI.getPayments error:", e);
     }
     return null;
   },
@@ -711,6 +791,9 @@ const SpotworkAPI = {
         return await res.json();
       } catch (e) { }
     }
+    try {
+      localStorage.setItem("spotwork_user_preferences", JSON.stringify(preferences));
+    } catch { }
     return { status: "success" };
   },
   async cancelBooking(id) {
@@ -722,6 +805,23 @@ const SpotworkAPI = {
         });
         return await res.json();
       } catch (e) { }
+    }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({ status: "cancelled" })
+      });
+      if (res.ok) {
+        return { status: "success" };
+      }
+    } catch (e) {
+      console.error("SpotworkAPI.cancelBooking error:", e);
     }
     return { status: "success" };
   },
@@ -2334,16 +2434,22 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
     if (s) {
       SpotworkAPI.getSpaceById(s.dbId || s.id).then(res => {
         if (res && res.reviews && Array.isArray(res.reviews) && res.reviews.length > 0) {
-          setSpaceReviews(res.reviews.map(r => ({
-            id: r.id,
-            n: r.users?.full_name || "Membre Spotwork",
-            role: "Résident",
-            d: r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : "Récemment",
-            stars: r.rating || 5,
-            t: r.comment
-          })));
+          setSpaceReviews(res.reviews.map(r => {
+            const knownUser = PRESET_ACCOUNTS.find(a => a.id === r.user_id);
+            return {
+              id: r.id,
+              n: knownUser?.name || r.users?.full_name || "Membre Spotwork",
+              role: "Résident",
+              d: r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : "Récemment",
+              stars: r.rating || 5,
+              t: r.comment
+            };
+          }));
         } else {
-          setSpaceReviews([]);
+          setSpaceReviews(s.r || [
+            { id: "rev-def-1", n: "Karim Bennani", role: "Entrepreneur Tech", d: "Il y a 1 sem.", stars: 5, t: "Excellente connexion fibre optique, environnement très propice au travail et café de qualité." },
+            { id: "rev-def-2", n: "Sara Tazi", role: "Designer Freelance", d: "Il y a 3 sem.", stars: 5, t: "Espace calme, lumineux et très bien situé. L'accueil est chaleureux." }
+          ]);
         }
       });
     }
@@ -3631,7 +3737,13 @@ const UserDash = ({ initTab, bookings = [], setBookings, favs, toggleFav, nav, t
                   ) : (
                     <div className="grid gap-4 md:grid-cols-2">
                       {upcomingBookings.map(b => {
-                        const s = spaces.find(x => x.id === b.spaceId || String(x.id) === String(b.spaceId)); if (!s) return null;
+                        const s = spaces.find(x => x.id === b.spaceId || String(x.id) === String(b.spaceId) || (x.dbId && (x.dbId === b.spaceId || x.dbId === b.space_id || String(x.dbId) === String(b.spaceId)))) || {
+                          id: b.spaceId || 1,
+                          name: b.spaceName || "Espace Coworking",
+                          city: b.city || "Casablanca",
+                          imgs: ["https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=70"],
+                          price: b.totalPrice || 180
+                        };
                         return (
                           <article key={b.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-lift">
                             <div className="relative h-32 overflow-hidden">
@@ -3688,7 +3800,13 @@ const UserDash = ({ initTab, bookings = [], setBookings, favs, toggleFav, nav, t
                   ) : (
                     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
                       {pastBookings.map((b, i) => {
-                        const s = spaces.find(x => x.id === b.spaceId || String(x.id) === String(b.spaceId)); if (!s) return null;
+                        const s = spaces.find(x => x.id === b.spaceId || String(x.id) === String(b.spaceId) || (x.dbId && (x.dbId === b.spaceId || x.dbId === b.space_id || String(x.dbId) === String(b.spaceId)))) || {
+                          id: b.spaceId || 1,
+                          name: b.spaceName || "Espace Coworking",
+                          city: b.city || "Casablanca",
+                          imgs: ["https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=120&q=70"],
+                          price: b.totalPrice || 180
+                        };
                         return (
                           <div key={b.id} className={`flex items-center gap-4 px-5 py-4 text-sm ${i > 0 ? "border-t border-slate-100" : ""}`}>
                             <img src={U(s.imgs[0], 120)} alt="" className="h-11 w-14 rounded-lg object-cover" />
@@ -4630,34 +4748,54 @@ const AdminDash = ({
 
   useEffect(() => {
     SpotworkAPI.getPayments().then(res => {
-      if (res) {
-        const list = res.payments || res.transactions || [];
-        if (list.length > 0) {
-          setTxns(list.map(p => ({
-            id: p.id,
-            bookingId: p.bookingId,
-            clientName: p.clientName || "Client PropTech",
-            clientEmail: p.clientEmail,
-            clientPhone: p.clientPhone || "+212 6 61 23 45 67",
-            clientCity: p.city || "Casablanca",
-            spaceId: p.spaceId || 1,
-            spaceName: p.spaceName,
-            city: p.city,
-            date: p.date ? p.date.slice(0, 10) : todayISO(),
-            timeSlot: p.timeSlot || "Journée",
-            paidAt: p.date ? new Date(p.date).toLocaleDateString('fr-FR') : "Aujourd'hui",
-            grossAmount: p.grossAmount,
-            feeAmount: p.platformFee || Math.round(p.grossAmount * 0.08 * 100) / 100,
-            netAmount: p.netAmount || Math.round(p.grossAmount * 0.92 * 100) / 100,
-            paymentMethod: p.paymentMethod || "Carte Bancaire Maroc CMI",
-            cardLast4: "4242",
-            status: p.status || "paid",
-            invoiceNumber: p.invoiceRef || `FACT-2026-${String(p.id).slice(-4)}`
-          })));
+      let list = res?.payments || res?.transactions || [];
+      if (!list || list.length === 0) {
+        if (bookings && bookings.length > 0) {
+          list = bookings.map(b => ({
+            id: b.id,
+            bookingId: b.id,
+            clientName: b.clientName,
+            clientEmail: b.clientEmail,
+            clientPhone: b.clientPhone,
+            city: b.city,
+            spaceId: b.spaceId,
+            spaceName: b.spaceName,
+            date: b.date,
+            timeSlot: b.timeSlot,
+            grossAmount: b.totalPrice,
+            platformFee: Math.round((b.totalPrice || 0) * 0.08 * 100) / 100,
+            netAmount: Math.round((b.totalPrice || 0) * 0.92 * 100) / 100,
+            paymentMethod: b.paymentMethod || "Carte Bancaire Maroc CMI",
+            status: b.status === "cancelled" ? "pending" : "paid",
+            invoiceRef: b.invoiceRef
+          }));
         }
       }
+      if (list.length > 0) {
+        setTxns(list.map(p => ({
+          id: p.id,
+          bookingId: p.bookingId,
+          clientName: p.clientName || "Client PropTech",
+          clientEmail: p.clientEmail,
+          clientPhone: p.clientPhone || "+212 6 61 23 45 67",
+          clientCity: p.city || "Casablanca",
+          spaceId: p.spaceId || 1,
+          spaceName: p.spaceName,
+          city: p.city,
+          date: p.date ? p.date.slice(0, 10) : todayISO(),
+          timeSlot: p.timeSlot || "Journée",
+          paidAt: p.date ? new Date(p.date).toLocaleDateString('fr-FR') : "Aujourd'hui",
+          grossAmount: Number(p.grossAmount || 0),
+          feeAmount: p.platformFee || Math.round((p.grossAmount || 0) * 0.08 * 100) / 100,
+          netAmount: p.netAmount || Math.round((p.grossAmount || 0) * 0.92 * 100) / 100,
+          paymentMethod: p.paymentMethod || "Carte Bancaire Maroc CMI",
+          cardLast4: "4242",
+          status: p.status || "paid",
+          invoiceNumber: p.invoiceRef || `FACT-2026-${String(p.id).slice(-4)}`
+        })));
+      }
     });
-  }, []);
+  }, [bookings.length]);
 
   if (!currentUser || (currentUser.role !== "manager" && currentUser.role !== "admin")) {
     return <AccessDenied nav={nav} currentUser={currentUser} onSelectUser={onSelectUser} />;
@@ -5883,13 +6021,12 @@ const App = () => {
 
   const onDone = (b) => {
     const spaceId = b.spaceId || b.id;
-    const bookedSpace = spacesList.find(s => s.id === spaceId);
+    const bookedSpace = spacesList.find(s => s.id === spaceId || String(s.id) === String(spaceId) || (s.dbId && String(s.dbId) === String(spaceId)));
     const spaceName = bookedSpace ? bookedSpace.name : (b.name || "Espace Coworking");
     const city = bookedSpace ? bookedSpace.city : (b.city || "Casablanca");
     const num = typeof spaceId === 'number' ? spaceId : parseInt(spaceId, 10) || 1;
-    const spaceUuid = typeof spaceId === 'string' && spaceId.includes('-')
-      ? spaceId
-      : `10000000-0000-0000-0000-${String(num).padStart(12, '0')}`;
+    const spaceUuid = bookedSpace?.dbId || (typeof spaceId === 'string' && spaceId.includes('-') ? spaceId : toValidUUID(spaceId)) || `10000000-0000-0000-0000-${String(num).padStart(12, '0')}`;
+    const userUuid = (currentUser?.id && toValidUUID(currentUser.id)) || currentUser?.id || "00000000-0000-0000-0000-000000000001";
 
     let startTime = "09:00:00";
     let endTime = "18:00:00";
@@ -5921,31 +6058,36 @@ const App = () => {
 
     // Synchronisation en temps réel avec l'API backend et PostgreSQL Supabase
     SpotworkAPI.createBooking({
+      user_id: userUuid,
       space_id: spaceUuid,
       booking_date: b.date || new Date().toISOString().slice(0, 10),
       start_time: startTime,
       end_time: endTime,
       total_price: totalPrice,
-      seats: b.seats || 1
+      status: "confirmed",
+      seats: Number(b.seats || 1)
     }).then(res => {
       if (res && res.status === "success") {
         toast("Réservation enregistrée et synchronisée avec la base de données !", "check-circle");
         const realId = res.data?.booking?.id;
         if (realId) {
-          setUserBookings(prev => prev.map(item => item.id === tempBookingId ? { ...item, id: realId } : item));
-          setAllBookings(prev => prev.map(item => item.id === tempBookingId ? { ...item, id: realId } : item));
+          setUserBookings(prev => prev.map(item => item.id === tempBookingId ? { ...item, id: realId, spaceId: bookedSpace?.id || spaceId } : item));
+          setAllBookings(prev => prev.map(item => item.id === tempBookingId ? { ...item, id: realId, spaceId: bookedSpace?.id || spaceId } : item));
         }
       }
     }).catch(() => { });
 
     setUserBookings(p => [{
       id: tempBookingId,
-      spaceId: spaceId,
+      spaceId: bookedSpace?.id || spaceId,
+      space_id: spaceUuid,
+      spaceName: spaceName,
+      city: city,
       date: b.date,
       meta: b.meta,
       status: "Confirmée",
       totalPrice: totalPrice,
-      seats: b.seats || 1,
+      seats: Number(b.seats || 1),
       slots: b.slots || [],
       invoiceRef: `FACT-2026-${String(tempBookingId).slice(-6)}`
     }, ...p]);
@@ -5956,13 +6098,14 @@ const App = () => {
       clientEmail: currentUser?.email || b.email || "client@proptech.ma",
       clientPhone: currentUser?.phone || "+212 6 61 23 45 67",
       clientInitials: currentUser?.initials || "CP",
-      spaceId: spaceId,
+      spaceId: bookedSpace?.id || spaceId,
+      space_id: spaceUuid,
       spaceName: spaceName,
       city: city,
       date: b.date,
       timeSlot: b.meta,
       hours: Array.isArray(b.slots) ? b.slots.length : 4,
-      seats: b.seats || 1,
+      seats: Number(b.seats || 1),
       slots: b.slots || [],
       totalPrice: totalPrice,
       status: "confirmed",
@@ -6018,17 +6161,22 @@ const App = () => {
       else if (currentUser.role === 'manager') SpotworkAPI.token = 'mock-token-manager';
       else SpotworkAPI.token = 'mock-token-client';
 
-      SpotworkAPI.getUserBookings().then(bkgs => {
+      SpotworkAPI.getUserBookings(currentUser.id).then(bkgs => {
         if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
           const mapped = bkgs.map(b => {
-            const numId = parseInt(String(b.space_id).split('-').pop(), 10) || 1;
+            const matchedSpace = spacesList.find(s => s.dbId === b.space_id || s.id === b.space_id || String(s.id) === String(b.space_id));
+            const numId = matchedSpace ? matchedSpace.id : (parseInt(String(b.space_id).split('-').pop(), 10) || 1);
             return {
               id: b.id,
               spaceId: numId,
+              space_id: b.space_id,
+              spaceName: b.spaces?.name || matchedSpace?.name || "Espace Coworking",
+              city: b.spaces?.location ? b.spaces.location.split('·')[0].trim() : (matchedSpace?.city || "Casablanca"),
               date: b.booking_date,
               meta: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} – ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
               status: b.status === 'confirmed' ? "Confirmée" : b.status === 'cancelled' ? "Annulée" : b.status === 'completed' ? "Terminée" : "En attente",
               totalPrice: b.total_price,
+              seats: b.seats || 1,
               invoiceRef: `FACT-2026-${String(b.id).slice(-6)}`
             };
           });
@@ -6041,48 +6189,49 @@ const App = () => {
           });
         }
       }).catch(() => { });
-
-      if (currentUser.role === 'manager' || currentUser.role === 'admin') {
-        SpotworkAPI.getManagerBookings().then(bkgs => {
-          if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
-            const mappedManager = bkgs.map(b => {
-              const numId = parseInt(String(b.space_id).split('-').pop(), 10) || 1;
-              const cName = b.user?.full_name || b.users?.full_name || "Client PropTech";
-              const initials = cName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || "CP";
-              const sName = b.space?.name || b.spaces?.name || "Espace Coworking";
-              const sCity = b.space?.location ? b.space.location.split('·')[0].trim() : (b.spaces?.city || "Casablanca");
-              return {
-                id: b.id,
-                clientName: cName,
-                clientEmail: b.user?.email || b.users?.email || "client@proptech.ma",
-                clientPhone: b.user?.phone || b.users?.phone || "+212 6 61 23 45 67",
-                clientInitials: initials,
-                spaceId: numId,
-                spaceName: sName,
-                city: sCity,
-                date: b.booking_date,
-                timeSlot: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} – ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
-                hours: 4,
-                seats: b.seats || 1,
-                totalPrice: b.total_price,
-                status: b.status || "confirmed",
-                createdAt: "Récemment",
-                paymentMethod: "Carte Bancaire CMI (3D Secure)",
-                invoiceRef: `FACT-2026-${String(b.id).slice(-4)}`
-              };
-            });
-            setAllBookings(prev => {
-              const existingMap = new Map(prev.map(p => [p.id, p]));
-              mappedManager.forEach(m => {
-                existingMap.set(m.id, { ...existingMap.get(m.id), ...m });
-              });
-              return Array.from(existingMap.values());
-            });
-          }
-        }).catch(() => { });
-      }
     }
-  }, [currentUser, view.name]);
+
+    SpotworkAPI.getManagerBookings().then(bkgs => {
+      if (bkgs && Array.isArray(bkgs) && bkgs.length > 0) {
+        const mappedManager = bkgs.map(b => {
+          const matchedSpace = spacesList.find(s => s.dbId === b.space_id || s.id === b.space_id || String(s.id) === String(b.space_id));
+          const numId = matchedSpace ? matchedSpace.id : (parseInt(String(b.space_id).split('-').pop(), 10) || 1);
+          const knownUser = PRESET_ACCOUNTS.find(a => a.id === b.user_id);
+          const cName = b.user?.full_name || b.users?.full_name || knownUser?.name || "Client PropTech";
+          const initials = knownUser?.initials || cName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || "CP";
+          const sName = b.space?.name || b.spaces?.name || matchedSpace?.name || "Espace Coworking";
+          const sCity = b.space?.location ? b.space.location.split('·')[0].trim() : (b.spaces?.city || matchedSpace?.city || "Casablanca");
+          return {
+            id: b.id,
+            clientName: cName,
+            clientEmail: b.user?.email || b.users?.email || knownUser?.email || "client@proptech.ma",
+            clientPhone: b.user?.phone || b.users?.phone || "+212 6 61 23 45 67",
+            clientInitials: initials,
+            spaceId: numId,
+            space_id: b.space_id,
+            spaceName: sName,
+            city: sCity,
+            date: b.booking_date,
+            timeSlot: `${b.start_time ? b.start_time.slice(0, 5) : "09:00"} – ${b.end_time ? b.end_time.slice(0, 5) : "18:00"}`,
+            hours: 4,
+            seats: b.seats || 1,
+            totalPrice: b.total_price,
+            status: b.status || "confirmed",
+            createdAt: "Récemment",
+            paymentMethod: "Carte Bancaire CMI (3D Secure)",
+            invoiceRef: `FACT-2026-${String(b.id).slice(-4)}`
+          };
+        });
+        setAllBookings(prev => {
+          const existingMap = new Map(prev.map(p => [p.id, p]));
+          mappedManager.forEach(m => {
+            existingMap.set(m.id, { ...existingMap.get(m.id), ...m });
+          });
+          return Array.from(existingMap.values());
+        });
+      }
+    }).catch(() => { });
+  }, [currentUser, view.name, spacesList.length]);
 
   useEffect(() => {
     let tries = 0;

@@ -242,5 +242,23 @@ CREATE POLICY "Public can create bookings" ON public.bookings FOR INSERT WITH CH
 DROP POLICY IF EXISTS "Public can update bookings" ON public.bookings;
 CREATE POLICY "Public can update bookings" ON public.bookings FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Public can delete bookings" ON public.bookings;
+CREATE POLICY "Public can delete bookings" ON public.bookings FOR DELETE USING (true);
+
+-- Permet la lecture et mise à jour des profils de démonstration
+DROP POLICY IF EXISTS "Public can view demo users" ON public.users;
+CREATE POLICY "Public can view demo users" ON public.users FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can update demo users" ON public.users;
+CREATE POLICY "Public can update demo users" ON public.users FOR UPDATE USING (true);
+
+-- Permet la lecture et l'ajout d'avis clients
+DROP POLICY IF EXISTS "Public can view reviews" ON public.reviews;
+CREATE POLICY "Public can view reviews" ON public.reviews FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can insert reviews" ON public.reviews;
+CREATE POLICY "Public can insert reviews" ON public.reviews FOR INSERT WITH CHECK (true);
+
 -- 7. Rafraîchir le cache de schéma PostgREST
 NOTIFY pgrst, 'reload schema';
+
