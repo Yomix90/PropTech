@@ -202,6 +202,86 @@ const DEFAULT_MOROCCAN_SPACES = [
     imgs: ["https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?auto=format&fit=crop&w=900&q=70"],
     rating: 4.8,
     type: "open"
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000007",
+    name: "Coworking Palm Hivernage",
+    description: "Atelier modulable entour\xE9 de palmiers avec terrasse ensoleill\xE9e pour les pauses et sessions de networking. Mobilier artisanal contemporain.",
+    location: "Marrakech \xB7 Hivernage",
+    city: "Marrakech",
+    district: "Hivernage",
+    latitude: 31.623,
+    longitude: -8.016,
+    price_per_hour: 55,
+    price: 55,
+    capacity: 16,
+    cap: 16,
+    amenities: ["wifi", "board", "coffee", "terrace"],
+    am: ["wifi", "board", "coffee", "terrace"],
+    photos: ["https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=70"],
+    imgs: ["https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=70"],
+    rating: 4.8,
+    type: "studio"
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000008",
+    name: "Technopark Agadir Hub",
+    description: "Bureau d'\xE9quipe moderne au sein du Technopark d'Agadir. \xC9quipements complets, environnement innovant et parking s\xE9curis\xE9 24/7.",
+    location: "Agadir \xB7 Tilila",
+    city: "Agadir",
+    district: "Tilila",
+    latitude: 30.405,
+    longitude: -9.558,
+    price_per_hour: 75,
+    price: 75,
+    capacity: 8,
+    cap: 8,
+    amenities: ["wifi", "screen", "access", "print"],
+    am: ["wifi", "screen", "access", "print"],
+    photos: ["https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=900&q=70"],
+    imgs: ["https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=900&q=70"],
+    rating: 4.7,
+    type: "office"
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000009",
+    name: "D\xE9troit Meeting Tanger",
+    description: "Salle panoramique en plein centre-ville de Tanger avec vue sur le d\xE9troit de Gibraltar. Configuration flexible en U ou th\xE9\xE2tre.",
+    location: "Tanger \xB7 Centre",
+    city: "Tanger",
+    district: "Centre",
+    latitude: 35.782,
+    longitude: -5.811,
+    price_per_hour: 45,
+    price: 45,
+    capacity: 14,
+    cap: 14,
+    amenities: ["wifi", "screen", "board", "coffee", "terrace"],
+    am: ["wifi", "screen", "board", "coffee", "terrace"],
+    photos: ["https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=900&q=70"],
+    imgs: ["https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=900&q=70"],
+    rating: 4.8,
+    type: "meeting"
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000010",
+    name: "F\xE8s Medina Lab",
+    description: "Hub collaboratif moderne m\xEAlant architecture marocaine et \xE9quipements high-tech. Ambiance chaleureuse et communaut\xE9 cosmopolite.",
+    location: "F\xE8s \xB7 Ville Nouvelle",
+    city: "F\xE8s",
+    district: "Ville Nouvelle",
+    latitude: 34.033,
+    longitude: -5.001,
+    price_per_hour: 35,
+    price: 35,
+    capacity: 30,
+    cap: 30,
+    amenities: ["wifi", "coffee", "print", "access"],
+    am: ["wifi", "coffee", "print", "access"],
+    photos: ["https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=70"],
+    imgs: ["https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=70"],
+    rating: 4.8,
+    type: "open"
   }
 ];
 const SpotworkAPI = {
@@ -431,6 +511,16 @@ const SpotworkAPI = {
       }
     }
     try {
+      const sbPayload = {
+        name: updates.name,
+        location: updates.location || (updates.city && updates.district ? `${updates.city} \xB7 ${updates.district}` : void 0),
+        price_per_hour: updates.price_per_hour !== void 0 ? Number(updates.price_per_hour) : updates.price !== void 0 ? Number(updates.price) : void 0,
+        capacity: updates.capacity !== void 0 ? Number(updates.capacity) : updates.cap !== void 0 ? Number(updates.cap) : void 0,
+        description: updates.description || updates.desc,
+        amenities: updates.amenities || updates.am,
+        photos: updates.photos || updates.imgs
+      };
+      Object.keys(sbPayload).forEach((k) => sbPayload[k] === void 0 && delete sbPayload[k]);
       const res = await fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${id}`, {
         method: "PATCH",
         headers: {
@@ -438,7 +528,7 @@ const SpotworkAPI = {
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(sbPayload)
       });
       if (res.ok) return { status: "success" };
     } catch {
@@ -659,37 +749,52 @@ const MONTHS = ["Jan", "F\xE9v", "Mar", "Avr", "Mai", "Juin", "Juil", "Ao\xFB", 
 const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const normalizeSpaceFromDB = (s) => {
   if (!s) return null;
-  const numId = typeof s.id === "number" ? s.id : parseInt(String(s.id).split("-").pop(), 10) || s.id;
-  const city = s.city || (s.location ? s.location.split("\xB7")[0].trim() : "Casablanca");
-  const district = s.district || (s.location && s.location.includes("\xB7") ? s.location.split("\xB7")[1].trim() : s.location || "Centre-ville");
+  let canonicalId = s.id;
+  if (typeof s.id === "number") {
+    canonicalId = s.id;
+  } else if (typeof s.id === "string" && /^[0-9]+$/.test(s.id)) {
+    canonicalId = parseInt(s.id, 10);
+  } else if (typeof s.id === "string" && s.id.startsWith("10000000-0000-0000-0000-0000000000")) {
+    canonicalId = parseInt(s.id.split("-").pop(), 10);
+  }
+  const rawLoc = s.location || "";
+  const parts = rawLoc.includes("\xB7") ? rawLoc.split("\xB7") : rawLoc.includes("-") ? rawLoc.split("-") : [rawLoc];
+  const city = s.city || (parts[0] ? parts[0].trim() : "Casablanca");
+  const district = s.district || (parts[1] ? parts[1].trim() : s.city ? `${s.city} Centre` : "Centre-ville");
   const imgs = Array.isArray(s.imgs) && s.imgs.length > 0 ? s.imgs : Array.isArray(s.photos) && s.photos.length > 0 ? s.photos : [s.photos || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=70"];
-  const am = Array.isArray(s.am) && s.am.length > 0 ? s.am : Array.isArray(s.amenities) && s.amenities.length > 0 ? s.amenities : typeof s.amenities === "string" ? s.amenities.split(" ") : ["wifi", "coffee", "screen"];
+  const am = Array.isArray(s.am) && s.am.length > 0 ? s.am : Array.isArray(s.amenities) && s.amenities.length > 0 ? s.amenities : typeof s.amenities === "string" ? s.amenities.split(/[\s,]+/) : ["wifi", "coffee", "screen"];
   const price = Number(s.price !== void 0 ? s.price : s.price_per_hour) || 45;
   const cap = Number(s.cap !== void 0 ? s.cap : s.capacity) || 10;
   return {
     ...s,
-    id: numId,
+    id: canonicalId,
     dbId: s.id,
-    name: s.name,
+    name: s.name || "Espace Spotwork",
     city,
     district,
+    location: s.location || `${city} \xB7 ${district}`,
     address: s.address || `${district}, ${city}, Maroc`,
-    lat: s.lat || s.latitude || 33.5855,
-    lng: s.lng || s.longitude || -7.6322,
+    lat: Number(s.lat !== void 0 ? s.lat : s.latitude) || 33.5855,
+    lng: Number(s.lng !== void 0 ? s.lng : s.longitude) || -7.6322,
     transport: s.transport || "Acc\xE8s transports & taxis \xE0 proximit\xE9",
     type: s.type || (cap > 20 ? "open" : cap > 10 ? "studio" : cap > 5 ? "meeting" : cap === 1 ? "booth" : "office"),
     price,
+    price_per_hour: price,
     unit: s.unit || "heure",
     rating: Number(s.rating) || 4.8,
-    rev: s.rev || 48,
+    rev: Number(s.rev) || 48,
     cap,
+    capacity: cap,
     surface: s.surface || `${cap * 6} m\xB2`,
     imgs,
+    photos: imgs,
     am,
-    badge: s.badge || (s.rating >= 4.9 ? "Coup de c\u0153ur" : s.rating >= 4.8 ? "Populaire" : "Recommand\xE9"),
-    featured: s.featured !== void 0 ? s.featured : typeof numId === "number" ? numId <= 4 : true,
+    amenities: am,
+    badge: s.badge || (Number(s.rating) >= 4.9 ? "Coup de c\u0153ur" : Number(s.rating) >= 4.8 ? "Populaire" : "Recommand\xE9"),
+    featured: s.featured !== void 0 ? s.featured : typeof canonicalId === "number" ? canonicalId <= 3 : true,
     host: s.host || (s.users?.full_name || "Mehdi El Fassi"),
-    desc: s.desc || s.description || "",
+    desc: s.desc || s.description || `Espace de travail tout \xE9quip\xE9 situ\xE9 \xE0 ${city}, ${district}.`,
+    description: s.description || s.desc || `Espace de travail tout \xE9quip\xE9 situ\xE9 \xE0 ${city}, ${district}.`,
     busy: s.busy || []
   };
 };
@@ -973,8 +1078,14 @@ const InvoiceModal = ({ invoice, isOpen, onClose }) => {
   ))));
 };
 const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
-  const liked = favs.has(s.id);
+  if (!s) return null;
+  const liked = favs && typeof favs.has === "function" ? favs.has(s.id) : false;
   const avail = getSpaceAvailability(s, date, bookings);
+  const cardImg = s.imgs && s.imgs[0] || s.photos && s.photos[0] || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=700&q=70";
+  const cardPrice = Number(s.price !== void 0 ? s.price : s.price_per_hour || 45);
+  const cardRating = Number(s.rating || 4.8);
+  const typeLabel = TYPES.find((t) => t.id === s.type)?.label || s.type || "Espace flexible";
+  const surfaceLabel = s.surface || `${(s.cap || s.capacity || 10) * 6} m\xB2`;
   return /* @__PURE__ */ React.createElement(
     "article",
     {
@@ -984,23 +1095,23 @@ const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
     /* @__PURE__ */ React.createElement("div", { className: "relative h-44 md:h-48 overflow-hidden" }, /* @__PURE__ */ React.createElement(
       "img",
       {
-        src: U(s.imgs[0], 700),
-        alt: s.name,
+        src: U(cardImg, 700),
+        alt: s.name || "Espace Spotwork",
         loading: "lazy",
         className: "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.07]"
       }
-    ), /* @__PURE__ */ React.createElement("div", { className: "absolute left-3 top-3 flex flex-col gap-1 items-start" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), date && (avail.isPast || avail.allHoursPast ? /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-slate-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white" }), "Journ\xE9e pass\xE9e") : avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-rose-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white animate-pulse" }), "COMPLET (0 place)") : /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-emerald-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white" }), avail.availableSeats, " place", avail.availableSeats > 1 ? "s" : "", " libre", avail.availableSeats > 1 ? "s" : ""))), /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("div", { className: "absolute left-3 top-3 flex flex-col gap-1 items-start" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge || "Recommand\xE9" }), date && (avail.isPast || avail.allHoursPast ? /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-slate-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white" }), "Journ\xE9e pass\xE9e") : avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-rose-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white animate-pulse" }), "COMPLET (0 place)") : /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-emerald-600 text-white shadow-md" }, /* @__PURE__ */ React.createElement("span", { className: "h-1.5 w-1.5 rounded-full bg-white" }), avail.availableSeats, " place", avail.availableSeats > 1 ? "s" : "", " libre", avail.availableSeats > 1 ? "s" : ""))), /* @__PURE__ */ React.createElement(
       "button",
       {
         onClick: (e) => {
           e.stopPropagation();
-          toggleFav(s.id);
+          if (toggleFav) toggleFav(s.id);
         },
         className: `absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full backdrop-blur transition ${liked ? "bg-white text-rose-500" : "bg-white/85 text-slate-500 hover:text-rose-500"}`
       },
       /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 16, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" })
-    ), /* @__PURE__ */ React.createElement("span", { className: "absolute bottom-3 right-3 rounded-full bg-ink/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur" }, s.unit === "heure" ? "\xC0 l'heure" : "\xC0 la journ\xE9e")),
-    /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-semibold text-[15px] leading-snug" }, s.name), /* @__PURE__ */ React.createElement("span", { className: "flex shrink-0 items-center gap-1 text-sm font-semibold" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), s.rating.toLocaleString("fr-FR"))), /* @__PURE__ */ React.createElement("p", { className: "mt-0.5 flex items-center gap-1 text-[13px] text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 12 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex items-center justify-between text-xs" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-400" }, TYPES.find((t) => t.id === s.type).label, " \xB7 ", s.surface), avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200" }, "0 / ", avail.totalCapacity, " place") : /* @__PURE__ */ React.createElement("span", { className: "font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" }, avail.availableSeats, " / ", avail.totalCapacity, " places libres")), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex items-center justify-between border-t border-slate-100 pt-3" }, /* @__PURE__ */ React.createElement("p", { className: "text-[15px]" }, /* @__PURE__ */ React.createElement("b", { className: "font-display" }, EUR.format(s.price)), /* @__PURE__ */ React.createElement("span", { className: "text-slate-400 text-xs" }, " /", s.unit)), /* @__PURE__ */ React.createElement("span", { className: `flex items-center gap-1 text-xs font-semibold transition-transform group-hover:translate-x-1 ${avail.isSoldOut ? "text-slate-400" : "text-brand-600"}` }, avail.isSoldOut ? "Voir planning" : "Voir l'espace", /* @__PURE__ */ React.createElement(Icon, { n: "arrow-right", size: 13 }))))
+    ), /* @__PURE__ */ React.createElement("span", { className: "absolute bottom-3 right-3 rounded-full bg-ink/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur" }, s.unit === "jour" ? "\xC0 la journ\xE9e" : "\xC0 l'heure")),
+    /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-semibold text-[15px] leading-snug" }, s.name), /* @__PURE__ */ React.createElement("span", { className: "flex shrink-0 items-center gap-1 text-sm font-semibold" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), cardRating.toLocaleString("fr-FR"))), /* @__PURE__ */ React.createElement("p", { className: "mt-0.5 flex items-center gap-1 text-[13px] text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 12 }), s.city || "Maroc", " \xB7 ", s.district || "Centre"), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex items-center justify-between text-xs" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-400" }, typeLabel, " \xB7 ", surfaceLabel), avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200" }, "0 / ", avail.totalCapacity, " place") : /* @__PURE__ */ React.createElement("span", { className: "font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" }, avail.availableSeats, " / ", avail.totalCapacity, " places libres")), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex items-center justify-between border-t border-slate-100 pt-3" }, /* @__PURE__ */ React.createElement("p", { className: "text-[15px]" }, /* @__PURE__ */ React.createElement("b", { className: "font-display" }, EUR.format(cardPrice)), /* @__PURE__ */ React.createElement("span", { className: "text-slate-400 text-xs" }, " /", s.unit || "heure")), /* @__PURE__ */ React.createElement("span", { className: `flex items-center gap-1 text-xs font-semibold transition-transform group-hover:translate-x-1 ${avail.isSoldOut ? "text-slate-400" : "text-brand-600"}` }, avail.isSoldOut ? "Voir planning" : "Voir l'espace", /* @__PURE__ */ React.createElement(Icon, { n: "arrow-right", size: 13 }))))
   );
 };
 const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSelectUser, onLogout, toast }) => {
@@ -1153,37 +1264,42 @@ const Ring = ({ v }) => /* @__PURE__ */ React.createElement("svg", { width: "46"
   }
 ), /* @__PURE__ */ React.createElement("text", { x: "20", y: "24", textAnchor: "middle", fontSize: "10", fontWeight: "700", fill: "#0A1B33" }, v, "%"));
 const Home = ({ nav, favs, toggleFav, spaces = [], bookings = [], currentUser = null, userBookings = [] }) => {
-  const featured = spaces.filter((s) => s.featured);
+  const [selectedHomeCity, setSelectedHomeCity] = useState("");
+  const featured = spaces.filter((s) => s.featured).length > 0 ? spaces.filter((s) => s.featured).slice(0, 3) : spaces.slice(0, 3);
+  const visibleSpaces = selectedHomeCity ? spaces.filter((s) => (s.city || "").toLowerCase() === selectedHomeCity.toLowerCase()) : spaces;
   const homeAiRecs = useMemo(() => {
     if (!currentUser) return [];
     const p = currentUser.preferences || {};
     const prefCity = (p.city || currentUser.city || "Casablanca").toLowerCase();
     const prefType = (p.type || "open").toLowerCase();
-    return spaces.map((s) => {
-      let score = 55 + Math.round((s.rating - 4) * 14);
+    return (spaces || []).map((s) => {
+      let score = 55 + Math.round(((s.rating || 4.8) - 4) * 14);
       const tags = [];
       let reason = "";
-      if (s.city.toLowerCase() === prefCity) {
+      const sCity = (s.city || "").toLowerCase();
+      const sType = (s.type || "").toLowerCase();
+      if (sCity && sCity === prefCity) {
         score += 24;
         tags.push(`\u{1F4CD} ${s.city}`);
       }
-      if (s.type.toLowerCase() === prefType) {
+      if (sType && sType === prefType) {
         score += 20;
         tags.push(`\u{1F3E2} ${TYPES.find((t) => t.id === s.type)?.label || s.type}`);
       }
-      if (favs.has(s.id)) {
+      if (favs && typeof favs.has === "function" && favs.has(s.id)) {
         score += 15;
         tags.push("\u2764\uFE0F Coup de c\u0153ur");
       }
-      if (userBookings.some((b) => b.spaceId === s.id)) {
+      if (Array.isArray(userBookings) && userBookings.some((b) => b.spaceId === s.id || String(b.spaceId) === String(s.id))) {
         score += 12;
         tags.push("\u{1F504} Habitude");
       }
       const matchScore = Math.min(99, Math.max(75, score));
-      if (s.city.toLowerCase() === prefCity && s.type.toLowerCase() === prefType) {
-        reason = `Align\xE9 sur votre pr\xE9f\xE9rence active : ${TYPES.find((t) => t.id === s.type)?.label} \xE0 ${s.city}.`;
-      } else if (s.city.toLowerCase() === prefCity) {
-        reason = `Recommand\xE9 selon vos habitudes \xE0 ${s.city} \xB7 Not\xE9 ${s.rating}/5.`;
+      const typeLabel = TYPES.find((t) => t.id === s.type)?.label || s.type || "Espace";
+      if (sCity && sCity === prefCity && sType && sType === prefType) {
+        reason = `Align\xE9 sur votre pr\xE9f\xE9rence active : ${typeLabel} \xE0 ${s.city}.`;
+      } else if (sCity && sCity === prefCity) {
+        reason = `Recommand\xE9 selon vos habitudes \xE0 ${s.city} \xB7 Not\xE9 ${s.rating || 4.8}/5.`;
       } else {
         reason = `Espace pris\xE9 des coworkers marocains avec \xE9quipement complet.`;
       }
@@ -1225,7 +1341,23 @@ const Home = ({ nav, favs, toggleFav, spaces = [], bookings = [], currentUser = 
       title: "Espaces en vedette cette semaine",
       action: /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-bold text-brand-600 transition hover:gap-2.5" }, "Tout voir", /* @__PURE__ */ React.createElement(Icon, { n: "arrow-right", size: 15 }))
     }
-  ), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, featured.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i * 70}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav, bookings })))))), /* @__PURE__ */ React.createElement("section", { className: "mx-auto max-w-7xl px-4 py-16 md:px-6" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Simple et rapide", title: "R\xE9servez en trois temps" }), /* @__PURE__ */ React.createElement("div", { className: "relative grid gap-10 md:grid-cols-3 md:gap-6" }, /* @__PURE__ */ React.createElement("div", { className: "absolute left-[16%] right-[16%] top-7 hidden border-t-2 border-dashed border-slate-200 md:block" }), [
+  ), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, featured.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i * 70}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav, bookings })))))), /* @__PURE__ */ React.createElement("section", { className: "bg-white py-14 border-t border-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-7xl px-4 md:px-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8", "data-reveal": true }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Kicker, null, "Catalogue National"), /* @__PURE__ */ React.createElement("h2", { className: "font-display text-2xl md:text-[2rem] font-bold tracking-tight mt-2 text-ink" }, "Tous nos espaces de travail au Maroc"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-sm text-slate-500" }, "Explorez l'ensemble des ", spaces.length, " espaces disponibles dans tout le Royaume avec r\xE9servation directe")), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, [
+    { label: "Toutes les villes", val: "" },
+    { label: "Casablanca", val: "Casablanca" },
+    { label: "Marrakech", val: "Marrakech" },
+    { label: "Rabat", val: "Rabat" },
+    { label: "Tanger", val: "Tanger" },
+    { label: "Agadir", val: "Agadir" },
+    { label: "F\xE8s", val: "F\xE8s" }
+  ].map((item) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: item.val || "all",
+      onClick: () => setSelectedHomeCity(item.val),
+      className: `rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${selectedHomeCity === item.val ? "bg-navy text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`
+    },
+    item.label
+  )))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, visibleSpaces.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.id, "data-reveal": true, style: { transitionDelay: `${i % 6 * 50}ms` } }, /* @__PURE__ */ React.createElement(SpaceCard, { s, nav, favs, toggleFav, bookings })))), visibleSpaces.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-dashed border-slate-200 p-12 text-center text-slate-500" }, "Aucun espace trouv\xE9 pour la ville s\xE9lectionn\xE9e."))), /* @__PURE__ */ React.createElement("section", { className: "mx-auto max-w-7xl px-4 py-16 md:px-6" }, /* @__PURE__ */ React.createElement(SecHead, { kicker: "Simple et rapide", title: "R\xE9servez en trois temps" }), /* @__PURE__ */ React.createElement("div", { className: "relative grid gap-10 md:grid-cols-3 md:gap-6" }, /* @__PURE__ */ React.createElement("div", { className: "absolute left-[16%] right-[16%] top-7 hidden border-t-2 border-dashed border-slate-200 md:block" }), [
     { n: "01", i: "search", t: "Cherchez & comparez", d: "Filtrez par ville, type, budget et \xE9quipements. Photos r\xE9elles, avis v\xE9rifi\xE9s, tarifs transparents." },
     { n: "02", i: "badge-check", t: "R\xE9servez en 2 min", d: "Choisissez votre cr\xE9neau, payez en ligne de fa\xE7on s\xE9curis\xE9e. Confirmation instantan\xE9e par e-mail." },
     { n: "03", i: "calendar-check", t: "Installez-vous", d: "Acc\xE8s direct le jour J. Annulation gratuite jusqu'\xE0 24 h avant, report en un clic." }
@@ -1339,18 +1471,27 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
     }
   }, [s?.id]);
   if (!s) return /* @__PURE__ */ React.createElement("main", { className: "py-24 text-center" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto flex max-w-sm flex-col items-center" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "loader-2", size: 22, className: "animate-spin" })), /* @__PURE__ */ React.createElement("p", { className: "mt-4 font-semibold text-slate-700" }, "Chargement de l'espace depuis la base de donn\xE9es...")));
-  const liked = favs.has(s.id);
-  const isHour = s.unit === "heure";
-  const base = isHour ? slots.length * s.price * seatsCount : days * s.price * seatsCount;
+  const liked = favs && typeof favs.has === "function" ? favs.has(s.id) : false;
+  const isHour = s.unit !== "jour";
+  const spacePrice = Number(s.price !== void 0 ? s.price : s.price_per_hour || 45);
+  const spaceCap = Number(s.cap !== void 0 ? s.cap : s.capacity || 10);
+  const spaceSurface = s.surface || `${spaceCap * 6} m\xB2`;
+  const spaceRating = Number(s.rating || 4.8);
+  const spaceHost = s.host || "Mehdi El Fassi";
+  const spaceDesc = s.desc || s.description || `Espace de travail tout \xE9quip\xE9 \xE0 ${s.city || "Casablanca"}.`;
+  const spaceAm = Array.isArray(s.am) && s.am.length > 0 ? s.am : Array.isArray(s.amenities) && s.amenities.length > 0 ? s.amenities : ["wifi", "coffee", "screen"];
+  const spaceImgs = Array.isArray(s.imgs) && s.imgs.length > 0 ? s.imgs : Array.isArray(s.photos) && s.photos.length > 0 ? s.photos : ["https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1100&q=70"];
+  const currentImg = spaceImgs[img] || spaceImgs[0];
+  const base = isHour ? slots.length * spacePrice * seatsCount : days * spacePrice * seatsCount;
   const fees = Math.round(base * 0.08 * 100) / 100;
   const availability = useMemo(() => getSpaceAvailability(s, date, bookings), [s, date, bookings]);
   const upcomingDates = useMemo(() => getNextAvailableDates(s, bookings, 7), [s, bookings]);
   const updateSeatsCount = (newCount) => {
-    const clamped = Math.max(1, Math.min(s.cap || 1, newCount));
+    const clamped = Math.max(1, Math.min(spaceCap, newCount));
     setSeatsCount(clamped);
     if (isHour && slots.length > 0) {
       const validSlots = slots.filter((h) => {
-        const free = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
+        const free = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : spaceCap || 1;
         return free >= clamped;
       });
       if (validSlots.length < slots.length) {
@@ -1367,7 +1508,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
       setErr(`Le cr\xE9neau horaire ${h} est d\xE9j\xE0 pass\xE9 et ne peut plus \xEAtre r\xE9serv\xE9.`);
       return;
     }
-    const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
+    const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : spaceCap || 1;
     if (!slots.includes(h)) {
       if (freeSeats <= 0) {
         setErr(`Le cr\xE9neau ${h} est complet (0 place disponible).`);
@@ -1400,7 +1541,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
           setErr(`Le cr\xE9neau ${h} est d\xE9j\xE0 pass\xE9 et ne peut plus \xEAtre r\xE9serv\xE9.`);
           return;
         }
-        const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : s.cap || 1;
+        const freeSeats = availability.hourlyFreeSeats[h] !== void 0 ? availability.hourlyFreeSeats[h] : spaceCap || 1;
         if (freeSeats < seatsCount) {
           setErr(`Le cr\xE9neau ${h} ne dispose que de ${freeSeats} place(s) libre(s) pour votre demande de ${seatsCount} place(s).`);
           return;
@@ -1417,8 +1558,9 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
       key: Date.now(),
       id: s.id,
       name: s.name,
-      img: s.imgs[0],
-      city: s.city,
+      img: spaceImgs[0],
+      city: s.city || "Casablanca",
+      price: spacePrice,
       date,
       seats: seatsCount,
       slots,
@@ -1428,7 +1570,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
     });
   };
   const similar = spaces.filter((x) => x.id !== s.id && (x.city === s.city || x.type === s.type)).slice(0, 3);
-  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type)?.label || s.type)), isManagerOrAdmin && onUpdateSpace && /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("main", { className: "mx-auto max-w-7xl px-4 py-8 md:px-6" }, /* @__PURE__ */ React.createElement("button", { onClick: () => nav({ name: "explore" }), className: "flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: "arrow-left", size: 16 }), "Retour aux r\xE9sultats"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid gap-8 lg:grid-cols-[1fr_400px]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(Badge, { label: s.badge || "Recommand\xE9" }), /* @__PURE__ */ React.createElement("span", { className: "rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700" }, TYPES.find((t) => t.id === s.type)?.label || s.type || "Espace flexible")), isManagerOrAdmin && onUpdateSpace && /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: () => setEditingSpace(s),
@@ -1436,7 +1578,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
     },
     /* @__PURE__ */ React.createElement(Icon, { n: "pencil", size: 13 }),
     /* @__PURE__ */ React.createElement("span", null, "Modifier cet espace (Admin)")
-  )), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-slate-300 bg-slate-100/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-slate-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-slate-500 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 13 })), availability.isPast ? `Date pass\xE9e (${fmtDate(date)}) \u2014 R\xE9servations impossibles` : `Journ\xE9e termin\xE9e pour le ${fmtDate(date)} \u2014 Tous les cr\xE9neaux horaires sont \xE9coul\xE9s`), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-600 leading-relaxed" }, "Il n'est plus possible de r\xE9server pour cette date car les horaires sont d\xE9j\xE0 pass\xE9s. Veuillez s\xE9lectionner une date ult\xE9rieure dans le planning ci-dessous.")) : availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.minFreeSeats === availability.availableSeats ? `${availability.availableSeats} place${availability.availableSeats > 1 ? "s" : ""} disponible${availability.availableSeats > 1 ? "s" : ""} sur ${availability.totalCapacity} pour le ${fmtDate(date)}` : `De ${availability.minFreeSeats} \xE0 ${availability.availableSeats} places libres selon les heures (capacit\xE9 : ${availability.totalCapacity} places) pour le ${fmtDate(date)}`)), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(s.imgs[img], 1100), alt: s.name, className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, s.imgs.map((im, i) => /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("h1", { className: "mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl" }, s.name), /* @__PURE__ */ React.createElement("p", { className: "mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 13 }), s.city, " \xB7 ", s.district), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), /* @__PURE__ */ React.createElement("b", { className: "text-ink" }, s.rating.toLocaleString("fr-FR")), "(", s.rev, " avis)")), availability.isPast || availability.allHoursPast ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-slate-300 bg-slate-100/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-slate-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-slate-500 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "clock", size: 13 })), availability.isPast ? `Date pass\xE9e (${fmtDate(date)}) \u2014 R\xE9servations impossibles` : `Journ\xE9e termin\xE9e pour le ${fmtDate(date)} \u2014 Tous les cr\xE9neaux horaires sont \xE9coul\xE9s`), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-600 leading-relaxed" }, "Il n'est plus possible de r\xE9server pour cette date car les horaires sont d\xE9j\xE0 pass\xE9s. Veuillez s\xE9lectionner une date ult\xE9rieure dans le planning ci-dessous.")) : availability.isSoldOut ? /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-rose-800 font-bold text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-rose-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-triangle", size: 13 })), "COMPLET pour le ", fmtDate(date), " \u2014 0 place disponible"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-rose-700 leading-relaxed" }, "Cet espace est enti\xE8rement r\xE9serv\xE9 sur cette date. Consultez les autres dates disponibles ci-contre ou dans le s\xE9lecteur ci-dessous.")) : /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "check", size: 13 })), /* @__PURE__ */ React.createElement("span", null, availability.minFreeSeats === availability.availableSeats ? `${availability.availableSeats} place${availability.availableSeats > 1 ? "s" : ""} disponible${availability.availableSeats > 1 ? "s" : ""} sur ${availability.totalCapacity} pour le ${fmtDate(date)}` : `De ${availability.minFreeSeats} \xE0 ${availability.availableSeats} places libres selon les heures (capacit\xE9 : ${availability.totalCapacity} places) pour le ${fmtDate(date)}`)), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full" }, "R\xE9servation ouverte")), /* @__PURE__ */ React.createElement("div", { className: "mt-5 grid grid-cols-4 gap-2.5" }, /* @__PURE__ */ React.createElement("div", { className: "col-span-4 overflow-hidden rounded-2xl md:col-span-3" }, /* @__PURE__ */ React.createElement("img", { src: U(currentImg, 1100), alt: s.name || "Espace Spotwork", className: "h-64 w-full object-cover transition-all duration-500 md:h-[380px]" })), /* @__PURE__ */ React.createElement("div", { className: "col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1" }, spaceImgs.map((im, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: i,
@@ -1444,9 +1586,9 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
       className: `overflow-hidden rounded-xl transition ${img === i ? "ring-2 ring-brand-600 ring-offset-2" : "opacity-80 hover:opacity-100"}`
     },
     /* @__PURE__ */ React.createElement("img", { src: U(im, 300), alt: "", className: "h-20 w-full object-cover md:h-[118px]" })
-  )))), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4" }, [["users", "Capacit\xE9 totale", `${s.cap} pers.`], ["user-check", "Places libres", `${availability.availableSeats} pers.`], ["ruler", "Surface", s.surface], ["clock", "R\xE9servation", isHour ? "\xC0 l'heure" : "\xC0 la journ\xE9e"]].map(([i, l, v]) => /* @__PURE__ */ React.createElement("div", { key: l, className: "rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement(Icon, { n: i, size: 17, className: "text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400" }, l), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold text-ink" }, v)))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC0 propos de cet espace"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[15px] leading-relaxed text-slate-600" }, s.desc), /* @__PURE__ */ React.createElement("div", { className: "mt-4 flex items-center gap-3 rounded-2xl bg-mist p-4" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-full bg-navy text-sm font-bold text-white" }, s.host.split(" ").map((w) => w[0]).join("")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, "G\xE9r\xE9 par ", s.host), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "R\xE9pond en ~1 h \xB7 Membre certifi\xE9 PropTech Maroc")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC9quipements inclus"), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex flex-wrap gap-2.5" }, s.am.map((a) => {
+  )))), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4" }, [["users", "Capacit\xE9 totale", `${spaceCap} pers.`], ["user-check", "Places libres", `${availability.availableSeats} pers.`], ["ruler", "Surface", spaceSurface], ["clock", "R\xE9servation", isHour ? "\xC0 l'heure" : "\xC0 la journ\xE9e"]].map(([i, l, v]) => /* @__PURE__ */ React.createElement("div", { key: l, className: "rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement(Icon, { n: i, size: 17, className: "text-brand-600" }), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400" }, l), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold text-ink" }, v)))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC0 propos de cet espace"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-[15px] leading-relaxed text-slate-600" }, s.desc), /* @__PURE__ */ React.createElement("div", { className: "mt-4 flex items-center gap-3 rounded-2xl bg-mist p-4" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-full bg-navy text-sm font-bold text-white" }, (s.host || "Mehdi El Fassi").split(" ").map((w) => w[0]).join("")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, "G\xE9r\xE9 par ", s.host || "Mehdi El Fassi"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "R\xE9pond en ~1 h \xB7 Membre certifi\xE9 PropTech Maroc")))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "\xC9quipements inclus"), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex flex-wrap gap-2.5" }, (s.am || ["wifi", "coffee"]).map((a) => {
     const am = AMENITIES.find((x) => x.id === a);
-    return /* @__PURE__ */ React.createElement("span", { key: a, className: "flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white" }, /* @__PURE__ */ React.createElement(Icon, { n: am.icon, size: 14, className: "text-brand-600" }), am.label);
+    return /* @__PURE__ */ React.createElement("span", { key: a, className: "flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white" }, /* @__PURE__ */ React.createElement(Icon, { n: am?.icon || "check", size: 14, className: "text-brand-600" }), am?.label || a);
   }))), /* @__PURE__ */ React.createElement("div", { className: "mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 mb-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 20, className: "text-brand-600" }), "Localisation & Plan d'acc\xE8s"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-0.5" }, s.address || `${s.district}, ${s.city}, Maroc`)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(
     "a",
     {
@@ -1467,7 +1609,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
       style: { border: 0 },
       src: `https://www.openstreetmap.org/export/embed.html?bbox=${(s.lng || -7.6322) - 0.01}%2C${(s.lat || 33.5855) - 7e-3}%2C${(s.lng || -7.6322) + 0.01}%2C${(s.lat || 33.5855) + 7e-3}&layer=mapnik&marker=${s.lat || 33.5855}%2C${s.lng || -7.6322}`
     }
-  )), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-3 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-brand-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "navigation", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Acc\xE8s & Transports"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-700 font-medium mt-0.5 leading-relaxed" }, s.transport || "Desservi par tramway, bus et stations taxis \xE0 proximit\xE9 imm\xE9diate."))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-emerald-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "compass", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Coordonn\xE9es GPS"), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-mono text-slate-700 font-medium mt-0.5" }, "Lat: ", (s.lat || 33.5855).toFixed(4), " \xB7 Lng: ", (s.lng || -7.6322).toFixed(4)), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, "Quartier ", s.district, " \xB7 ", s.city))))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "Avis des membres"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-6 md:grid-cols-[220px_1fr]" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 p-5 text-center h-fit bg-white" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-4xl font-bold" }, s.rating.toLocaleString("fr-FR")), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex justify-center" }, /* @__PURE__ */ React.createElement(Stars, { v: s.rating })), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, s.rev, " avis"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-1.5" }, [70, 20, 6, 3, 1].map((w, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center gap-2 text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "w-3" }, 5 - i), /* @__PURE__ */ React.createElement("div", { className: "h-1.5 flex-1 rounded-full bg-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full bg-amber-400", style: { width: w + "%" } })))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, spaceReviews.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400" }, "Aucun avis pour le moment pour cet espace.") : spaceReviews.map((r) => /* @__PURE__ */ React.createElement("article", { key: r.id || r.n, className: "rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" }, (r.n || "M")[0]), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, r.n), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400" }, r.role, " \xB7 ", r.d)), /* @__PURE__ */ React.createElement("div", { className: "ml-auto" }, /* @__PURE__ */ React.createElement(Stars, { v: r.stars, size: 11 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm leading-relaxed text-slate-600" }, r.t))))))), /* @__PURE__ */ React.createElement("aside", { className: "lg:sticky lg:top-24 h-fit" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, EUR.format(s.price), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, " /", s.unit)), /* @__PURE__ */ React.createElement("button", { onClick: () => toggleFav(s.id), className: `grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 17, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" }))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-3.5" }, /* @__PURE__ */ React.createElement(Field, { label: "Date souhait\xE9e" }, /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-3 sm:grid-cols-2" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-brand-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "navigation", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Acc\xE8s & Transports"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-700 font-medium mt-0.5 leading-relaxed" }, s.transport || "Desservi par tramway, bus et stations taxis \xE0 proximit\xE9 imm\xE9diate."))), /* @__PURE__ */ React.createElement("div", { className: "rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex items-start gap-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "p-2 rounded-lg bg-white shadow-2xs text-emerald-600 mt-0.5 shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { n: "compass", size: 16 })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "Coordonn\xE9es GPS"), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-mono text-slate-700 font-medium mt-0.5" }, "Lat: ", (s.lat || 33.5855).toFixed(4), " \xB7 Lng: ", (s.lng || -7.6322).toFixed(4)), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 mt-0.5" }, "Quartier ", s.district, " \xB7 ", s.city))))), /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold" }, "Avis des membres"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid gap-6 md:grid-cols-[220px_1fr]" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 p-5 text-center h-fit bg-white" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-4xl font-bold" }, s.rating.toLocaleString("fr-FR")), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex justify-center" }, /* @__PURE__ */ React.createElement(Stars, { v: s.rating })), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-400" }, s.rev, " avis"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-1.5" }, [70, 20, 6, 3, 1].map((w, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center gap-2 text-[10px] text-slate-400" }, /* @__PURE__ */ React.createElement("span", { className: "w-3" }, 5 - i), /* @__PURE__ */ React.createElement("div", { className: "h-1.5 flex-1 rounded-full bg-slate-100" }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full bg-amber-400", style: { width: w + "%" } })))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, spaceReviews.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400" }, "Aucun avis pour le moment pour cet espace.") : spaceReviews.map((r) => /* @__PURE__ */ React.createElement("article", { key: r.id || r.n, className: "rounded-2xl border border-slate-200 p-5 bg-white shadow-2xs" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" }, (r.n || "M")[0]), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-bold" }, r.n), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-slate-400" }, r.role, " \xB7 ", r.d)), /* @__PURE__ */ React.createElement("div", { className: "ml-auto" }, /* @__PURE__ */ React.createElement(Stars, { v: r.stars, size: 11 }))), /* @__PURE__ */ React.createElement("p", { className: "mt-3 text-sm leading-relaxed text-slate-600" }, r.t))))))), /* @__PURE__ */ React.createElement("aside", { className: "lg:sticky lg:top-24 h-fit" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-lift" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("p", { className: "font-display text-2xl font-bold" }, EUR.format(spacePrice), /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-slate-400" }, " /", s.unit || "heure")), /* @__PURE__ */ React.createElement("button", { onClick: () => toggleFav && toggleFav(s.id), className: `grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}` }, /* @__PURE__ */ React.createElement(Icon, { n: "heart", size: 17, fill: liked ? "currentColor" : "none", className: liked ? "pop" : "" }))), /* @__PURE__ */ React.createElement("div", { className: "mt-4 space-y-3.5" }, /* @__PURE__ */ React.createElement(Field, { label: "Date souhait\xE9e" }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "date",
@@ -2387,7 +2529,12 @@ const EditSpaceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
       am: selectedAm,
       amenities: selectedAm,
       imgs: cleanImgs,
-      photos: cleanImgs
+      photos: cleanImgs,
+      badge: space.badge || "Recommand\xE9",
+      host: space.host || "Mehdi El Fassi",
+      rating: space.rating || 4.8,
+      rev: space.rev || 48,
+      featured: space.featured !== void 0 ? space.featured : true
     });
     onClose();
   };
@@ -3052,8 +3199,26 @@ const App = () => {
   const [view, setView] = useState({ name: "home" });
   const [cart, setCart] = useState([]);
   const [favs, setFavs] = useState(/* @__PURE__ */ new Set([2, 7]));
-  const [spacesList, setSpacesList] = useState([]);
   const [allBookings, setAllBookings] = useState([]);
+  const [spacesList, setSpacesList] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+      const deletedIds = JSON.parse(localStorage.getItem("spotwork_deleted_spaces") || "[]");
+      let initial = DEFAULT_MOROCCAN_SPACES.map(normalizeSpaceFromDB);
+      if (deletedIds.length > 0) {
+        initial = initial.filter((s) => !deletedIds.includes(String(s.id)) && !deletedIds.includes(String(s.dbId)));
+      }
+      if (Object.keys(stored).length > 0) {
+        initial = initial.map((s) => {
+          const ov = stored[String(s.id)] || s.dbId && stored[String(s.dbId)];
+          return ov ? { ...s, ...ov } : s;
+        });
+      }
+      return initial;
+    } catch {
+      return DEFAULT_MOROCCAN_SPACES.map(normalizeSpaceFromDB);
+    }
+  });
   const [userBookings, setUserBookings] = useState([]);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [toasts, setToasts] = useState([]);
@@ -3102,28 +3267,36 @@ const App = () => {
       district: newSpace.district,
       type: newSpace.type,
       price: Number(newSpace.price),
+      price_per_hour: Number(newSpace.price),
       unit: newSpace.unit || "heure",
       rating: 5,
       rev: 1,
       cap: Number(newSpace.capacity) || 10,
+      capacity: Number(newSpace.capacity) || 10,
       surface: newSpace.surface || "50 m\xB2",
       imgs: newSpace.imgs && newSpace.imgs.length ? newSpace.imgs : [IMG.a, IMG.b, IMG.c],
+      photos: newSpace.imgs && newSpace.imgs.length ? newSpace.imgs : [IMG.a, IMG.b, IMG.c],
       am: newSpace.am || ["wifi", "coffee", "screen"],
+      amenities: newSpace.am || ["wifi", "coffee", "screen"],
       badge: "Nouveau",
-      featured: false,
+      featured: true,
       host: currentUser?.name || "Mehdi El Fassi",
-      desc: newSpace.desc,
+      desc: newSpace.desc || `Espace de travail tout \xE9quip\xE9 \xE0 ${newSpace.city}.`,
+      description: newSpace.desc || `Espace de travail tout \xE9quip\xE9 \xE0 ${newSpace.city}.`,
       busy: []
     };
     setSpacesList((prev) => [created, ...prev]);
+    try {
+      const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+      stored[String(created.id)] = created;
+      localStorage.setItem("spotwork_custom_overrides", JSON.stringify(stored));
+    } catch {
+    }
     SpotworkAPI.createSpace({
       name: created.name,
-      city: created.city,
-      district: created.district,
-      type: created.type,
-      price: created.price,
+      location: `${created.city} \xB7 ${created.district}`,
+      price_per_hour: created.price,
       capacity: created.cap,
-      surface: created.surface,
       amenities: created.am,
       description: created.desc,
       photos: created.imgs
@@ -3132,71 +3305,97 @@ const App = () => {
   };
   const handleUpdateSpace = (spaceId, updatedFields) => {
     let spaceName = "";
-    setSpacesList((prev) => prev.map((s) => {
-      if (s.id === spaceId || String(s.id) === String(spaceId) || s.dbId && String(s.dbId) === String(spaceId)) {
-        spaceName = updatedFields.name || s.name;
-        const newCity = updatedFields.city || s.city;
-        const newDistrict = updatedFields.district || s.district;
-        const newLocation = updatedFields.location || `${newCity} \xB7 ${newDistrict}`;
-        const newPrice = updatedFields.price !== void 0 ? Number(updatedFields.price) : updatedFields.price_per_hour !== void 0 ? Number(updatedFields.price_per_hour) : s.price;
-        const newCap = updatedFields.capacity !== void 0 ? Number(updatedFields.capacity) : updatedFields.cap !== void 0 ? Number(updatedFields.cap) : s.cap;
-        const newImgs = updatedFields.imgs || updatedFields.photos || s.imgs;
-        const newAm = updatedFields.am || updatedFields.amenities || s.am;
-        const newDesc = updatedFields.desc !== void 0 ? updatedFields.desc : updatedFields.description !== void 0 ? updatedFields.description : s.desc;
-        const newName = updatedFields.name || s.name;
-        const newType = updatedFields.type || s.type;
-        const newSurface = updatedFields.surface || s.surface;
-        const newAddress = updatedFields.address || s.address;
-        return {
-          ...s,
-          ...updatedFields,
-          name: newName,
-          city: newCity,
-          district: newDistrict,
-          location: newLocation,
-          address: newAddress,
-          price: newPrice,
-          price_per_hour: newPrice,
-          cap: newCap,
-          capacity: newCap,
-          imgs: newImgs,
-          photos: newImgs,
-          am: newAm,
-          amenities: newAm,
-          desc: newDesc,
-          description: newDesc,
-          type: newType,
-          surface: newSurface
-        };
+    let savedSpace = null;
+    setSpacesList((prev) => {
+      const next = prev.map((s) => {
+        if (s.id === spaceId || String(s.id) === String(spaceId) || s.dbId && String(s.dbId) === String(spaceId)) {
+          spaceName = updatedFields.name || s.name;
+          const newCity = updatedFields.city || s.city;
+          const newDistrict = updatedFields.district || s.district;
+          const newLocation = updatedFields.location || `${newCity} \xB7 ${newDistrict}`;
+          const newPrice = updatedFields.price !== void 0 ? Number(updatedFields.price) : updatedFields.price_per_hour !== void 0 ? Number(updatedFields.price_per_hour) : s.price;
+          const newCap = updatedFields.capacity !== void 0 ? Number(updatedFields.capacity) : updatedFields.cap !== void 0 ? Number(updatedFields.cap) : s.cap;
+          const newImgs = updatedFields.imgs || updatedFields.photos || s.imgs;
+          const newAm = updatedFields.am || updatedFields.amenities || s.am;
+          const newDesc = updatedFields.desc !== void 0 ? updatedFields.desc : updatedFields.description !== void 0 ? updatedFields.description : s.desc;
+          const newName = updatedFields.name || s.name;
+          const newType = updatedFields.type || s.type;
+          const newSurface = updatedFields.surface || s.surface;
+          const newAddress = updatedFields.address || s.address;
+          savedSpace = {
+            ...s,
+            ...updatedFields,
+            id: s.id,
+            // Preserver l'ID canonique exact
+            dbId: s.dbId || s.id,
+            host: updatedFields.host || s.host || "Mehdi El Fassi",
+            rating: s.rating || 4.8,
+            rev: s.rev || 48,
+            badge: updatedFields.badge || s.badge || "Recommand\xE9",
+            featured: updatedFields.featured !== void 0 ? updatedFields.featured : s.featured !== void 0 ? s.featured : true,
+            name: newName,
+            city: newCity,
+            district: newDistrict,
+            location: newLocation,
+            address: newAddress,
+            price: newPrice,
+            price_per_hour: newPrice,
+            cap: newCap,
+            capacity: newCap,
+            imgs: newImgs,
+            photos: newImgs,
+            am: newAm,
+            amenities: newAm,
+            desc: newDesc,
+            description: newDesc,
+            type: newType,
+            surface: newSurface
+          };
+          return savedSpace;
+        }
+        return s;
+      });
+      try {
+        const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+        if (savedSpace) {
+          stored[String(spaceId)] = savedSpace;
+          if (savedSpace.id) stored[String(savedSpace.id)] = savedSpace;
+          if (savedSpace.dbId) stored[String(savedSpace.dbId)] = savedSpace;
+          localStorage.setItem("spotwork_custom_overrides", JSON.stringify(stored));
+        }
+      } catch {
       }
-      return s;
-    }));
+      return next;
+    });
     const currentSpace = spacesList.find((s) => s.id === spaceId || String(s.id) === String(spaceId) || s.dbId && String(s.dbId) === String(spaceId));
     const targetId = currentSpace?.dbId || currentSpace?.id || spaceId;
     const payloadForApi = {
       name: updatedFields.name,
       location: updatedFields.location || (updatedFields.city && updatedFields.district ? `${updatedFields.city} \xB7 ${updatedFields.district}` : void 0),
       price_per_hour: updatedFields.price !== void 0 ? Number(updatedFields.price) : updatedFields.price_per_hour !== void 0 ? Number(updatedFields.price_per_hour) : void 0,
-      price: updatedFields.price !== void 0 ? Number(updatedFields.price) : void 0,
       capacity: updatedFields.capacity !== void 0 ? Number(updatedFields.capacity) : updatedFields.cap !== void 0 ? Number(updatedFields.cap) : void 0,
       description: updatedFields.description !== void 0 ? updatedFields.description : updatedFields.desc,
-      desc: updatedFields.desc !== void 0 ? updatedFields.desc : updatedFields.description,
       amenities: updatedFields.amenities || updatedFields.am,
-      photos: updatedFields.photos || updatedFields.imgs,
-      imgs: updatedFields.imgs || updatedFields.photos,
-      type: updatedFields.type,
-      surface: updatedFields.surface,
-      city: updatedFields.city,
-      district: updatedFields.district,
-      address: updatedFields.address
+      photos: updatedFields.photos || updatedFields.imgs
     };
     Object.keys(payloadForApi).forEach((k) => payloadForApi[k] === void 0 && delete payloadForApi[k]);
     SpotworkAPI.updateSpace(targetId, payloadForApi);
     toast(`Espace \xAB ${updatedFields.name || spaceName || currentSpace?.name || ""} \xBB mis \xE0 jour avec succ\xE8s !`, "check-circle");
   };
   const handleDeleteSpace = (spaceId) => {
-    const deleted = spacesList.find((s) => s.id === spaceId);
-    setSpacesList((prev) => prev.filter((s) => s.id !== spaceId));
+    const deleted = spacesList.find((s) => s.id === spaceId || String(s.id) === String(spaceId));
+    setSpacesList((prev) => prev.filter((s) => s.id !== spaceId && String(s.id) !== String(spaceId)));
+    try {
+      const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+      delete stored[String(spaceId)];
+      const deletedIds = JSON.parse(localStorage.getItem("spotwork_deleted_spaces") || "[]");
+      if (!deletedIds.includes(String(spaceId))) {
+        deletedIds.push(String(spaceId));
+        localStorage.setItem("spotwork_deleted_spaces", JSON.stringify(deletedIds));
+      }
+      localStorage.setItem("spotwork_custom_overrides", JSON.stringify(stored));
+    } catch {
+    }
     SpotworkAPI.deleteSpace(spaceId);
     toast(`Espace \xAB ${deleted?.name || ""} \xBB supprim\xE9 du catalogue.`, "trash");
   };
@@ -3307,9 +3506,25 @@ const App = () => {
   };
   useEffect(() => {
     SpotworkAPI.getSpaces().then((spaces) => {
+      let finalSpaces = DEFAULT_MOROCCAN_SPACES.map(normalizeSpaceFromDB);
       if (spaces && Array.isArray(spaces) && spaces.length > 0) {
-        setSpacesList(spaces.map(normalizeSpaceFromDB));
+        finalSpaces = spaces.map(normalizeSpaceFromDB);
       }
+      try {
+        const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+        const deletedIds = JSON.parse(localStorage.getItem("spotwork_deleted_spaces") || "[]");
+        if (deletedIds.length > 0) {
+          finalSpaces = finalSpaces.filter((sp) => !deletedIds.includes(String(sp.id)) && !deletedIds.includes(String(sp.dbId)));
+        }
+        if (Object.keys(stored).length > 0) {
+          finalSpaces = finalSpaces.map((sp) => {
+            const override = stored[String(sp.id)] || sp.dbId && stored[String(sp.dbId)];
+            return override ? { ...sp, ...override } : sp;
+          });
+        }
+      } catch {
+      }
+      setSpacesList(finalSpaces);
       setLoadingSpaces(false);
     }).catch(() => {
       setLoadingSpaces(false);

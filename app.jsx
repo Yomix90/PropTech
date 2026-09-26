@@ -206,6 +206,86 @@ const DEFAULT_MOROCCAN_SPACES = [
     imgs: ["https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?auto=format&fit=crop&w=900&q=70"],
     rating: 4.8,
     type: "open"
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000007",
+    name: "Coworking Palm Hivernage",
+    description: "Atelier modulable entouré de palmiers avec terrasse ensoleillée pour les pauses et sessions de networking. Mobilier artisanal contemporain.",
+    location: "Marrakech · Hivernage",
+    city: "Marrakech",
+    district: "Hivernage",
+    latitude: 31.6230,
+    longitude: -8.0160,
+    price_per_hour: 55.0,
+    price: 55.0,
+    capacity: 16,
+    cap: 16,
+    amenities: ["wifi", "board", "coffee", "terrace"],
+    am: ["wifi", "board", "coffee", "terrace"],
+    photos: ["https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=70"],
+    imgs: ["https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=70"],
+    rating: 4.8,
+    type: "studio"
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000008",
+    name: "Technopark Agadir Hub",
+    description: "Bureau d'équipe moderne au sein du Technopark d'Agadir. Équipements complets, environnement innovant et parking sécurisé 24/7.",
+    location: "Agadir · Tilila",
+    city: "Agadir",
+    district: "Tilila",
+    latitude: 30.4050,
+    longitude: -9.5580,
+    price_per_hour: 75.0,
+    price: 75.0,
+    capacity: 8,
+    cap: 8,
+    amenities: ["wifi", "screen", "access", "print"],
+    am: ["wifi", "screen", "access", "print"],
+    photos: ["https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=900&q=70"],
+    imgs: ["https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=900&q=70"],
+    rating: 4.7,
+    type: "office"
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000009",
+    name: "Détroit Meeting Tanger",
+    description: "Salle panoramique en plein centre-ville de Tanger avec vue sur le détroit de Gibraltar. Configuration flexible en U ou théâtre.",
+    location: "Tanger · Centre",
+    city: "Tanger",
+    district: "Centre",
+    latitude: 35.7820,
+    longitude: -5.8110,
+    price_per_hour: 45.0,
+    price: 45.0,
+    capacity: 14,
+    cap: 14,
+    amenities: ["wifi", "screen", "board", "coffee", "terrace"],
+    am: ["wifi", "screen", "board", "coffee", "terrace"],
+    photos: ["https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=900&q=70"],
+    imgs: ["https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=900&q=70"],
+    rating: 4.8,
+    type: "meeting"
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000010",
+    name: "Fès Medina Lab",
+    description: "Hub collaboratif moderne mêlant architecture marocaine et équipements high-tech. Ambiance chaleureuse et communauté cosmopolite.",
+    location: "Fès · Ville Nouvelle",
+    city: "Fès",
+    district: "Ville Nouvelle",
+    latitude: 34.0330,
+    longitude: -5.0010,
+    price_per_hour: 35.0,
+    price: 35.0,
+    capacity: 30,
+    cap: 30,
+    amenities: ["wifi", "coffee", "print", "access"],
+    am: ["wifi", "coffee", "print", "access"],
+    photos: ["https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=70"],
+    imgs: ["https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=70"],
+    rating: 4.8,
+    type: "open"
   }
 ];
 
@@ -425,6 +505,17 @@ const SpotworkAPI = {
       } catch (e) { }
     }
     try {
+      const sbPayload = {
+        name: updates.name,
+        location: updates.location || (updates.city && updates.district ? `${updates.city} · ${updates.district}` : undefined),
+        price_per_hour: updates.price_per_hour !== undefined ? Number(updates.price_per_hour) : (updates.price !== undefined ? Number(updates.price) : undefined),
+        capacity: updates.capacity !== undefined ? Number(updates.capacity) : (updates.cap !== undefined ? Number(updates.cap) : undefined),
+        description: updates.description || updates.desc,
+        amenities: updates.amenities || updates.am,
+        photos: updates.photos || updates.imgs
+      };
+      Object.keys(sbPayload).forEach(k => sbPayload[k] === undefined && delete sbPayload[k]);
+
       const res = await fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${id}`, {
         method: "PATCH",
         headers: {
@@ -432,7 +523,7 @@ const SpotworkAPI = {
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(sbPayload)
       });
       if (res.ok) return { status: "success" };
     } catch { }
@@ -633,9 +724,19 @@ const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 const normalizeSpaceFromDB = (s) => {
   if (!s) return null;
-  const numId = typeof s.id === 'number' ? s.id : parseInt(String(s.id).split('-').pop(), 10) || s.id;
-  const city = s.city || (s.location ? s.location.split('·')[0].trim() : "Casablanca");
-  const district = s.district || (s.location && s.location.includes('·') ? s.location.split('·')[1].trim() : (s.location || "Centre-ville"));
+  let canonicalId = s.id;
+  if (typeof s.id === 'number') {
+    canonicalId = s.id;
+  } else if (typeof s.id === 'string' && /^[0-9]+$/.test(s.id)) {
+    canonicalId = parseInt(s.id, 10);
+  } else if (typeof s.id === 'string' && s.id.startsWith("10000000-0000-0000-0000-0000000000")) {
+    canonicalId = parseInt(s.id.split('-').pop(), 10);
+  }
+
+  const rawLoc = s.location || "";
+  const parts = rawLoc.includes('·') ? rawLoc.split('·') : rawLoc.includes('-') ? rawLoc.split('-') : [rawLoc];
+  const city = s.city || (parts[0] ? parts[0].trim() : "Casablanca");
+  const district = s.district || (parts[1] ? parts[1].trim() : (s.city ? `${s.city} Centre` : "Centre-ville"));
   const imgs = Array.isArray(s.imgs) && s.imgs.length > 0 
     ? s.imgs 
     : (Array.isArray(s.photos) && s.photos.length > 0 
@@ -645,34 +746,40 @@ const normalizeSpaceFromDB = (s) => {
     ? s.am 
     : (Array.isArray(s.amenities) && s.amenities.length > 0 
         ? s.amenities 
-        : (typeof s.amenities === 'string' ? s.amenities.split(' ') : ["wifi", "coffee", "screen"]));
+        : (typeof s.amenities === 'string' ? s.amenities.split(/[\s,]+/) : ["wifi", "coffee", "screen"]));
   const price = Number(s.price !== undefined ? s.price : s.price_per_hour) || 45;
   const cap = Number(s.cap !== undefined ? s.cap : s.capacity) || 10;
   
   return {
     ...s,
-    id: numId,
+    id: canonicalId,
     dbId: s.id,
-    name: s.name,
+    name: s.name || "Espace Spotwork",
     city,
     district,
+    location: s.location || `${city} · ${district}`,
     address: s.address || `${district}, ${city}, Maroc`,
-    lat: s.lat || s.latitude || 33.5855,
-    lng: s.lng || s.longitude || -7.6322,
+    lat: Number(s.lat !== undefined ? s.lat : s.latitude) || 33.5855,
+    lng: Number(s.lng !== undefined ? s.lng : s.longitude) || -7.6322,
     transport: s.transport || "Accès transports & taxis à proximité",
     type: s.type || (cap > 20 ? "open" : cap > 10 ? "studio" : cap > 5 ? "meeting" : cap === 1 ? "booth" : "office"),
     price,
+    price_per_hour: price,
     unit: s.unit || "heure",
     rating: Number(s.rating) || 4.8,
-    rev: s.rev || 48,
+    rev: Number(s.rev) || 48,
     cap,
+    capacity: cap,
     surface: s.surface || `${cap * 6} m²`,
     imgs,
+    photos: imgs,
     am,
-    badge: s.badge || (s.rating >= 4.9 ? "Coup de cœur" : s.rating >= 4.8 ? "Populaire" : "Recommandé"),
-    featured: s.featured !== undefined ? s.featured : (typeof numId === 'number' ? numId <= 4 : true),
+    amenities: am,
+    badge: s.badge || (Number(s.rating) >= 4.9 ? "Coup de cœur" : Number(s.rating) >= 4.8 ? "Populaire" : "Recommandé"),
+    featured: s.featured !== undefined ? s.featured : (typeof canonicalId === 'number' ? canonicalId <= 3 : true),
     host: s.host || (s.users?.full_name || "Mehdi El Fassi"),
-    desc: s.desc || s.description || "",
+    desc: s.desc || s.description || `Espace de travail tout équipé situé à ${city}, ${district}.`,
+    description: s.description || s.desc || `Espace de travail tout équipé situé à ${city}, ${district}.`,
     busy: s.busy || []
   };
 };
@@ -1175,16 +1282,23 @@ const InvoiceModal = ({ invoice, isOpen, onClose }) => {
 
 /* ================= CARTE ESPACE AVEC SYNCHRONISATION DES PLACES EN DIRECT ================= */
 const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
-  const liked = favs.has(s.id);
+  if (!s) return null;
+  const liked = favs && typeof favs.has === 'function' ? favs.has(s.id) : false;
   const avail = getSpaceAvailability(s, date, bookings);
+  const cardImg = (s.imgs && s.imgs[0]) || (s.photos && s.photos[0]) || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=700&q=70";
+  const cardPrice = Number(s.price !== undefined ? s.price : (s.price_per_hour || 45));
+  const cardRating = Number(s.rating || 4.8);
+  const typeLabel = TYPES.find(t => t.id === s.type)?.label || s.type || "Espace flexible";
+  const surfaceLabel = s.surface || `${(s.cap || s.capacity || 10) * 6} m²`;
+
   return (
     <article onClick={() => nav({ name: "space", params: { id: s.id, date } })}
       className={`group cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift ${avail.isSoldOut ? "border-rose-200" : "border-slate-200/80"}`}>
       <div className="relative h-44 md:h-48 overflow-hidden">
-        <img src={U(s.imgs[0], 700)} alt={s.name} loading="lazy"
+        <img src={U(cardImg, 700)} alt={s.name || "Espace Spotwork"} loading="lazy"
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.07]" />
         <div className="absolute left-3 top-3 flex flex-col gap-1 items-start">
-          <Badge label={s.badge} />
+          <Badge label={s.badge || "Recommandé"} />
           {date && (
             avail.isPast || avail.allHoursPast ? (
               <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-slate-600 text-white shadow-md">
@@ -1201,24 +1315,24 @@ const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
             )
           )}
         </div>
-        <button onClick={e => { e.stopPropagation(); toggleFav(s.id); }}
+        <button onClick={e => { e.stopPropagation(); if (toggleFav) toggleFav(s.id); }}
           className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full backdrop-blur transition ${liked ? "bg-white text-rose-500" : "bg-white/85 text-slate-500 hover:text-rose-500"}`}>
           <Icon n="heart" size={16} fill={liked ? "currentColor" : "none"} className={liked ? "pop" : ""} />
         </button>
         <span className="absolute bottom-3 right-3 rounded-full bg-ink/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
-          {s.unit === "heure" ? "À l'heure" : "À la journée"}
+          {s.unit === "jour" ? "À la journée" : "À l'heure"}
         </span>
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-display font-semibold text-[15px] leading-snug">{s.name}</h3>
-          <span className="flex shrink-0 items-center gap-1 text-sm font-semibold"><Icon n="star" size={13} fill="currentColor" className="text-amber-400" />{s.rating.toLocaleString('fr-FR')}</span>
+          <span className="flex shrink-0 items-center gap-1 text-sm font-semibold"><Icon n="star" size={13} fill="currentColor" className="text-amber-400" />{cardRating.toLocaleString('fr-FR')}</span>
         </div>
         <p className="mt-0.5 flex items-center gap-1 text-[13px] text-slate-500">
-          <Icon n="map-pin" size={12} />{s.city} · {s.district}
+          <Icon n="map-pin" size={12} />{s.city || "Maroc"} · {s.district || "Centre"}
         </p>
         <div className="mt-1 flex items-center justify-between text-xs">
-          <span className="text-slate-400">{TYPES.find(t => t.id === s.type).label} · {s.surface}</span>
+          <span className="text-slate-400">{typeLabel} · {surfaceLabel}</span>
           {avail.isSoldOut ? (
             <span className="font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
               0 / {avail.totalCapacity} place
@@ -1230,7 +1344,7 @@ const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
           )}
         </div>
         <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
-          <p className="text-[15px]"><b className="font-display">{EUR.format(s.price)}</b><span className="text-slate-400 text-xs"> /{s.unit}</span></p>
+          <p className="text-[15px]"><b className="font-display">{EUR.format(cardPrice)}</b><span className="text-slate-400 text-xs"> /{s.unit || "heure"}</span></p>
           <span className={`flex items-center gap-1 text-xs font-semibold transition-transform group-hover:translate-x-1 ${avail.isSoldOut ? "text-slate-400" : "text-brand-600"}`}>
             {avail.isSoldOut ? "Voir planning" : "Voir l'espace"}<Icon n="arrow-right" size={13} />
           </span>
@@ -1596,7 +1710,9 @@ const Ring = ({ v }) => (
 
 /* ================= HOME ================= */
 const Home = ({ nav, favs, toggleFav, spaces = [], bookings = [], currentUser = null, userBookings = [] }) => {
-  const featured = spaces.filter(s => s.featured);
+  const [selectedHomeCity, setSelectedHomeCity] = useState("");
+  const featured = spaces.filter(s => s.featured).length > 0 ? spaces.filter(s => s.featured).slice(0, 3) : spaces.slice(0, 3);
+  const visibleSpaces = selectedHomeCity ? spaces.filter(s => (s.city || "").toLowerCase() === selectedHomeCity.toLowerCase()) : spaces;
 
   // Recommandations IA personnalisées pour la page d'accueil
   const homeAiRecs = useMemo(() => {
@@ -1605,33 +1721,36 @@ const Home = ({ nav, favs, toggleFav, spaces = [], bookings = [], currentUser = 
     const prefCity = (p.city || currentUser.city || "Casablanca").toLowerCase();
     const prefType = (p.type || "open").toLowerCase();
 
-    return spaces.map(s => {
-      let score = 55 + Math.round((s.rating - 4.0) * 14);
+    return (spaces || []).map(s => {
+      let score = 55 + Math.round(((s.rating || 4.8) - 4.0) * 14);
       const tags = [];
       let reason = "";
 
-      if (s.city.toLowerCase() === prefCity) {
+      const sCity = (s.city || "").toLowerCase();
+      const sType = (s.type || "").toLowerCase();
+      if (sCity && sCity === prefCity) {
         score += 24;
         tags.push(`📍 ${s.city}`);
       }
-      if (s.type.toLowerCase() === prefType) {
+      if (sType && sType === prefType) {
         score += 20;
         tags.push(`🏢 ${TYPES.find(t => t.id === s.type)?.label || s.type}`);
       }
-      if (favs.has(s.id)) {
+      if (favs && typeof favs.has === 'function' && favs.has(s.id)) {
         score += 15;
         tags.push("❤️ Coup de cœur");
       }
-      if (userBookings.some(b => b.spaceId === s.id)) {
+      if (Array.isArray(userBookings) && userBookings.some(b => b.spaceId === s.id || String(b.spaceId) === String(s.id))) {
         score += 12;
         tags.push("🔄 Habitude");
       }
 
       const matchScore = Math.min(99, Math.max(75, score));
-      if (s.city.toLowerCase() === prefCity && s.type.toLowerCase() === prefType) {
-        reason = `Aligné sur votre préférence active : ${TYPES.find(t => t.id === s.type)?.label} à ${s.city}.`;
-      } else if (s.city.toLowerCase() === prefCity) {
-        reason = `Recommandé selon vos habitudes à ${s.city} · Noté ${s.rating}/5.`;
+      const typeLabel = TYPES.find(t => t.id === s.type)?.label || s.type || "Espace";
+      if (sCity && sCity === prefCity && sType && sType === prefType) {
+        reason = `Aligné sur votre préférence active : ${typeLabel} à ${s.city}.`;
+      } else if (sCity && sCity === prefCity) {
+        reason = `Recommandé selon vos habitudes à ${s.city} · Noté ${s.rating || 4.8}/5.`;
       } else {
         reason = `Espace prisé des coworkers marocains avec équipement complet.`;
       }
@@ -1757,6 +1876,59 @@ const Home = ({ nav, favs, toggleFav, spaces = [], bookings = [], currentUser = 
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Catalogue National des espaces au Maroc */}
+      <section className="bg-white py-14 border-t border-slate-100">
+        <div className="mx-auto max-w-7xl px-4 md:px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8" data-reveal>
+            <div>
+              <Kicker>Catalogue National</Kicker>
+              <h2 className="font-display text-2xl md:text-[2rem] font-bold tracking-tight mt-2 text-ink">
+                Tous nos espaces de travail au Maroc
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Explorez l'ensemble des {spaces.length} espaces disponibles dans tout le Royaume avec réservation directe
+              </p>
+            </div>
+            {/* Filtres par ville rapides */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: "Toutes les villes", val: "" },
+                { label: "Casablanca", val: "Casablanca" },
+                { label: "Marrakech", val: "Marrakech" },
+                { label: "Rabat", val: "Rabat" },
+                { label: "Tanger", val: "Tanger" },
+                { label: "Agadir", val: "Agadir" },
+                { label: "Fès", val: "Fès" }
+              ].map(item => (
+                <button
+                  key={item.val || "all"}
+                  onClick={() => setSelectedHomeCity(item.val)}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
+                    selectedHomeCity === item.val
+                      ? "bg-navy text-white shadow-sm"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleSpaces.map((s, i) => (
+              <div key={s.id} data-reveal style={{ transitionDelay: `${(i % 6) * 50}ms` }}>
+                <SpaceCard s={s} nav={nav} favs={favs} toggleFav={toggleFav} bookings={bookings} />
+              </div>
+            ))}
+          </div>
+          {visibleSpaces.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center text-slate-500">
+              Aucun espace trouvé pour la ville sélectionnée.
+            </div>
+          )}
         </div>
       </section>
       {/* Comment ça marche */}
@@ -2057,9 +2229,27 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
       </div>
     </main>
   );
-  const liked = favs.has(s.id);
-  const isHour = s.unit === "heure";
-  const base = isHour ? slots.length * s.price * seatsCount : days * s.price * seatsCount;
+  const liked = favs && typeof favs.has === 'function' ? favs.has(s.id) : false;
+  const isHour = s.unit !== "jour";
+  const spacePrice = Number(s.price !== undefined ? s.price : (s.price_per_hour || 45));
+  const spaceCap = Number(s.cap !== undefined ? s.cap : (s.capacity || 10));
+  const spaceSurface = s.surface || `${spaceCap * 6} m²`;
+  const spaceRating = Number(s.rating || 4.8);
+  const spaceHost = s.host || "Mehdi El Fassi";
+  const spaceDesc = s.desc || s.description || `Espace de travail tout équipé à ${s.city || "Casablanca"}.`;
+  const spaceAm = (Array.isArray(s.am) && s.am.length > 0)
+    ? s.am
+    : ((Array.isArray(s.amenities) && s.amenities.length > 0)
+        ? s.amenities
+        : ["wifi", "coffee", "screen"]);
+  const spaceImgs = (Array.isArray(s.imgs) && s.imgs.length > 0)
+    ? s.imgs
+    : ((Array.isArray(s.photos) && s.photos.length > 0)
+        ? s.photos
+        : ["https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1100&q=70"]);
+  const currentImg = spaceImgs[img] || spaceImgs[0];
+
+  const base = isHour ? slots.length * spacePrice * seatsCount : days * spacePrice * seatsCount;
   const fees = Math.round(base * 0.08 * 100) / 100;
 
   // Calcul dynamique des places et disponibilités selon les réservations enregistrées
@@ -2068,11 +2258,11 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
 
   // Réajuster les créneaux si l'utilisateur augmente le nombre de places demandées
   const updateSeatsCount = newCount => {
-    const clamped = Math.max(1, Math.min(s.cap || 1, newCount));
+    const clamped = Math.max(1, Math.min(spaceCap, newCount));
     setSeatsCount(clamped);
     if (isHour && slots.length > 0) {
       const validSlots = slots.filter(h => {
-        const free = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (s.cap || 1);
+        const free = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (spaceCap || 1);
         return free >= clamped;
       });
       if (validSlots.length < slots.length) {
@@ -2090,7 +2280,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
       setErr(`Le créneau horaire ${h} est déjà passé et ne peut plus être réservé.`);
       return;
     }
-    const freeSeats = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (s.cap || 1);
+    const freeSeats = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (spaceCap || 1);
     if (!slots.includes(h)) {
       if (freeSeats <= 0) {
         setErr(`Le créneau ${h} est complet (0 place disponible).`);
@@ -2124,7 +2314,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
           setErr(`Le créneau ${h} est déjà passé et ne peut plus être réservé.`);
           return;
         }
-        const freeSeats = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (s.cap || 1);
+        const freeSeats = availability.hourlyFreeSeats[h] !== undefined ? availability.hourlyFreeSeats[h] : (spaceCap || 1);
         if (freeSeats < seatsCount) {
           setErr(`Le créneau ${h} ne dispose que de ${freeSeats} place(s) libre(s) pour votre demande de ${seatsCount} place(s).`);
           return;
@@ -2141,8 +2331,9 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
       key: Date.now(),
       id: s.id,
       name: s.name,
-      img: s.imgs[0],
-      city: s.city,
+      img: spaceImgs[0],
+      city: s.city || "Casablanca",
+      price: spacePrice,
       date,
       seats: seatsCount,
       slots: slots,
@@ -2163,8 +2354,8 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge label={s.badge} />
-              <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">{TYPES.find(t => t.id === s.type)?.label || s.type}</span>
+              <Badge label={s.badge || "Recommandé"} />
+              <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">{TYPES.find(t => t.id === s.type)?.label || s.type || "Espace flexible"}</span>
             </div>
             {isManagerOrAdmin && onUpdateSpace && (
               <button
@@ -2229,10 +2420,10 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
           {/* Galerie */}
           <div className="mt-5 grid grid-cols-4 gap-2.5">
             <div className="col-span-4 overflow-hidden rounded-2xl md:col-span-3">
-              <img src={U(s.imgs[img], 1100)} alt={s.name} className="h-64 w-full object-cover transition-all duration-500 md:h-[380px]" />
+              <img src={U(currentImg, 1100)} alt={s.name || "Espace Spotwork"} className="h-64 w-full object-cover transition-all duration-500 md:h-[380px]" />
             </div>
             <div className="col-span-4 grid grid-cols-3 gap-2.5 md:col-span-1 md:grid-cols-1">
-              {s.imgs.map((im, i) => (
+              {spaceImgs.map((im, i) => (
                 <button key={i} onClick={() => setImg(i)}
                   className={`overflow-hidden rounded-xl transition ${img === i ? "ring-2 ring-brand-600 ring-offset-2" : "opacity-80 hover:opacity-100"}`}>
                   <img src={U(im, 300)} alt="" className="h-20 w-full object-cover md:h-[118px]" />
@@ -2242,7 +2433,7 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
           </div>
           {/* Infos clés */}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[["users", "Capacité totale", `${s.cap} pers.`], ["user-check", "Places libres", `${availability.availableSeats} pers.`], ["ruler", "Surface", s.surface], ["clock", "Réservation", isHour ? "À l'heure" : "À la journée"]].map(([i, l, v]) => (
+            {[["users", "Capacité totale", `${spaceCap} pers.`], ["user-check", "Places libres", `${availability.availableSeats} pers.`], ["ruler", "Surface", spaceSurface], ["clock", "Réservation", isHour ? "À l'heure" : "À la journée"]].map(([i, l, v]) => (
               <div key={l} className="rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs">
                 <Icon n={i} size={17} className="text-brand-600" />
                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{l}</p>
@@ -2255,17 +2446,27 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
             <h2 className="font-display text-lg font-bold">À propos de cet espace</h2>
             <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{s.desc}</p>
             <div className="mt-4 flex items-center gap-3 rounded-2xl bg-mist p-4">
-              <span className="grid h-11 w-11 place-items-center rounded-full bg-navy text-sm font-bold text-white">{s.host.split(" ").map(w => w[0]).join("")}</span>
-              <div><p className="text-sm font-bold">Géré par {s.host}</p><p className="text-xs text-slate-500">Répond en ~1 h · Membre certifié PropTech Maroc</p></div>
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-navy text-sm font-bold text-white">
+                {(s.host || "Mehdi El Fassi").split(" ").map(w => w[0]).join("")}
+              </span>
+              <div>
+                <p className="text-sm font-bold">Géré par {s.host || "Mehdi El Fassi"}</p>
+                <p className="text-xs text-slate-500">Répond en ~1 h · Membre certifié PropTech Maroc</p>
+              </div>
             </div>
           </div>
           {/* Équipements */}
           <div className="mt-8">
             <h2 className="font-display text-lg font-bold">Équipements inclus</h2>
             <div className="mt-3 flex flex-wrap gap-2.5">
-              {s.am.map(a => {
+              {(s.am || ["wifi", "coffee"]).map(a => {
                 const am = AMENITIES.find(x => x.id === a);
-                return <span key={a} className="flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white"><Icon n={am.icon} size={14} className="text-brand-600" />{am.label}</span>;
+                return (
+                  <span key={a} className="flex items-center gap-2 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white">
+                    <Icon n={am?.icon || "check"} size={14} className="text-brand-600" />
+                    {am?.label || a}
+                  </span>
+                );
               })}
             </div>
           </div>
@@ -2377,8 +2578,8 @@ const SpaceDetail = ({ id, nav, favs, toggleFav, reserve, spaces = [], bookings 
         <aside className="lg:sticky lg:top-24 h-fit">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lift">
             <div className="flex items-baseline justify-between">
-              <p className="font-display text-2xl font-bold">{EUR.format(s.price)}<span className="text-sm font-medium text-slate-400"> /{s.unit}</span></p>
-              <button onClick={() => toggleFav(s.id)} className={`grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}`}>
+              <p className="font-display text-2xl font-bold">{EUR.format(spacePrice)}<span className="text-sm font-medium text-slate-400"> /{s.unit || "heure"}</span></p>
+              <button onClick={() => toggleFav && toggleFav(s.id)} className={`grid h-10 w-10 place-items-center rounded-full border transition ${liked ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-400 hover:text-rose-500"}`}>
                 <Icon n="heart" size={17} fill={liked ? "currentColor" : "none"} className={liked ? "pop" : ""} />
               </button>
             </div>
@@ -4004,7 +4205,12 @@ const EditSpaceModal = ({ space, isOpen, onClose, onUpdateSpace }) => {
       am: selectedAm,
       amenities: selectedAm,
       imgs: cleanImgs,
-      photos: cleanImgs
+      photos: cleanImgs,
+      badge: space.badge || "Recommandé",
+      host: space.host || "Mehdi El Fassi",
+      rating: space.rating || 4.8,
+      rev: space.rev || 48,
+      featured: space.featured !== undefined ? space.featured : true
     });
     onClose();
   };
@@ -5272,8 +5478,26 @@ const App = () => {
   const [view, setView] = useState({ name: "home" });
   const [cart, setCart] = useState([]);
   const [favs, setFavs] = useState(new Set([2, 7]));
-  const [spacesList, setSpacesList] = useState([]);
   const [allBookings, setAllBookings] = useState([]);
+  const [spacesList, setSpacesList] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+      const deletedIds = JSON.parse(localStorage.getItem("spotwork_deleted_spaces") || "[]");
+      let initial = DEFAULT_MOROCCAN_SPACES.map(normalizeSpaceFromDB);
+      if (deletedIds.length > 0) {
+        initial = initial.filter(s => !deletedIds.includes(String(s.id)) && !deletedIds.includes(String(s.dbId)));
+      }
+      if (Object.keys(stored).length > 0) {
+        initial = initial.map(s => {
+          const ov = stored[String(s.id)] || (s.dbId && stored[String(s.dbId)]);
+          return ov ? { ...s, ...ov } : s;
+        });
+      }
+      return initial;
+    } catch {
+      return DEFAULT_MOROCCAN_SPACES.map(normalizeSpaceFromDB);
+    }
+  });
   const [userBookings, setUserBookings] = useState([]);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [toasts, setToasts] = useState([]);
@@ -5324,28 +5548,36 @@ const App = () => {
       district: newSpace.district,
       type: newSpace.type,
       price: Number(newSpace.price),
+      price_per_hour: Number(newSpace.price),
       unit: newSpace.unit || "heure",
       rating: 5.0,
       rev: 1,
       cap: Number(newSpace.capacity) || 10,
+      capacity: Number(newSpace.capacity) || 10,
       surface: newSpace.surface || "50 m²",
       imgs: newSpace.imgs && newSpace.imgs.length ? newSpace.imgs : [IMG.a, IMG.b, IMG.c],
+      photos: newSpace.imgs && newSpace.imgs.length ? newSpace.imgs : [IMG.a, IMG.b, IMG.c],
       am: newSpace.am || ["wifi", "coffee", "screen"],
+      amenities: newSpace.am || ["wifi", "coffee", "screen"],
       badge: "Nouveau",
-      featured: false,
+      featured: true,
       host: currentUser?.name || "Mehdi El Fassi",
-      desc: newSpace.desc,
+      desc: newSpace.desc || `Espace de travail tout équipé à ${newSpace.city}.`,
+      description: newSpace.desc || `Espace de travail tout équipé à ${newSpace.city}.`,
       busy: []
     };
     setSpacesList(prev => [created, ...prev]);
+    try {
+      const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+      stored[String(created.id)] = created;
+      localStorage.setItem("spotwork_custom_overrides", JSON.stringify(stored));
+    } catch { }
+
     SpotworkAPI.createSpace({
       name: created.name,
-      city: created.city,
-      district: created.district,
-      type: created.type,
-      price: created.price,
+      location: `${created.city} · ${created.district}`,
+      price_per_hour: created.price,
       capacity: created.cap,
-      surface: created.surface,
       amenities: created.am,
       description: created.desc,
       photos: created.imgs
@@ -5355,46 +5587,71 @@ const App = () => {
 
   const handleUpdateSpace = (spaceId, updatedFields) => {
     let spaceName = "";
-    setSpacesList(prev => prev.map(s => {
-      if (s.id === spaceId || String(s.id) === String(spaceId) || (s.dbId && String(s.dbId) === String(spaceId))) {
-        spaceName = updatedFields.name || s.name;
-        const newCity = updatedFields.city || s.city;
-        const newDistrict = updatedFields.district || s.district;
-        const newLocation = updatedFields.location || `${newCity} · ${newDistrict}`;
-        const newPrice = updatedFields.price !== undefined ? Number(updatedFields.price) : (updatedFields.price_per_hour !== undefined ? Number(updatedFields.price_per_hour) : s.price);
-        const newCap = updatedFields.capacity !== undefined ? Number(updatedFields.capacity) : (updatedFields.cap !== undefined ? Number(updatedFields.cap) : s.cap);
-        const newImgs = updatedFields.imgs || updatedFields.photos || s.imgs;
-        const newAm = updatedFields.am || updatedFields.amenities || s.am;
-        const newDesc = updatedFields.desc !== undefined ? updatedFields.desc : (updatedFields.description !== undefined ? updatedFields.description : s.desc);
-        const newName = updatedFields.name || s.name;
-        const newType = updatedFields.type || s.type;
-        const newSurface = updatedFields.surface || s.surface;
-        const newAddress = updatedFields.address || s.address;
+    let savedSpace = null;
 
-        return {
-          ...s,
-          ...updatedFields,
-          name: newName,
-          city: newCity,
-          district: newDistrict,
-          location: newLocation,
-          address: newAddress,
-          price: newPrice,
-          price_per_hour: newPrice,
-          cap: newCap,
-          capacity: newCap,
-          imgs: newImgs,
-          photos: newImgs,
-          am: newAm,
-          amenities: newAm,
-          desc: newDesc,
-          description: newDesc,
-          type: newType,
-          surface: newSurface
-        };
-      }
-      return s;
-    }));
+    setSpacesList(prev => {
+      const next = prev.map(s => {
+        if (s.id === spaceId || String(s.id) === String(spaceId) || (s.dbId && String(s.dbId) === String(spaceId))) {
+          spaceName = updatedFields.name || s.name;
+          const newCity = updatedFields.city || s.city;
+          const newDistrict = updatedFields.district || s.district;
+          const newLocation = updatedFields.location || `${newCity} · ${newDistrict}`;
+          const newPrice = updatedFields.price !== undefined ? Number(updatedFields.price) : (updatedFields.price_per_hour !== undefined ? Number(updatedFields.price_per_hour) : s.price);
+          const newCap = updatedFields.capacity !== undefined ? Number(updatedFields.capacity) : (updatedFields.cap !== undefined ? Number(updatedFields.cap) : s.cap);
+          const newImgs = updatedFields.imgs || updatedFields.photos || s.imgs;
+          const newAm = updatedFields.am || updatedFields.amenities || s.am;
+          const newDesc = updatedFields.desc !== undefined ? updatedFields.desc : (updatedFields.description !== undefined ? updatedFields.description : s.desc);
+          const newName = updatedFields.name || s.name;
+          const newType = updatedFields.type || s.type;
+          const newSurface = updatedFields.surface || s.surface;
+          const newAddress = updatedFields.address || s.address;
+
+          savedSpace = {
+            ...s,
+            ...updatedFields,
+            id: s.id, // Preserver l'ID canonique exact
+            dbId: s.dbId || s.id,
+            host: updatedFields.host || s.host || "Mehdi El Fassi",
+            rating: s.rating || 4.8,
+            rev: s.rev || 48,
+            badge: updatedFields.badge || s.badge || "Recommandé",
+            featured: updatedFields.featured !== undefined ? updatedFields.featured : (s.featured !== undefined ? s.featured : true),
+            name: newName,
+            city: newCity,
+            district: newDistrict,
+            location: newLocation,
+            address: newAddress,
+            price: newPrice,
+            price_per_hour: newPrice,
+            cap: newCap,
+            capacity: newCap,
+            imgs: newImgs,
+            photos: newImgs,
+            am: newAm,
+            amenities: newAm,
+            desc: newDesc,
+            description: newDesc,
+            type: newType,
+            surface: newSurface
+          };
+          return savedSpace;
+        }
+        return s;
+      });
+
+      // Stockage persistant dans localStorage
+      try {
+        const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+        if (savedSpace) {
+          stored[String(spaceId)] = savedSpace;
+          if (savedSpace.id) stored[String(savedSpace.id)] = savedSpace;
+          if (savedSpace.dbId) stored[String(savedSpace.dbId)] = savedSpace;
+          localStorage.setItem("spotwork_custom_overrides", JSON.stringify(stored));
+        }
+      } catch { }
+
+      return next;
+    });
 
     const currentSpace = spacesList.find(s => s.id === spaceId || String(s.id) === String(spaceId) || (s.dbId && String(s.dbId) === String(spaceId)));
     const targetId = currentSpace?.dbId || currentSpace?.id || spaceId;
@@ -5403,18 +5660,10 @@ const App = () => {
       name: updatedFields.name,
       location: updatedFields.location || (updatedFields.city && updatedFields.district ? `${updatedFields.city} · ${updatedFields.district}` : undefined),
       price_per_hour: updatedFields.price !== undefined ? Number(updatedFields.price) : (updatedFields.price_per_hour !== undefined ? Number(updatedFields.price_per_hour) : undefined),
-      price: updatedFields.price !== undefined ? Number(updatedFields.price) : undefined,
       capacity: updatedFields.capacity !== undefined ? Number(updatedFields.capacity) : (updatedFields.cap !== undefined ? Number(updatedFields.cap) : undefined),
       description: updatedFields.description !== undefined ? updatedFields.description : updatedFields.desc,
-      desc: updatedFields.desc !== undefined ? updatedFields.desc : updatedFields.description,
       amenities: updatedFields.amenities || updatedFields.am,
-      photos: updatedFields.photos || updatedFields.imgs,
-      imgs: updatedFields.imgs || updatedFields.photos,
-      type: updatedFields.type,
-      surface: updatedFields.surface,
-      city: updatedFields.city,
-      district: updatedFields.district,
-      address: updatedFields.address
+      photos: updatedFields.photos || updatedFields.imgs
     };
 
     Object.keys(payloadForApi).forEach(k => payloadForApi[k] === undefined && delete payloadForApi[k]);
@@ -5424,8 +5673,18 @@ const App = () => {
   };
 
   const handleDeleteSpace = (spaceId) => {
-    const deleted = spacesList.find(s => s.id === spaceId);
-    setSpacesList(prev => prev.filter(s => s.id !== spaceId));
+    const deleted = spacesList.find(s => s.id === spaceId || String(s.id) === String(spaceId));
+    setSpacesList(prev => prev.filter(s => s.id !== spaceId && String(s.id) !== String(spaceId)));
+    try {
+      const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+      delete stored[String(spaceId)];
+      const deletedIds = JSON.parse(localStorage.getItem("spotwork_deleted_spaces") || "[]");
+      if (!deletedIds.includes(String(spaceId))) {
+        deletedIds.push(String(spaceId));
+        localStorage.setItem("spotwork_deleted_spaces", JSON.stringify(deletedIds));
+      }
+      localStorage.setItem("spotwork_custom_overrides", JSON.stringify(stored));
+    } catch { }
     SpotworkAPI.deleteSpace(spaceId);
     toast(`Espace « ${deleted?.name || ""} » supprimé du catalogue.`, "trash");
   };
@@ -5549,9 +5808,24 @@ const App = () => {
   // Chargement dynamique des espaces depuis la base de données PostgreSQL Supabase
   useEffect(() => {
     SpotworkAPI.getSpaces().then(spaces => {
+      let finalSpaces = DEFAULT_MOROCCAN_SPACES.map(normalizeSpaceFromDB);
       if (spaces && Array.isArray(spaces) && spaces.length > 0) {
-        setSpacesList(spaces.map(normalizeSpaceFromDB));
+        finalSpaces = spaces.map(normalizeSpaceFromDB);
       }
+      try {
+        const stored = JSON.parse(localStorage.getItem("spotwork_custom_overrides") || "{}");
+        const deletedIds = JSON.parse(localStorage.getItem("spotwork_deleted_spaces") || "[]");
+        if (deletedIds.length > 0) {
+          finalSpaces = finalSpaces.filter(sp => !deletedIds.includes(String(sp.id)) && !deletedIds.includes(String(sp.dbId)));
+        }
+        if (Object.keys(stored).length > 0) {
+          finalSpaces = finalSpaces.map(sp => {
+            const override = stored[String(sp.id)] || (sp.dbId && stored[String(sp.dbId)]);
+            return override ? { ...sp, ...override } : sp;
+          });
+        }
+      } catch { }
+      setSpacesList(finalSpaces);
       setLoadingSpaces(false);
     }).catch(() => {
       setLoadingSpaces(false);
