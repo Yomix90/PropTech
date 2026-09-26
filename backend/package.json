@@ -8,7 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc && npm run build:css && npm run build:js",
     "build:css": "tailwindcss -i src/styles/input.css -o ../styles.css --minify",
-    "build:js": "esbuild ../app.jsx --outfile=../app.js --target=es2020",
+    "build:js": "esbuild ../app.jsx --outfile=../app.js --target=es2020 && esbuild ../app.jsx --outfile=../public/app.js --target=es2020",
     "start": "node dist/server.js",
     "test": "vitest run"
   },
