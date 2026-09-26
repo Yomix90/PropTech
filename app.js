@@ -822,6 +822,37 @@ const SpotworkAPI = {
     }
     return { status: "success" };
   },
+  async getUsers() {
+    if (API_BASE) {
+      try {
+        const res = await fetch(`${API_BASE}/users`, {
+          headers: { "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` },
+          signal: AbortSignal.timeout(2500)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data?.users && json.data.users.length > 0) return json.data.users;
+        }
+      } catch {
+      }
+    }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/users?select=*&order=created_at.asc`, {
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        signal: AbortSignal.timeout(3e3)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
+    } catch (e) {
+      console.error("SpotworkAPI.getUsers error:", e);
+    }
+    return PRESET_ACCOUNTS;
+  },
   async getProfile() {
     if (API_BASE) {
       try {
@@ -876,6 +907,31 @@ const PRESET_ACCOUNTS = [
     desc: "Compte Administrateur : vue globale sur la plateforme PropTech Maroc et ses utilisateurs."
   }
 ];
+const normalizeUserFromDB = (u) => {
+  if (!u) return null;
+  const fullName = u.full_name || u.name || (u.email ? u.email.split("@")[0] : "Utilisateur");
+  const initials = fullName.split(/[\s._-]+/).filter(Boolean).map((p) => p[0]).join("").toUpperCase().slice(0, 2) || "U";
+  const firstName = fullName.split(" ")[0] || fullName;
+  const role = u.role || "client";
+  const roleLabel = role === "admin" ? "Administrateur" : role === "manager" ? "Gestionnaire" : "Client";
+  const avatarBg = role === "admin" ? "bg-navy" : role === "manager" ? "bg-indigo-600" : "bg-brand-600";
+  const badgeCls = role === "admin" ? "bg-purple-50 text-purple-700 border-purple-200" : role === "manager" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-blue-50 text-brand-700 border-brand-200";
+  const desc = role === "admin" ? "Compte Administrateur : vue globale sur la plateforme PropTech Maroc et ses utilisateurs." : role === "manager" ? "Compte Gestionnaire : pilotage des espaces, occupation, revenus et gestion des r\xE9servations." : "Compte Client : recherche, r\xE9servation d'espaces au Maroc, recommandations IA personnalis\xE9es.";
+  return {
+    id: u.id,
+    email: u.email,
+    name: fullName,
+    fullName,
+    firstName,
+    initials,
+    role,
+    roleLabel,
+    city: u.preferences?.location_preference || u.city || "Casablanca",
+    avatarBg,
+    badgeCls,
+    desc
+  };
+};
 const CITIES = ["Casablanca", "Rabat", "Marrakech", "Tanger", "Agadir", "F\xE8s"];
 const TYPES = [
   { id: "open", label: "Open space", icon: "layout-grid" },
@@ -1188,8 +1244,9 @@ const Toggle = ({ on, onClick }) => /* @__PURE__ */ React.createElement("button"
 const Field = ({ label, err, children }) => /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-slate-600 mb-1.5" }, label), children, err && /* @__PURE__ */ React.createElement("p", { className: "flex items-center gap-1 text-xs text-rose-600 mt-1.5" }, /* @__PURE__ */ React.createElement(Icon, { n: "alert-circle", size: 12 }), err));
 const inp = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10";
 const inpErr = "border-rose-400 focus:border-rose-500 focus:ring-rose-500/10";
-const AccessDenied = ({ nav, currentUser, onSelectUser }) => {
-  return /* @__PURE__ */ React.createElement("main", { className: "min-h-[75vh] flex items-center justify-center py-12 px-4 bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-lg w-full text-center bg-white rounded-3xl border border-slate-200/90 p-8 md:p-10 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-5 shadow-sm" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-alert", size: 32 })), /* @__PURE__ */ React.createElement("span", { className: "inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-100 text-rose-700 mb-3" }, "Erreur 403 \xB7 Acc\xE8s Restreint"), /* @__PURE__ */ React.createElement("h1", { className: "font-display text-2xl font-bold text-slate-900 mb-2" }, "Espace R\xE9serv\xE9 aux Gestionnaires"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-500 mb-6 leading-relaxed" }, currentUser ? /* @__PURE__ */ React.createElement(React.Fragment, null, "Vous \xEAtes actuellement connect\xE9 en tant que ", /* @__PURE__ */ React.createElement("b", null, currentUser.name), " (", /* @__PURE__ */ React.createElement("span", { className: "text-brand-600 font-semibold" }, currentUser.roleLabel || currentUser.role), "). Ce tableau de bord est strictement r\xE9serv\xE9 aux gestionnaires d'espaces et administrateurs autoris\xE9s.") : /* @__PURE__ */ React.createElement(React.Fragment, null, "Vous devez \xEAtre connect\xE9 avec un compte gestionnaire ou administrateur pour acc\xE9der \xE0 la gestion des espaces, aux plannings et aux revenus.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-3 text-left" }, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-1" }, "Basculer sur un compte autoris\xE9 :"), PRESET_ACCOUNTS.filter((a) => a.role === "manager" || a.role === "admin").map((acc) => /* @__PURE__ */ React.createElement(
+const AccessDenied = ({ nav, currentUser, onSelectUser, users = [] }) => {
+  const availableAccounts = users && users.length > 0 ? users : PRESET_ACCOUNTS;
+  return /* @__PURE__ */ React.createElement("main", { className: "min-h-[75vh] flex items-center justify-center py-12 px-4 bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-lg w-full text-center bg-white rounded-3xl border border-slate-200/90 p-8 md:p-10 shadow-card" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-5 shadow-sm" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-alert", size: 32 })), /* @__PURE__ */ React.createElement("span", { className: "inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-100 text-rose-700 mb-3" }, "Erreur 403 \xB7 Acc\xE8s Restreint"), /* @__PURE__ */ React.createElement("h1", { className: "font-display text-2xl font-bold text-slate-900 mb-2" }, "Espace R\xE9serv\xE9 aux Gestionnaires"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-500 mb-6 leading-relaxed" }, currentUser ? /* @__PURE__ */ React.createElement(React.Fragment, null, "Vous \xEAtes actuellement connect\xE9 en tant que ", /* @__PURE__ */ React.createElement("b", null, currentUser.name), " (", /* @__PURE__ */ React.createElement("span", { className: "text-brand-600 font-semibold" }, currentUser.roleLabel || currentUser.role), "). Ce tableau de bord est strictement r\xE9serv\xE9 aux gestionnaires d'espaces et administrateurs autoris\xE9s.") : /* @__PURE__ */ React.createElement(React.Fragment, null, "Vous devez \xEAtre connect\xE9 avec un compte gestionnaire ou administrateur pour acc\xE9der \xE0 la gestion des espaces, aux plannings et aux revenus.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-3 text-left" }, /* @__PURE__ */ React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-1" }, "Basculer sur un compte autoris\xE9 :"), availableAccounts.filter((a) => a.role === "manager" || a.role === "admin").map((acc) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: acc.id,
@@ -1331,10 +1388,11 @@ const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
     /* @__PURE__ */ React.createElement("div", { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-semibold text-[15px] leading-snug" }, s.name), /* @__PURE__ */ React.createElement("span", { className: "flex shrink-0 items-center gap-1 text-sm font-semibold" }, /* @__PURE__ */ React.createElement(Icon, { n: "star", size: 13, fill: "currentColor", className: "text-amber-400" }), cardRating.toLocaleString("fr-FR"))), /* @__PURE__ */ React.createElement("p", { className: "mt-0.5 flex items-center gap-1 text-[13px] text-slate-500" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 12 }), s.city || "Maroc", " \xB7 ", s.district || "Centre"), /* @__PURE__ */ React.createElement("div", { className: "mt-1 flex items-center justify-between text-xs" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-400" }, typeLabel, " \xB7 ", surfaceLabel), avail.isSoldOut ? /* @__PURE__ */ React.createElement("span", { className: "font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200" }, "0 / ", avail.totalCapacity, " place") : /* @__PURE__ */ React.createElement("span", { className: "font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" }, avail.availableSeats, " / ", avail.totalCapacity, " places libres")), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex items-center justify-between border-t border-slate-100 pt-3" }, /* @__PURE__ */ React.createElement("p", { className: "text-[15px]" }, /* @__PURE__ */ React.createElement("b", { className: "font-display" }, EUR.format(cardPrice)), /* @__PURE__ */ React.createElement("span", { className: "text-slate-400 text-xs" }, " /", s.unit || "heure")), /* @__PURE__ */ React.createElement("span", { className: `flex items-center gap-1 text-xs font-semibold transition-transform group-hover:translate-x-1 ${avail.isSoldOut ? "text-slate-400" : "text-brand-600"}` }, avail.isSoldOut ? "Voir planning" : "Voir l'espace", /* @__PURE__ */ React.createElement(Icon, { n: "arrow-right", size: 13 }))))
   );
 };
-const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSelectUser, onLogout, toast }) => {
+const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSelectUser, onLogout, toast, users = [] }) => {
   const [scrolled, setScrolled] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
+  const availableAccounts = users && users.length > 0 ? users : PRESET_ACCOUNTS;
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 8);
     f();
@@ -1362,7 +1420,7 @@ const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSe
   ].map(([l, i, f]) => /* @__PURE__ */ React.createElement("button", { key: l, onClick: () => {
     f();
     setUserMenu(false);
-  }, className: "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-mist hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: i, size: 15, className: "text-slate-400" }), l)), /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-100 my-1.5 pt-1.5" }, /* @__PURE__ */ React.createElement("p", { className: "px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400" }, "Changer de compte (1 clic)"), PRESET_ACCOUNTS.map((acc) => /* @__PURE__ */ React.createElement(
+  }, className: "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-mist hover:text-ink" }, /* @__PURE__ */ React.createElement(Icon, { n: i, size: 15, className: "text-slate-400" }), l)), /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-100 my-1.5 pt-1.5" }, /* @__PURE__ */ React.createElement("p", { className: "px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400" }, "Changer de compte (", availableAccounts.length, ")"), availableAccounts.map((acc) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: acc.id,
@@ -2936,9 +2994,11 @@ const AdminDash = ({
   onCreateSpace,
   onDeleteSpace,
   bookings = [],
-  onUpdateBookingStatus
+  onUpdateBookingStatus,
+  users = []
 }) => {
   const [tab, setTab] = useState("overview");
+  const availableAccounts = users && users.length > 0 ? users : PRESET_ACCOUNTS;
   const [range, setRange] = useState("30j");
   const [cityFilter, setCityFilter] = useState("");
   const [bookingFilter, setBookingFilter] = useState("all");
@@ -3061,7 +3121,7 @@ const AdminDash = ({
     { id: "spaces", label: `Espaces & Tarifs (${spaces.length})`, icon: "building" },
     { id: "bookings", label: `Demandes de r\xE9servation`, icon: "calendar-days", badge: pendingBookings.length },
     { id: "payments", label: `Paiements & Revenus`, icon: "credit-card" },
-    { id: "users", label: `Membres & R\xF4les (${PRESET_ACCOUNTS.length})`, icon: "users" }
+    { id: "users", label: `Membres & R\xF4les (${availableAccounts.length})`, icon: "users" }
   ].map((t) => /* @__PURE__ */ React.createElement(
     "button",
     {
@@ -3269,7 +3329,7 @@ const AdminDash = ({
     },
     /* @__PURE__ */ React.createElement(Icon, { n: "file-text", size: 12 }),
     "Facture"
-  ))))))))), tab === "users" && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold text-ink" }, "Comptes utilisateurs & Acc\xE8s PropTech Maroc"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1" }, "Profils configur\xE9s pour la gestion, la r\xE9servation et le contr\xF4le de la plateforme."), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid gap-4 md:grid-cols-3" }, PRESET_ACCOUNTS.map((acc) => {
+  ))))))))), tab === "users" && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-6 shadow-card" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold text-ink" }, "Comptes utilisateurs & Acc\xE8s PropTech Maroc"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1" }, "Profils configur\xE9s pour la gestion, la r\xE9servation et le contr\xF4le de la plateforme."), /* @__PURE__ */ React.createElement("div", { className: "mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3" }, availableAccounts.map((acc) => {
     const isCurrent = currentUser?.id === acc.id;
     return /* @__PURE__ */ React.createElement("div", { key: acc.id, className: `rounded-2xl border p-5 transition ${isCurrent ? "border-brand-500 bg-brand-50/20 ring-2 ring-brand-500/20" : "border-slate-200 bg-white"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 mb-3" }, /* @__PURE__ */ React.createElement("span", { className: `grid h-10 w-10 place-items-center rounded-xl font-bold text-white text-xs ${acc.avatarBg}` }, acc.initials), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-sm text-ink" }, acc.name), /* @__PURE__ */ React.createElement("span", { className: `inline-block mt-0.5 rounded-full border px-2 py-0.5 text-[10px] font-bold ${acc.badgeCls}` }, acc.roleLabel))), /* @__PURE__ */ React.createElement("p", { className: "text-xs font-mono text-slate-500 mb-2" }, acc.email), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-600 leading-relaxed min-h-[44px]" }, acc.desc), /* @__PURE__ */ React.createElement(
       "button",
@@ -3306,7 +3366,8 @@ const AdminDash = ({
     }
   ));
 };
-const LoginPage = ({ currentUser, onLogin, nav, toast }) => {
+const LoginPage = ({ currentUser, onLogin, nav, toast, users = [] }) => {
+  const availableAccounts = users && users.length > 0 ? users : PRESET_ACCOUNTS;
   const [selectedRole, setSelectedRole] = useState("client");
   const [email, setEmail] = useState("youssef@proptech.ma");
   const [password, setPassword] = useState("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022");
@@ -3326,7 +3387,7 @@ const LoginPage = ({ currentUser, onLogin, nav, toast }) => {
       setErr("Veuillez saisir une adresse email");
       return;
     }
-    const found = PRESET_ACCOUNTS.find((a) => a.email.toLowerCase() === email.toLowerCase());
+    const found = availableAccounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
     if (found) {
       handlePresetLogin(found);
     } else {
@@ -3350,7 +3411,7 @@ const LoginPage = ({ currentUser, onLogin, nav, toast }) => {
       nav(selectedRole === "client" ? { name: "user" } : { name: "admin" });
     }
   };
-  return /* @__PURE__ */ React.createElement("main", { className: "min-h-[85vh] bg-mist py-10 md:py-16" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-4xl px-4 md:px-6" }, /* @__PURE__ */ React.createElement("div", { className: "text-center max-w-xl mx-auto mb-10" }, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1 text-xs font-semibold text-brand-700 shadow-sm" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-brand-600" }), "Portail d'authentification PropTech Maroc"), /* @__PURE__ */ React.createElement("h1", { className: "mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-ink" }, "Connexion \xE0 Spotwork"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-sm text-slate-500" }, "Acc\xE9dez \xE0 votre espace Client, Gestionnaire ou Administrateur. Testez en 1 clic gr\xE2ce aux comptes pr\xE9configur\xE9s.")), /* @__PURE__ */ React.createElement("div", { className: "mb-10" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-4" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Icon, { n: "zap", size: 17, className: "text-amber-500" }), "Connexion rapide en 1 clic (Profils de Test)"), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-slate-400" }, "Pr\xEAt \xE0 l'emploi")), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 md:grid-cols-3" }, PRESET_ACCOUNTS.map((acc) => {
+  return /* @__PURE__ */ React.createElement("main", { className: "min-h-[85vh] bg-mist py-10 md:py-16" }, /* @__PURE__ */ React.createElement("div", { className: "mx-auto max-w-4xl px-4 md:px-6" }, /* @__PURE__ */ React.createElement("div", { className: "text-center max-w-xl mx-auto mb-10" }, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1 text-xs font-semibold text-brand-700 shadow-sm" }, /* @__PURE__ */ React.createElement(Icon, { n: "shield-check", size: 13, className: "text-brand-600" }), "Portail d'authentification PropTech Maroc"), /* @__PURE__ */ React.createElement("h1", { className: "mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-ink" }, "Connexion \xE0 Spotwork"), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-sm text-slate-500" }, "Acc\xE9dez \xE0 votre espace Client, Gestionnaire ou Administrateur. Testez en 1 clic gr\xE2ce aux comptes pr\xE9configur\xE9s.")), /* @__PURE__ */ React.createElement("div", { className: "mb-10" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-4" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display text-lg font-bold flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Icon, { n: "zap", size: 17, className: "text-amber-500" }), "Connexion rapide en 1 clic (Profils de Test)"), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-slate-400" }, "Pr\xEAt \xE0 l'emploi")), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-3" }, availableAccounts.map((acc) => {
     const isActive = currentUser?.id === acc.id;
     return /* @__PURE__ */ React.createElement(
       "div",
@@ -3483,6 +3544,7 @@ const App = () => {
     }
   });
   const [userBookings, setUserBookings] = useState([]);
+  const [usersList, setUsersList] = useState(PRESET_ACCOUNTS);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [toasts, setToasts] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -3495,6 +3557,20 @@ const App = () => {
     }
     return PRESET_ACCOUNTS[0];
   });
+  useEffect(() => {
+    SpotworkAPI.getUsers().then((users) => {
+      if (users && Array.isArray(users) && users.length > 0) {
+        const normalized = users.map(normalizeUserFromDB);
+        setUsersList(normalized);
+        setCurrentUser((prev) => {
+          if (!prev) return prev;
+          const match = normalized.find((u) => u.id === prev.id || u.email && prev.email && u.email.toLowerCase() === prev.email.toLowerCase());
+          return match || prev;
+        });
+      }
+    }).catch(() => {
+    });
+  }, []);
   const onLogin = (user) => {
     setCurrentUser(user);
     try {
@@ -3965,7 +4041,7 @@ const App = () => {
   };
   if (!ready || loadingSpaces && spacesList.length === 0) return /* @__PURE__ */ React.createElement("div", { className: "grid min-h-screen place-items-center bg-mist" }, /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("span", { className: "mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-brand-600 text-white" }, /* @__PURE__ */ React.createElement(Icon, { n: "map-pin", size: 22 })), /* @__PURE__ */ React.createElement("p", { className: "mt-3 font-display font-bold" }, "Spotwork PropTech Maroc"), /* @__PURE__ */ React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Chargement des espaces en direct depuis la base de donn\xE9es...")));
   const isManagerOrAdmin = currentUser && (currentUser.role === "manager" || currentUser.role === "admin");
-  return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList, bookings: allBookings, currentUser, userBookings }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList, bookings: allBookings, currentUser, onUpdateSpace: handleUpdateSpace }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && (isManagerOrAdmin ? /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "font-body" }, /* @__PURE__ */ React.createElement(Navbar, { view, nav, cartCount: cart.length, menuOpen, setMenuOpen, currentUser, onSelectUser: onLogin, onLogout, toast, users: usersList }), view.name === "home" && /* @__PURE__ */ React.createElement(Home, { nav, favs, toggleFav, spaces: spacesList, bookings: allBookings, currentUser, userBookings }), view.name === "explore" && /* @__PURE__ */ React.createElement(Explore, { params: view.params, nav, favs, toggleFav, spaces: spacesList, bookings: allBookings }), view.name === "space" && /* @__PURE__ */ React.createElement(SpaceDetail, { id: view.params.id, nav, favs, toggleFav, reserve, spaces: spacesList, bookings: allBookings, currentUser, onUpdateSpace: handleUpdateSpace }), view.name === "checkout" && /* @__PURE__ */ React.createElement(Checkout, { cart, setCart, nav, onDone, toast, currentUser }), view.name === "user" && /* @__PURE__ */ React.createElement(UserDash, { initTab: view.params?.tab, bookings: userBookings, setBookings: setUserBookings, favs, toggleFav, nav, toast, currentUser, spaces: spacesList }), view.name === "admin" && (isManagerOrAdmin ? /* @__PURE__ */ React.createElement(
     AdminDash,
     {
       nav,
@@ -3977,8 +4053,9 @@ const App = () => {
       onCreateSpace: handleCreateSpace,
       onDeleteSpace: handleDeleteSpace,
       bookings: allBookings,
-      onUpdateBookingStatus: handleUpdateBookingStatus
+      onUpdateBookingStatus: handleUpdateBookingStatus,
+      users: usersList
     }
-  ) : /* @__PURE__ */ React.createElement(AccessDenied, { nav, currentUser, onSelectUser: onLogin })), view.name === "login" && /* @__PURE__ */ React.createElement(LoginPage, { currentUser, onLogin, nav, toast }), /* @__PURE__ */ React.createElement(Footer, { nav, toast }), /* @__PURE__ */ React.createElement("div", { className: "pointer-events-none fixed bottom-5 right-5 z-[60] flex flex-col gap-2" }, toasts.map((t) => /* @__PURE__ */ React.createElement("div", { key: t.id, className: "toast pointer-events-auto flex items-center gap-2.5 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-lift" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: t.icon, size: 13 })), t.msg))));
+  ) : /* @__PURE__ */ React.createElement(AccessDenied, { nav, currentUser, onSelectUser: onLogin, users: usersList })), view.name === "login" && /* @__PURE__ */ React.createElement(LoginPage, { currentUser, onLogin, nav, toast, users: usersList }), /* @__PURE__ */ React.createElement(Footer, { nav, toast }), /* @__PURE__ */ React.createElement("div", { className: "pointer-events-none fixed bottom-5 right-5 z-[60] flex flex-col gap-2" }, toasts.map((t) => /* @__PURE__ */ React.createElement("div", { key: t.id, className: "toast pointer-events-auto flex items-center gap-2.5 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-lift" }, /* @__PURE__ */ React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-brand-600" }, /* @__PURE__ */ React.createElement(Icon, { n: t.icon, size: 13 })), t.msg))));
 };
 ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));

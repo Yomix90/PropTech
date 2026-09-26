@@ -825,6 +825,36 @@ const SpotworkAPI = {
     }
     return { status: "success" };
   },
+  async getUsers() {
+    if (API_BASE) {
+      try {
+        const res = await fetch(`${API_BASE}/users`, {
+          headers: { "Authorization": `Bearer ${SpotworkAPI.token || SpotworkAPI.managerToken}` },
+          signal: AbortSignal.timeout(2500)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data?.users && json.data.users.length > 0) return json.data.users;
+        }
+      } catch { }
+    }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/users?select=*&order=created_at.asc`, {
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        signal: AbortSignal.timeout(3000)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
+    } catch (e) {
+      console.error("SpotworkAPI.getUsers error:", e);
+    }
+    return PRESET_ACCOUNTS;
+  },
   async getProfile() {
     if (API_BASE) {
       try {
@@ -880,6 +910,47 @@ const PRESET_ACCOUNTS = [
     desc: "Compte Administrateur : vue globale sur la plateforme PropTech Maroc et ses utilisateurs."
   }
 ];
+
+const normalizeUserFromDB = (u) => {
+  if (!u) return null;
+  const fullName = u.full_name || u.name || (u.email ? u.email.split('@')[0] : "Utilisateur");
+  const initials = fullName
+    .split(/[\s._-]+/)
+    .filter(Boolean)
+    .map(p => p[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || "U";
+  const firstName = fullName.split(' ')[0] || fullName;
+  const role = u.role || 'client';
+  const roleLabel = role === 'admin' ? "Administrateur" : role === 'manager' ? "Gestionnaire" : "Client";
+  const avatarBg = role === 'admin' ? "bg-navy" : role === 'manager' ? "bg-indigo-600" : "bg-brand-600";
+  const badgeCls = role === 'admin'
+    ? "bg-purple-50 text-purple-700 border-purple-200"
+    : role === 'manager'
+      ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+      : "bg-blue-50 text-brand-700 border-brand-200";
+  const desc = role === 'admin'
+    ? "Compte Administrateur : vue globale sur la plateforme PropTech Maroc et ses utilisateurs."
+    : role === 'manager'
+      ? "Compte Gestionnaire : pilotage des espaces, occupation, revenus et gestion des réservations."
+      : "Compte Client : recherche, réservation d'espaces au Maroc, recommandations IA personnalisées.";
+
+  return {
+    id: u.id,
+    email: u.email,
+    name: fullName,
+    fullName,
+    firstName,
+    initials,
+    role,
+    roleLabel,
+    city: u.preferences?.location_preference || u.city || "Casablanca",
+    avatarBg,
+    badgeCls,
+    desc
+  };
+};
 
 /* ================= DONNÉES MOCK MAROC ================= */
 const CITIES = ["Casablanca", "Rabat", "Marrakech", "Tanger", "Agadir", "Fès"];
@@ -1236,7 +1307,8 @@ const inp = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 te
 const inpErr = "border-rose-400 focus:border-rose-500 focus:ring-rose-500/10";
 
 /* ================= ACCÈS RESTREINT (403 RBAC GESTIONNAIRE) ================= */
-const AccessDenied = ({ nav, currentUser, onSelectUser }) => {
+const AccessDenied = ({ nav, currentUser, onSelectUser, users = [] }) => {
+  const availableAccounts = users && users.length > 0 ? users : PRESET_ACCOUNTS;
   return (
     <main className="min-h-[75vh] flex items-center justify-center py-12 px-4 bg-mist">
       <div className="max-w-lg w-full text-center bg-white rounded-3xl border border-slate-200/90 p-8 md:p-10 shadow-card">
@@ -1265,7 +1337,7 @@ const AccessDenied = ({ nav, currentUser, onSelectUser }) => {
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-1">
             Basculer sur un compte autorisé :
           </p>
-          {PRESET_ACCOUNTS.filter(a => a.role === 'manager' || a.role === 'admin').map(acc => (
+          {availableAccounts.filter(a => a.role === 'manager' || a.role === 'admin').map(acc => (
             <button
               key={acc.id}
               onClick={() => {
@@ -1585,11 +1657,12 @@ const SpaceCard = ({ s, nav, favs, toggleFav, date, bookings = [] }) => {
 };
 
 /* ================= NAVBAR ================= */
-const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSelectUser, onLogout, toast }) => {
+const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSelectUser, onLogout, toast, users = [] }) => {
   const [scrolled, setScrolled] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
 
   const isManagerOrAdmin = currentUser && (currentUser.role === 'manager' || currentUser.role === 'admin');
+  const availableAccounts = users && users.length > 0 ? users : PRESET_ACCOUNTS;
 
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 8); f();
@@ -1670,8 +1743,8 @@ const Navbar = ({ view, nav, cartCount, menuOpen, setMenuOpen, currentUser, onSe
 
                   {/* Quick Account Switcher */}
                   <div className="border-t border-slate-100 my-1.5 pt-1.5">
-                    <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Changer de compte (1 clic)</p>
-                    {PRESET_ACCOUNTS.map(acc => (
+                    <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Changer de compte ({availableAccounts.length})</p>
+                    {availableAccounts.map(acc => (
                       <button
                         key={acc.id}
                         onClick={() => {
@@ -4734,9 +4807,11 @@ const AdminDash = ({
   onCreateSpace,
   onDeleteSpace,
   bookings = [],
-  onUpdateBookingStatus
+  onUpdateBookingStatus,
+  users = []
 }) => {
   const [tab, setTab] = useState("overview");
+  const availableAccounts = users && users.length > 0 ? users : PRESET_ACCOUNTS;
   const [range, setRange] = useState("30j");
   const [cityFilter, setCityFilter] = useState("");
   const [bookingFilter, setBookingFilter] = useState("all");
@@ -4885,7 +4960,7 @@ const AdminDash = ({
               { id: "spaces", label: `Espaces & Tarifs (${spaces.length})`, icon: "building" },
               { id: "bookings", label: `Demandes de réservation`, icon: "calendar-days", badge: pendingBookings.length },
               { id: "payments", label: `Paiements & Revenus`, icon: "credit-card" },
-              { id: "users", label: `Membres & Rôles (${PRESET_ACCOUNTS.length})`, icon: "users" }
+              { id: "users", label: `Membres & Rôles (${availableAccounts.length})`, icon: "users" }
             ].map(t => (
               <button
                 key={t.id}
@@ -5431,8 +5506,8 @@ const AdminDash = ({
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
               <h2 className="font-display text-lg font-bold text-ink">Comptes utilisateurs & Accès PropTech Maroc</h2>
               <p className="text-xs text-slate-500 mt-1">Profils configurés pour la gestion, la réservation et le contrôle de la plateforme.</p>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                {PRESET_ACCOUNTS.map(acc => {
+              <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {availableAccounts.map(acc => {
                   const isCurrent = currentUser?.id === acc.id;
                   return (
                     <div key={acc.id} className={`rounded-2xl border p-5 transition ${isCurrent ? "border-brand-500 bg-brand-50/20 ring-2 ring-brand-500/20" : "border-slate-200 bg-white"}`}>
@@ -5490,7 +5565,8 @@ const AdminDash = ({
 };
 
 /* ================= PAGE DE CONNEXION ================= */
-const LoginPage = ({ currentUser, onLogin, nav, toast }) => {
+const LoginPage = ({ currentUser, onLogin, nav, toast, users = [] }) => {
+  const availableAccounts = users && users.length > 0 ? users : PRESET_ACCOUNTS;
   const [selectedRole, setSelectedRole] = useState("client");
   const [email, setEmail] = useState("youssef@proptech.ma");
   const [password, setPassword] = useState("••••••••");
@@ -5512,7 +5588,7 @@ const LoginPage = ({ currentUser, onLogin, nav, toast }) => {
       setErr("Veuillez saisir une adresse email");
       return;
     }
-    const found = PRESET_ACCOUNTS.find(a => a.email.toLowerCase() === email.toLowerCase());
+    const found = availableAccounts.find(a => a.email.toLowerCase() === email.toLowerCase());
     if (found) {
       handlePresetLogin(found);
     } else {
@@ -5562,8 +5638,8 @@ const LoginPage = ({ currentUser, onLogin, nav, toast }) => {
             <span className="text-xs text-slate-400">Prêt à l'emploi</span>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {PRESET_ACCOUNTS.map((acc) => {
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {availableAccounts.map((acc) => {
               const isActive = currentUser?.id === acc.id;
               return (
                 <div key={acc.id}
@@ -5778,6 +5854,7 @@ const App = () => {
     }
   });
   const [userBookings, setUserBookings] = useState([]);
+  const [usersList, setUsersList] = useState(PRESET_ACCOUNTS);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [toasts, setToasts] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -5791,6 +5868,21 @@ const App = () => {
     } catch { }
     return PRESET_ACCOUNTS[0];
   });
+
+  // Chargement dynamique des utilisateurs depuis la base de données PostgreSQL Supabase
+  useEffect(() => {
+    SpotworkAPI.getUsers().then(users => {
+      if (users && Array.isArray(users) && users.length > 0) {
+        const normalized = users.map(normalizeUserFromDB);
+        setUsersList(normalized);
+        setCurrentUser(prev => {
+          if (!prev) return prev;
+          const match = normalized.find(u => u.id === prev.id || (u.email && prev.email && u.email.toLowerCase() === prev.email.toLowerCase()));
+          return match || prev;
+        });
+      }
+    }).catch(() => { });
+  }, []);
 
   const onLogin = (user) => {
     setCurrentUser(user);
@@ -6283,7 +6375,7 @@ const App = () => {
 
   return (
     <div className="font-body">
-      <Navbar view={view} nav={nav} cartCount={cart.length} menuOpen={menuOpen} setMenuOpen={setMenuOpen} currentUser={currentUser} onSelectUser={onLogin} onLogout={onLogout} toast={toast} />
+      <Navbar view={view} nav={nav} cartCount={cart.length} menuOpen={menuOpen} setMenuOpen={setMenuOpen} currentUser={currentUser} onSelectUser={onLogin} onLogout={onLogout} toast={toast} users={usersList} />
       {view.name === "home" && <Home nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList} bookings={allBookings} currentUser={currentUser} userBookings={userBookings} />}
       {view.name === "explore" && <Explore params={view.params} nav={nav} favs={favs} toggleFav={toggleFav} spaces={spacesList} bookings={allBookings} />}
       {view.name === "space" && <SpaceDetail id={view.params.id} nav={nav} favs={favs} toggleFav={toggleFav} reserve={reserve} spaces={spacesList} bookings={allBookings} currentUser={currentUser} onUpdateSpace={handleUpdateSpace} />}
@@ -6302,12 +6394,13 @@ const App = () => {
             onDeleteSpace={handleDeleteSpace}
             bookings={allBookings}
             onUpdateBookingStatus={handleUpdateBookingStatus}
+            users={usersList}
           />
         ) : (
-          <AccessDenied nav={nav} currentUser={currentUser} onSelectUser={onLogin} />
+          <AccessDenied nav={nav} currentUser={currentUser} onSelectUser={onLogin} users={usersList} />
         )
       )}
-      {view.name === "login" && <LoginPage currentUser={currentUser} onLogin={onLogin} nav={nav} toast={toast} />}
+      {view.name === "login" && <LoginPage currentUser={currentUser} onLogin={onLogin} nav={nav} toast={toast} users={usersList} />}
       <Footer nav={nav} toast={toast} />
       {/* Toasts */}
       <div className="pointer-events-none fixed bottom-5 right-5 z-[60] flex flex-col gap-2">
